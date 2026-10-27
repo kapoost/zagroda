@@ -28,6 +28,19 @@ describe('walidator łapie psucie treści', () => {
     expect(codes(c)).toContain('REF_ITEM');
   });
 
+  it('podpowiada, gdy ktoś poda id surowca zamiast przedmiotu', () => {
+    // Najczęstsza pomyłka modelu: "pleciony z trzciny" → wsad "trzcina", podczas gdy
+    // trzcina to roślina w świecie, a przedmiotem jest włókno. Komunikat ma to tłumaczyć,
+    // bo to on wraca do modelu jako instrukcja poprawki.
+    const c = clone();
+    c.recipes.find((r: any) => r.id === 'r_sznurek').inputs[0].item = 'trzcina';
+    const r = validateContent(c);
+    expect(r.ok).toBe(false);
+    const msg = r.ok ? '' : r.issues.map((i) => i.msg).join(' ');
+    expect(msg).toContain('surowiec');
+    expect(msg).toContain('wlokno');
+  });
+
   it('wiszącą referencję do struktury', () => {
     const c = clone();
     c.items.find((i: any) => i.id === 'stol_warsztatowy').placeable.structure = 'widmo';

@@ -48,14 +48,18 @@ export function digest(): string {
   const recipeLine = (r: any) =>
     `${r.id} @${r.station}: ${r.inputs.map((x: any) => `${x.qty}×${x.item}`).join(' + ')} → ${r.output.qty}×${r.output.item}`;
   const resourceLine = (r: any) =>
-    `${r.id} "${r.name}" narzędzie=${r.tool} biomy=[${r.biomes.join(',')}] hp=${r.hp} łup=[${r.drops.map((d: any) => d.item).join(',')}]`;
+    `${r.id} "${r.name}" — zbierasz narzędziem ${r.tool} w biomach [${r.biomes.join(',')}], ` +
+    `DAJE PRZEDMIOTY: ${r.drops.map((d: any) => d.item).join(', ')}`;
 
   return [
-    `ITEMY (${items.length}):`,
+    'PRZEDMIOTY — tylko te id wolno podawać jako wsad receptury i jako łup surowca:',
+    `(${items.length})`,
     ...items.map((i) => '  ' + itemLine(i)),
     `STRUKTURY (${structures.length}):`,
     ...structures.map((s: any) => `  ${s.id} "${s.name}"${s.station ? ' stacja=' + s.station : ''}${s.storage ? ' schowek=' + s.storage : ''}`),
-    `SUROWCE (${resources.length}):`,
+    'SUROWCE — rosną/leżą w świecie i NIE SĄ przedmiotami. Nie wolno ich podawać jako wsadu',
+    'receptury. Receptura bierze to, co surowiec DAJE:',
+    `(${resources.length})`,
     ...resources.map((r) => '  ' + resourceLine(r)),
     `RECEPTURY (${recipes.length}):`,
     ...recipes.map((r) => '  ' + recipeLine(r)),

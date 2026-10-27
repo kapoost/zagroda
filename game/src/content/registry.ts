@@ -92,8 +92,38 @@ export function validateContent(raw: unknown): ValidateResult {
   const npcs = byId(c.npcs);
 
   // --- 2. referencje ------------------------------------------------------
+  /**
+   * Komunikat błędu jest tu interfejsem użytkownika — czyta go model, który ma zmianę
+   * poprawić. Samo "nie ma itemu X" nie niesie informacji, której potrzebuje: najczęstsza
+   * pomyłka to podanie id surowca zamiast id przedmiotu, który z niego wypada. Dlatego
+   * walidator sprawdza, czym ten identyfikator w rzeczywistości jest, i mówi to wprost.
+   */
   const needItem = (id: string, where: string) => {
-    if (!items.has(id)) err('REF_ITEM', `nie ma itemu "${id}"`, where);
+    if (items.has(id)) return;
+    const res = resources.get(id);
+    if (res) {
+      const drops = res.drops.map((d) => d.item).join(', ');
+      err(
+        'REF_ITEM',
+        `"${id}" to surowiec rosnący w świecie, nie przedmiot. Użyj tego, co z niego wypada: ${drops}`,
+        where,
+      );
+      return;
+    }
+    if (structures.has(id)) {
+      const holder = c.items.find((i) => i.placeable?.structure === id);
+      err(
+        'REF_ITEM',
+        `"${id}" to struktura stawiana w świecie, nie przedmiot${holder ? `. Przedmiot, który ją stawia, to "${holder.id}"` : ''}`,
+        where,
+      );
+      return;
+    }
+    if (recipes.has(id)) {
+      err('REF_ITEM', `"${id}" to receptura, nie przedmiot. Podaj id przedmiotu, który produkuje`, where);
+      return;
+    }
+    err('REF_ITEM', `nie ma itemu "${id}"`, where);
   };
   for (const it of c.items) {
     if (it.placeable && !structures.has(it.placeable.structure)) {
