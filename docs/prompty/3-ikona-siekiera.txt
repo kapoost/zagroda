@@ -1,0 +1,29 @@
+Pixel art sprite for a top-down 2D survival and crafting game in the style of
+16-bit console RPGs. Nostalgic, warm, hand-placed pixels — not a modern vector
+illustration with a pixel filter.
+
+SUBJECT: A primitive stone axe — a chipped grey stone head lashed to a short wooden
+handle with cord. Single object on a fully transparent background, no shadow, no
+ground. Rendered at a three-quarter angle, head in the upper left and handle running
+to the lower right, so its silhouette is instantly recognisable at actual size.
+
+CANVAS AND GRID — follow exactly:
+- The image is 512×512 and depicts a 16×16 pixel grid.
+- Every grid cell is one flat square of a single solid colour, with hard edges.
+- Cell boundaries align perfectly to the grid. No cell contains more than one colour.
+- Background outside the subject is fully transparent.
+
+DRAWING RULES — follow exactly:
+- Maximum 4 colours for the subject, plus a 1-pixel outline.
+- Outline is 1 cell thick, in a darker shade of the subject's own hue. Never black.
+- One light source from the upper left at 45 degrees. Highlights on upper-left
+  surfaces, shade on lower-right surfaces.
+- No anti-aliasing, no gradients, no blur, no soft or glowing edges.
+- Alpha is binary: a cell is either fully opaque or fully transparent.
+- Orthographic view tilted slightly toward the viewer, as in 16-bit action RPGs.
+- The subject is centred in the canvas and touches neither edge.
+- No text, no numbers, no logo, no frame, no border, no background scenery,
+  no drop shadow outside the subject.
+
+PALETTE — use only these colours, nothing in between:
+#6e6e6e #8d8d8d #b4b4b4 #9a6b3f #3a3a3a

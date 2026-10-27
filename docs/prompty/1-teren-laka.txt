@@ -1,0 +1,25 @@
+Pixel art sprite for a top-down 2D survival and crafting game in the style of
+16-bit console RPGs. Nostalgic, warm, hand-placed pixels — not a modern vector
+illustration with a pixel filter.
+
+SUBJECT: A patch of summer meadow grass seen from directly above. Short tufts and
+blades scattered with even density, a few slightly taller blades, no flowers, no
+path, no rocks. The tile must tile seamlessly in all four directions: the left edge
+continues into the right edge, the top into the bottom. No outline, no single focal
+point, even visual density across the whole tile.
+
+CANVAS AND GRID — follow exactly:
+- The image is 512×512 and depicts a 16×16 pixel grid.
+- Every grid cell is one flat square of a single solid colour, with hard edges.
+- Cell boundaries align perfectly to the grid. No cell contains more than one colour.
+- The tile is fully opaque, edge to edge — no transparency anywhere.
+
+DRAWING RULES — follow exactly:
+- Maximum 4 colours. No outline on terrain tiles.
+- One light source from the upper left at 45 degrees.
+- No anti-aliasing, no gradients, no blur, no soft or glowing edges.
+- Orthographic top-down view. The ground is flat.
+- No text, no numbers, no logo, no frame, no border, no vignette.
+
+PALETTE — use only these colours, nothing in between:
+#4f7a3a #6a9c4a #7fb65c #9ccd72
