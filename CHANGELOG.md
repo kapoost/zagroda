@@ -35,3 +35,12 @@ Dodano nowe narzędzie: żelazną kosę, która jest mocniejsza od zwykłej kosy
 
 - + items: kosa_zelazna ("Kosa żelazna")
 - + recipes: r_kosa_zelazna ("Kosa żelazna")
+
+## Żelazna wędka
+*2026-10-27 18:21 · dane · wykonawca: bielik*
+
+Nowe narzędzie do połowu ryb, trwalsze od drewnianej. Wymaga sztabek żelaza i deski.
+
+- + items: wedka_zelazna ("Wędka żelazna")
+- + recipes: r_wedka_zelazna ("Wędka żelazna")
+- + structures: stanowisko_rybackie ("Stanowisko rybackie")
