@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { CFG } from '../config.js';
 import { digest } from '../contentIo.js';
-import { apiComplete } from '../providers/anthropic.js';
-import { ollamaChat } from '../providers/ollama.js';
+import { apiComplete, apiReady } from '../providers/anthropic.js';
+import { lastCallSeconds, ollamaChat } from '../providers/ollama.js';
 import {
   RouteSchema,
   VOCAB,
@@ -164,6 +164,42 @@ export function widenCollections(cols: Collection[]): Collection[] {
   return [...set].slice(0, 5);
 }
 
+/** Kolejność ma znaczenie: struktury przed przedmiotami, przedmioty przed recepturami. */
+const ORDER: Collection[] = ['structures', 'biomes', 'resources', 'items', 'recipes', 'npcs', 'config'];
+
+function alreadyProposed(ops: Record<string, unknown>): string {
+  const lines: string[] = [];
+  for (const [key, value] of Object.entries(ops)) {
+    if (!key.startsWith('add_') || !Array.isArray(value) || !value.length) continue;
+    const ids = (value as Array<{ id?: string; name?: string }>)
+      .map((x) => `${x.id}${x.name ? ` ("${x.name}")` : ''}`)
+      .join(', ');
+    lines.push(`  ${key.slice(4)}: ${ids}`);
+  }
+  return lines.length ? `\n\nW TEJ SAMEJ ZMIANIE DODAŁEŚ JUŻ:\n${lines.join('\n')}\nMożesz się do tego odwoływać.` : '';
+}
+
+const FOCUS: Record<Collection, string> = {
+  structures: 'Dodaj budynki/stanowiska, jeśli zmiana ich wymaga (np. coś, co gracz stawia w świecie). Jeśli nie — zwróć pustą tablicę.',
+  biomes: 'Dodaj biomy, jeśli zmiana ich wymaga. Zwykle nie wymaga — zwróć wtedy pustą tablicę.',
+  resources: 'Dodaj surowce do zbierania w świecie, jeśli zmiana ich wymaga. Jeśli nie — pusta tablica.',
+  items: 'Dodaj przedmioty. Przedmiot stawiany w świecie wskazuje polem "placeable" na id struktury.',
+  recipes: 'Dodaj receptury, żeby nowe przedmioty dało się wytworzyć. Wsad musi istnieć w grze albo być dodany w tej zmianie.',
+  npcs: 'Dodaj postacie, jeśli zmiana ich wymaga. Jeśli nie — pusta tablica.',
+  config: 'Zmień parametry świata tylko jeśli zmiana tego wprost wymaga.',
+};
+
+/**
+ * Faza operacji, kolekcja po kolekcji.
+ *
+ * Jedno wywołanie na całość wyglądało na oczywiste rozwiązanie i było pułapką: koszt
+ * dekodowania pod gramatyką rośnie superliniowo z jej rozmiarem. Pomiar na tym sprzęcie:
+ * jedna kolekcja 33 s, trzy kolekcje naraz — kilkanaście minut bez końca w zasięgu wzroku.
+ *
+ * Rozbicie na osobne wywołania daje trzy rzeczy naraz: przewidywalny czas (suma, nie iloczyn),
+ * mniejszą gramatykę na wywołanie i prostsze zadanie dla modelu — a to ostatnie podnosi
+ * także trafność merytoryczną, nie tylko tempo.
+ */
 export async function proposeOps(
   route: Route,
   prompt: string,
@@ -172,11 +208,12 @@ export async function proposeOps(
   preferApi = false,
 ): Promise<OpsResult> {
   const cols = widenCollections(route.collections);
-  const opsSchema = buildOpsSchema(cols, route.removes_content, route.modifies_existing);
-  const schema = tightenForGrammar(jsonSchemaOf(opsSchema));
+  const ordered = ORDER.filter((c) => cols.includes(c));
   const attempts: StageAttempt[] = [];
+  const ops: Record<string, unknown> = {};
+  let usedApi = false;
 
-  const base = [
+  const header = [
     vocabBlock(),
     '',
     'OBECNA TREŚĆ GRY:',
@@ -188,37 +225,46 @@ export async function proposeOps(
     `ORYGINALNY OPIS OD GRACZA:\n${prompt}`,
   ].join('\n');
 
-  for (let i = 0; i < (preferApi ? 0 : CFG.attempts.ops); i++) {
-    const user = feedback.length
-      ? `${base}\n\nPOPRZEDNIA PRÓBA ZOSTAŁA ODRZUCONA. Napraw dokładnie te błędy:\n${feedback.join('\n')}`
-      : base;
-    try {
-      const raw = await ollamaChat({
-        model: CFG.models.pl,
-        system: OPS_SYSTEM,
-        user,
-        schema,
-        temperature: i === 0 ? 0.2 : 0.4,
-        // Poprawna odpowiedź mieści się w kilkuset tokenach. Bez sufitu model potrafił
-        // mielić pod gramatyką kwadransami, zapełniając każdy dopuszczony slot tablicy.
-        numPredict: 1600,
-      });
-      const ops = opsSchema.parse(stripNulls(extractJson(raw))) as Record<string, unknown>;
-      attempts.push({ stage: 'operacje', model: CFG.models.pl, ok: true });
-      return { ops, attempts, resolvedBy: 'bielik' };
-    } catch (e) {
-      attempts.push({ stage: 'operacje', model: CFG.models.pl, ok: false, note: String(e).slice(0, 200) });
+  for (const [i, col] of ordered.entries()) {
+    const subSchema = buildOpsSchema([col], route.removes_content && i === 0, route.modifies_existing);
+    const schema = tightenForGrammar(jsonSchemaOf(subSchema));
+    const base =
+      `${header}${alreadyProposed(ops)}\n\nTEN KROK DOTYCZY WYŁĄCZNIE: ${col}\n${FOCUS[col]}` +
+      (feedback.length ? `\n\nPOPRZEDNIA PRÓBA ZOSTAŁA ODRZUCONA. Napraw dokładnie te błędy:\n${feedback.join('\n')}` : '');
+
+    let done = false;
+    for (let attempt = 0; attempt < (preferApi ? 0 : CFG.attempts.ops) && !done; attempt++) {
+      try {
+        const raw = await ollamaChat({
+          model: CFG.models.pl,
+          system: OPS_SYSTEM,
+          user: base,
+          schema,
+          temperature: attempt === 0 ? 0.2 : 0.4,
+          numPredict: 1200,
+        });
+        Object.assign(ops, subSchema.parse(stripNulls(extractJson(raw))));
+        attempts.push({ stage: `operacje:${col}`, model: CFG.models.pl, ok: true, note: `${lastCallSeconds}s` });
+        done = true;
+      } catch (e) {
+        attempts.push({ stage: `operacje:${col}`, model: CFG.models.pl, ok: false, note: String(e).slice(0, 160) });
+      }
+    }
+
+    if (!done) {
+      if (!apiReady()) continue;
+      const raw = await apiComplete(
+        OPS_SYSTEM + `\n\nZwróć wyłącznie JSON zgodny z tym schematem:\n${JSON.stringify(schema)}`,
+        base,
+        8000,
+      );
+      Object.assign(ops, subSchema.parse(stripNulls(extractJson(raw))));
+      attempts.push({ stage: `operacje:${col}`, model: CFG.models.api, ok: true });
+      usedApi = true;
     }
   }
 
-  const raw = await apiComplete(
-    OPS_SYSTEM + `\n\nZwróć wyłącznie JSON zgodny z tym schematem:\n${JSON.stringify(schema)}`,
-    feedback.length ? `${base}\n\nWcześniejsze próby odrzucono z powodu:\n${feedback.join('\n')}` : base,
-    16_000,
-  );
-  const ops = opsSchema.parse(stripNulls(extractJson(raw))) as Record<string, unknown>;
-  attempts.push({ stage: 'operacje', model: CFG.models.api, ok: true });
-  return { ops, attempts, resolvedBy: 'api' };
+  return { ops, attempts, resolvedBy: usedApi ? 'api' : 'bielik' };
 }
 
 export const _test = { extractJson, RouteSchema: RouteSchema as z.ZodTypeAny };
