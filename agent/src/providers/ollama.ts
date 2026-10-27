@@ -16,6 +16,8 @@ export interface ChatRequest {
 
 /** Ile sekund zajęło ostatnie wywołanie — do logów, bo przy modelu 11B to jedyna metryka, która boli. */
 export let lastCallSeconds = 0;
+/** Długość ostatniej odpowiedzi w znakach — do oceny, czy model gadał, czy pracował. */
+export let lastTokens = 0;
 
 export async function ollamaChat(req: ChatRequest): Promise<string> {
   try {
@@ -28,6 +30,14 @@ export async function ollamaChat(req: ChatRequest): Promise<string> {
   }
 }
 
+/**
+ * Strumieniowanie jest tu wymogiem, nie optymalizacją.
+ *
+ * Node ma w undici sztywny limit 300 s na nagłówki odpowiedzi. Przy stream:false Ollama
+ * nie odsyła nic, dopóki nie skończy generować, więc każda odpowiedź dłuższa niż pięć
+ * minut ginie z "fetch failed" — a własny AbortController nigdy nie dostaje szansy.
+ * Przy strumieniu nagłówki przychodzą natychmiast i limit czasu znów jest nasz.
+ */
 async function chatOnce(req: ChatRequest): Promise<string> {
   const started = Date.now();
   const ctl = new AbortController();
@@ -39,7 +49,7 @@ async function chatOnce(req: ChatRequest): Promise<string> {
       signal: ctl.signal,
       body: JSON.stringify({
         model: req.model,
-        stream: false,
+        stream: true,
         ...(req.schema ? { format: req.schema } : {}),
         messages: [
           { role: 'system', content: req.system },
@@ -53,9 +63,28 @@ async function chatOnce(req: ChatRequest): Promise<string> {
       }),
     });
     if (!res.ok) throw new Error(`Ollama ${res.status}: ${(await res.text()).slice(0, 300)}`);
-    const data = (await res.json()) as { message?: { content?: string } };
-    const text = data.message?.content ?? '';
+    if (!res.body) throw new Error('Ollama nie zwróciła strumienia');
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let text = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let nl: number;
+      while ((nl = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, nl).trim();
+        buffer = buffer.slice(nl + 1);
+        if (!line) continue;
+        const chunk = JSON.parse(line) as { message?: { content?: string }; error?: string };
+        if (chunk.error) throw new Error(`Ollama: ${chunk.error}`);
+        text += chunk.message?.content ?? '';
+      }
+    }
     if (!text.trim()) throw new Error('Ollama zwróciła pustą odpowiedź');
+    lastTokens = text.length;
     return text;
   } finally {
     clearTimeout(t);
