@@ -1,29 +1,341 @@
 [
-  { "id": "galaz",             "name": "Gałąź",            "desc": "Sucha, lekka, wszędzie jej pełno.",      "tags": ["surowiec"],            "value": 1 },
-  { "id": "kamien",            "name": "Kamień",           "desc": "Polny, ostry na krawędziach.",           "tags": ["surowiec"],            "value": 1 },
-  { "id": "wlokno",            "name": "Włókno",           "desc": "Z rozbitej trzciny.",                    "tags": ["surowiec"],            "value": 1 },
-  { "id": "drewno",            "name": "Drewno",           "desc": "Pachnie żywicą.",                        "tags": ["surowiec"],            "value": 2 },
-  { "id": "siano",             "name": "Siano",            "desc": "Suszona trawa.",                         "tags": ["surowiec"],            "value": 1 },
-  { "id": "ruda_zelaza",       "name": "Ruda żelaza",      "desc": "Ciężka, rdzawa bryła.",                  "tags": ["surowiec"],            "value": 4 },
-  { "id": "jagoda",            "name": "Jagoda",           "desc": "Kwaśna, ale syci.",                      "tags": ["jedzenie"],            "value": 2, "edible": { "energy": 8 } },
-  { "id": "ryba",             "name": "Ryba",              "desc": "Śliska zdobycz.",                        "tags": ["jedzenie"],            "value": 5, "edible": { "energy": 20 } },
-  { "id": "sznurek",           "name": "Sznurek",          "desc": "Skręcone włókno.",                       "tags": ["polprodukt"],          "value": 3 },
-  { "id": "deska",             "name": "Deska",            "desc": "Podstawa budowania.",                    "tags": ["polprodukt"],          "value": 2 },
-  { "id": "wegiel_drzewny",    "name": "Węgiel drzewny",   "desc": "Pali się długo i równo.",                "tags": ["polprodukt", "paliwo"], "value": 3 },
-  { "id": "sztabka_zelaza",    "name": "Sztabka żelaza",   "desc": "Wytopiona i ostudzona.",                 "tags": ["polprodukt"],          "value": 14 },
-  { "id": "tkanina",           "name": "Tkanina",          "desc": "Gęsto tkana, miękka.",                   "tags": ["polprodukt"],          "value": 5 },
-  { "id": "pieczona_ryba",     "name": "Pieczona ryba",    "desc": "Ciepła i konkretna.",                    "tags": ["jedzenie"],            "value": 12, "edible": { "energy": 35 } },
-  { "id": "siekiera_kamienna", "name": "Siekiera kamienna","desc": "Tępawa, ale ścina drzewo.",              "tags": ["narzedzie"],           "value": 12, "stack": 1, "tool": { "kind": "axe",     "power": 1, "durability": 200 } },
-  { "id": "kilof_kamienny",    "name": "Kilof kamienny",   "desc": "Kruszy skałę, powoli.",                  "tags": ["narzedzie"],           "value": 14, "stack": 1, "tool": { "kind": "pickaxe", "power": 1, "durability": 200 } },
-  { "id": "siekiera_zelazna",  "name": "Siekiera żelazna", "desc": "Drzewo pada od dwóch uderzeń.",          "tags": ["narzedzie"],           "value": 60, "stack": 1, "tool": { "kind": "axe",     "power": 2, "durability": 800 } },
-  { "id": "kilof_zelazny",     "name": "Kilof żelazny",    "desc": "Wgryza się w żyłę rudy.",                "tags": ["narzedzie"],           "value": 60, "stack": 1, "tool": { "kind": "pickaxe", "power": 2, "durability": 800 } },
-  { "id": "wedka",             "name": "Wędka",            "desc": "Gałąź, sznurek i cierpliwość.",          "tags": ["narzedzie"],           "value": 20, "stack": 1, "tool": { "kind": "rod",     "power": 1, "durability": 300 } },
-  { "id": "kosa",              "name": "Kosa",             "desc": "Kładzie trawę pokosem.",                 "tags": ["narzedzie"],           "value": 30, "stack": 1, "tool": { "kind": "scythe",  "power": 1, "durability": 400 } },
-  { "id": "stol_warsztatowy",  "name": "Stół warsztatowy", "desc": "Postaw go i zacznij na serio.",          "tags": ["budynek"],             "value": 20, "stack": 10, "placeable": { "structure": "warsztat" } },
-  { "id": "piec",              "name": "Piec",             "desc": "Kamienna bryła z paleniskiem.",          "tags": ["budynek"],             "value": 30, "stack": 10, "placeable": { "structure": "piec_hutniczy" } },
-  { "id": "kuchnia_polowa",    "name": "Kuchnia polowa",   "desc": "Blat, ogień i garnek.",                  "tags": ["budynek"],             "value": 24, "stack": 10, "placeable": { "structure": "palenisko_kuchenne" } },
-  { "id": "krosno",            "name": "Krosno",           "desc": "Stuka miarowo przy pracy.",              "tags": ["budynek"],             "value": 30, "stack": 10, "placeable": { "structure": "krosno_tkackie" } },
-  { "id": "skrzynia",          "name": "Skrzynia",         "desc": "Dwadzieścia miejsc na drobiazgi.",       "tags": ["budynek"],             "value": 20, "stack": 10, "placeable": { "structure": "skrzynia_drewniana" } },
-  { "id": "sciana_drewniana",  "name": "Ściana drewniana", "desc": "Z desek, na styk.",                      "tags": ["budynek"],             "value": 8,  "stack": 50, "placeable": { "structure": "sciana" } },
-  { "id": "pochodnia",         "name": "Pochodnia",        "desc": "Gałąź owinięta węglem.",                 "tags": ["budynek", "swiatlo"],  "value": 3,  "stack": 50, "placeable": { "structure": "pochodnia_stojaca" } }
+  {
+    "id": "galaz",
+    "name": "Gałąź",
+    "desc": "Sucha, lekka, wszędzie jej pełno.",
+    "tags": [
+      "surowiec"
+    ],
+    "value": 1
+  },
+  {
+    "id": "kamien",
+    "name": "Kamień",
+    "desc": "Polny, ostry na krawędziach.",
+    "tags": [
+      "surowiec"
+    ],
+    "value": 1
+  },
+  {
+    "id": "wlokno",
+    "name": "Włókno",
+    "desc": "Z rozbitej trzciny.",
+    "tags": [
+      "surowiec"
+    ],
+    "value": 1
+  },
+  {
+    "id": "drewno",
+    "name": "Drewno",
+    "desc": "Pachnie żywicą.",
+    "tags": [
+      "surowiec"
+    ],
+    "value": 2
+  },
+  {
+    "id": "siano",
+    "name": "Siano",
+    "desc": "Suszona trawa.",
+    "tags": [
+      "surowiec"
+    ],
+    "value": 1
+  },
+  {
+    "id": "ruda_zelaza",
+    "name": "Ruda żelaza",
+    "desc": "Ciężka, rdzawa bryła.",
+    "tags": [
+      "surowiec"
+    ],
+    "value": 4
+  },
+  {
+    "id": "jagoda",
+    "name": "Jagoda",
+    "desc": "Kwaśna, ale syci.",
+    "tags": [
+      "jedzenie"
+    ],
+    "value": 2,
+    "edible": {
+      "energy": 8
+    }
+  },
+  {
+    "id": "ryba",
+    "name": "Ryba",
+    "desc": "Śliska zdobycz.",
+    "tags": [
+      "jedzenie"
+    ],
+    "value": 5,
+    "edible": {
+      "energy": 20
+    }
+  },
+  {
+    "id": "sznurek",
+    "name": "Sznurek",
+    "desc": "Skręcone włókno.",
+    "tags": [
+      "polprodukt"
+    ],
+    "value": 3
+  },
+  {
+    "id": "deska",
+    "name": "Deska",
+    "desc": "Podstawa budowania.",
+    "tags": [
+      "polprodukt"
+    ],
+    "value": 2
+  },
+  {
+    "id": "wegiel_drzewny",
+    "name": "Węgiel drzewny",
+    "desc": "Pali się długo i równo.",
+    "tags": [
+      "polprodukt",
+      "paliwo"
+    ],
+    "value": 3
+  },
+  {
+    "id": "sztabka_zelaza",
+    "name": "Sztabka żelaza",
+    "desc": "Wytopiona i ostudzona.",
+    "tags": [
+      "polprodukt"
+    ],
+    "value": 14
+  },
+  {
+    "id": "tkanina",
+    "name": "Tkanina",
+    "desc": "Gęsto tkana, miękka.",
+    "tags": [
+      "polprodukt"
+    ],
+    "value": 5
+  },
+  {
+    "id": "pieczona_ryba",
+    "name": "Pieczona ryba",
+    "desc": "Ciepła i konkretna.",
+    "tags": [
+      "jedzenie"
+    ],
+    "value": 12,
+    "edible": {
+      "energy": 35
+    }
+  },
+  {
+    "id": "siekiera_kamienna",
+    "name": "Siekiera kamienna",
+    "desc": "Tępawa, ale ścina drzewo.",
+    "tags": [
+      "narzedzie"
+    ],
+    "value": 12,
+    "stack": 1,
+    "tool": {
+      "kind": "axe",
+      "power": 1,
+      "durability": 200
+    }
+  },
+  {
+    "id": "kilof_kamienny",
+    "name": "Kilof kamienny",
+    "desc": "Kruszy skałę, powoli.",
+    "tags": [
+      "narzedzie"
+    ],
+    "value": 14,
+    "stack": 1,
+    "tool": {
+      "kind": "pickaxe",
+      "power": 1,
+      "durability": 200
+    }
+  },
+  {
+    "id": "siekiera_zelazna",
+    "name": "Siekiera żelazna",
+    "desc": "Drzewo pada od dwóch uderzeń.",
+    "tags": [
+      "narzedzie"
+    ],
+    "value": 60,
+    "stack": 1,
+    "tool": {
+      "kind": "axe",
+      "power": 2,
+      "durability": 800
+    }
+  },
+  {
+    "id": "kilof_zelazny",
+    "name": "Kilof żelazny",
+    "desc": "Wgryza się w żyłę rudy.",
+    "tags": [
+      "narzedzie"
+    ],
+    "value": 60,
+    "stack": 1,
+    "tool": {
+      "kind": "pickaxe",
+      "power": 2,
+      "durability": 800
+    }
+  },
+  {
+    "id": "wedka",
+    "name": "Wędka",
+    "desc": "Gałąź, sznurek i cierpliwość.",
+    "tags": [
+      "narzedzie"
+    ],
+    "value": 20,
+    "stack": 1,
+    "tool": {
+      "kind": "rod",
+      "power": 1,
+      "durability": 300
+    }
+  },
+  {
+    "id": "kosa",
+    "name": "Kosa",
+    "desc": "Kładzie trawę pokosem.",
+    "tags": [
+      "narzedzie"
+    ],
+    "value": 30,
+    "stack": 1,
+    "tool": {
+      "kind": "scythe",
+      "power": 1,
+      "durability": 400
+    }
+  },
+  {
+    "id": "stol_warsztatowy",
+    "name": "Stół warsztatowy",
+    "desc": "Postaw go i zacznij na serio.",
+    "tags": [
+      "budynek"
+    ],
+    "value": 20,
+    "stack": 10,
+    "placeable": {
+      "structure": "warsztat"
+    }
+  },
+  {
+    "id": "piec",
+    "name": "Piec",
+    "desc": "Kamienna bryła z paleniskiem.",
+    "tags": [
+      "budynek"
+    ],
+    "value": 30,
+    "stack": 10,
+    "placeable": {
+      "structure": "piec_hutniczy"
+    }
+  },
+  {
+    "id": "kuchnia_polowa",
+    "name": "Kuchnia polowa",
+    "desc": "Blat, ogień i garnek.",
+    "tags": [
+      "budynek"
+    ],
+    "value": 24,
+    "stack": 10,
+    "placeable": {
+      "structure": "palenisko_kuchenne"
+    }
+  },
+  {
+    "id": "krosno",
+    "name": "Krosno",
+    "desc": "Stuka miarowo przy pracy.",
+    "tags": [
+      "budynek"
+    ],
+    "value": 30,
+    "stack": 10,
+    "placeable": {
+      "structure": "krosno_tkackie"
+    }
+  },
+  {
+    "id": "skrzynia",
+    "name": "Skrzynia",
+    "desc": "Dwadzieścia miejsc na drobiazgi.",
+    "tags": [
+      "budynek"
+    ],
+    "value": 20,
+    "stack": 10,
+    "placeable": {
+      "structure": "skrzynia_drewniana"
+    }
+  },
+  {
+    "id": "sciana_drewniana",
+    "name": "Ściana drewniana",
+    "desc": "Z desek, na styk.",
+    "tags": [
+      "budynek"
+    ],
+    "value": 8,
+    "stack": 50,
+    "placeable": {
+      "structure": "sciana"
+    }
+  },
+  {
+    "id": "pochodnia",
+    "name": "Pochodnia",
+    "desc": "Gałąź owinięta węglem.",
+    "tags": [
+      "budynek",
+      "swiatlo"
+    ],
+    "value": 3,
+    "stack": 50,
+    "placeable": {
+      "structure": "pochodnia_stojaca"
+    }
+  },
+  {
+    "id": "kosz_wiklinowy",
+    "name": "Kosz wiklinowy",
+    "desc": "Pojemny schowek pleciony z trzciny.",
+    "tags": [
+      "budynek"
+    ],
+    "stack": 5,
+    "value": 10,
+    "tool": {
+      "kind": "hand",
+      "power": 2,
+      "durability": 3000
+    },
+    "edible": {
+      "energy": 5
+    },
+    "placeable": {
+      "structure": "kosz_wiklinowy"
+    }
+  }
 ]
