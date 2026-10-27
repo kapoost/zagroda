@@ -23,6 +23,8 @@ Pola:
 - summary_pl: 2-3 zdania, co dokładnie się zmieni i dlaczego
 - removes_content: true TYLKO jeśli gracz wprost prosi o usunięcie czegoś, co już jest w grze.
   Dodanie nowej rzeczy to zawsze false.
+- modifies_existing: true TYLKO jeśli zmiana dotyka wpisów, które już są w grze
+  (np. "osłab jagody", "zmień cenę skrzyni"). Dodanie nowej rzeczy to zawsze false.
 - code_request_en: PO ANGIELSKU, techniczny opis zmiany w kodzie; puste przy "dane"
 
 Zasada: wybieraj "dane", kiedy tylko to możliwe. Nowa broń, surowiec, potrawa, budynek
@@ -47,7 +49,27 @@ TWARDE REGUŁY (ich złamanie powoduje odrzucenie zmiany):
 10. Przedmiot, który się stawia w świecie, wymaga pary: wpisu w "structures" oraz pola
    "placeable" w przedmiocie wskazującego na id tej struktury.
 11. Każdy nowy przedmiot potrzebuje receptury albo wypadania z surowca — inaczej jest
-   nieosiągalny i zmiana zostanie odrzucona.`;
+   nieosiągalny i zmiana zostanie odrzucona.
+
+PRZYKŁAD dobrze zbudowanej odpowiedzi dla zadania "dodaj plecioną matę do spania":
+{
+  "add_items": [
+    { "id": "mata_sloma", "name": "Mata słomiana", "desc": "Plecione posłanie.",
+      "tags": ["budynek"], "value": 6, "stack": 10,
+      "placeable": { "structure": "poslanie_slomiane" } }
+  ],
+  "add_structures": [
+    { "id": "poslanie_slomiane", "name": "Posłanie", "desc": "Miejsce na odpoczynek.",
+      "color": "#c8b06a", "blocks": false }
+  ],
+  "add_recipes": [
+    { "id": "r_mata_sloma", "name": "Mata słomiana", "station": "workbench",
+      "inputs": [{ "item": "siano", "qty": 4 }, { "item": "sznurek", "qty": 1 }],
+      "output": { "item": "mata_sloma", "qty": 1 }, "ticks": 10 }
+  ]
+}
+Zwróć uwagę: jeden przedmiot, jedna struktura, jedna receptura ze wsadu, który
+już istnieje w grze. Wartość wyjścia (6) mieści się w 4× wartości wsadu (4×1 + 1×3 = 7).`;
 
 function vocabBlock(): string {
   return `RODZAJE NARZĘDZI: ${VOCAB.tools.join(', ')}\nSTACJE: ${VOCAB.stations.join(', ')}`;
@@ -134,7 +156,7 @@ export async function proposeOps(
   preferApi = false,
 ): Promise<OpsResult> {
   const cols = widenCollections(route.collections);
-  const opsSchema = buildOpsSchema(cols, route.removes_content);
+  const opsSchema = buildOpsSchema(cols, route.removes_content, route.modifies_existing);
   const schema = jsonSchemaOf(opsSchema);
   const attempts: StageAttempt[] = [];
 

@@ -38,6 +38,8 @@ export const RouteSchema = z
     code_request_en: z.string().max(1500),
     /** Czy zmiana naprawdę wymaga skasowania istniejących wpisów. */
     removes_content: z.boolean(),
+    /** Czy zmiana dotyka istniejących wpisów, czy tylko dodaje nowe. */
+    modifies_existing: z.boolean(),
   })
   .strict();
 
@@ -58,18 +60,25 @@ export type OpsSpec = {
 } & Record<string, unknown>;
 
 /** Schemat operacji zawężony do kolekcji wskazanych w fazie routingu. */
-export function buildOpsSchema(cols: Collection[], allowRemove = false): z.ZodObject<z.ZodRawShape> {
+export function buildOpsSchema(
+  cols: Collection[],
+  allowRemove = false,
+  allowPatch = false,
+): z.ZodObject<z.ZodRawShape> {
   const shape: z.ZodRawShape = {};
   for (const c of cols) {
     if (c === 'config') {
-      shape.patch_config = ConfigSchema.partial();
+      if (allowPatch) shape.patch_config = ConfigSchema.partial();
       continue;
     }
     const def = DEFS[c];
     shape[`add_${c}`] = z.array(def).max(8);
-    shape[`patch_${c}`] = z
-      .array(z.object({ id: Id, patch: def.partial() }).strict())
-      .max(8);
+    // Gałęzie patch_* podwajają rozmiar gramatyki, a model 11B dekoduje pod gramatyką
+    // tym wolniej, im jest ona większa. Dokładamy je tylko wtedy, gdy zmiana naprawdę
+    // dotyka istniejących wpisów.
+    if (allowPatch) {
+      shape[`patch_${c}`] = z.array(z.object({ id: Id, patch: def.partial() }).strict()).max(8);
+    }
   }
   // Kasowanie jest poza schematem, dopóki routing go wyraźnie nie zażąda. Model, który nie
   // ma jak usunąć wpisu, nie usunie go przez przypadek — a to był realny tryb awarii.
