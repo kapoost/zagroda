@@ -10,6 +10,8 @@ export interface ChatRequest {
   schema?: Record<string, unknown>;
   temperature?: number;
   numPredict?: number;
+  /** Który budżet kontekstu zastosować — polski czy koderski. */
+  ctx?: 'pl' | 'code';
 }
 
 /** Ile sekund zajęło ostatnie wywołanie — do logów, bo przy modelu 11B to jedyna metryka, która boli. */
@@ -34,7 +36,7 @@ export async function ollamaChat(req: ChatRequest): Promise<string> {
         ],
         options: {
           temperature: req.temperature ?? 0.2,
-          num_ctx: CFG.numCtx,
+          num_ctx: CFG.numCtx[req.ctx ?? 'pl'],
           ...(req.numPredict ? { num_predict: req.numPredict } : {}),
         },
       }),

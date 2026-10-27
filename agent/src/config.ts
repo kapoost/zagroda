@@ -15,7 +15,12 @@ export const CFG = {
   },
   /** Ile razy próbować na każdym szczeblu drabiny, licząc pierwszą próbę. */
   attempts: { route: 2, ops: 2, code: 3, api: 2 },
-  numCtx: 16384,
+  /**
+   * Okno kontekstu per model. Model kodujący dostaje pliki rdzenia jako kontekst
+   * (ok. 7,5 tys. tokenów) i ma zwrócić PEŁNE treści plików — przy oknie 16 tys.
+   * zabrakłoby miejsca na odpowiedź dłuższą niż jeden plik.
+   */
+  numCtx: { pl: 16384, code: 32768 } as Record<'pl' | 'code', number>,
   timeoutMs: 240_000,
   /** Hybrydowa autonomia: zmiany czysto danych z zieloną bramką wjeżdżają same. */
   autoMergeData: true,

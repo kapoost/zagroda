@@ -123,7 +123,8 @@ export async function patchWithCoder(request: string, feedback: string[]): Promi
     system: CODE_SYSTEM,
     user: buildPrompt(request, feedback),
     temperature: feedback.length ? 0.3 : 0.1,
-    numPredict: 8192,
+    numPredict: 12_000,
+    ctx: 'code',
   });
   const res = applyPatches(parseFileBlocks(raw));
   res.model = CFG.models.code;
