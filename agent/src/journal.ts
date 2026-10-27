@@ -14,7 +14,7 @@ export interface JournalEntry {
   resolvedBy?: 'bielik' | 'coder' | 'api' | null;
   attempts: Array<{ stage: string; model: string; ok: boolean; note?: string }>;
   gate?: { ok: boolean; failed: string | null };
-  outcome: 'merged' | 'branch' | 'abandoned' | 'error';
+  outcome: 'merged' | 'branch' | 'abandoned' | 'dry' | 'error';
   error?: string;
 }
 

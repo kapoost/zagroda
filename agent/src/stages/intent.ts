@@ -15,7 +15,10 @@ Pola:
   (przedmioty, receptury, surowce, budynki, NPC, biomy, parametry świata).
   "kod" jeśli wymaga nowej MECHANIKI — czegoś, czego obecne struktury danych nie opisują
   (np. uprawy, pory roku wpływające na rozgrywkę, handel, walka, nowy rodzaj akcji gracza).
-- collections: które kolekcje trzeba ruszyć (pusta lista przy "kod")
+- collections: które kolekcje trzeba ruszyć (pusta lista przy "kod").
+  Pamiętaj o zależnościach: przedmiot, który się stawia, potrzebuje też wpisu w
+  "structures"; przedmiot, który się wytwarza, potrzebuje wpisu w "recipes";
+  nowy surowiec do zbierania to "resources".
 - title: krótki tytuł zmiany po polsku, bez kropki
 - summary_pl: 2-3 zdania, co dokładnie się zmieni i dlaczego
 - code_request_en: PO ANGIELSKU, techniczny opis zmiany w kodzie; puste przy "dane"
@@ -97,6 +100,23 @@ export interface OpsResult {
 }
 
 /** Druga faza: operacje na danych, ze schematem zawężonym do wybranych kolekcji. */
+/**
+ * Dopełnienie kolekcji o zależności.
+ *
+ * Model regularnie wybiera samo "items" dla przedmiotu, który trzeba jeszcze wytworzyć
+ * i postawić. Bez wpisu w recipes przedmiot byłby nieosiągalny, bez structures wisiałaby
+ * referencja — i bramka odrzuciłaby zmianę, której schemat nawet nie pozwalał naprawić.
+ */
+export function widenCollections(cols: Collection[]): Collection[] {
+  const set = new Set<Collection>(cols.length ? cols : ['items']);
+  if (set.has('items') || set.has('resources') || set.has('structures')) {
+    set.add('items');
+    set.add('recipes');
+  }
+  if (set.has('structures')) set.add('items');
+  return [...set].slice(0, 5);
+}
+
 export async function proposeOps(
   route: Route,
   prompt: string,
@@ -104,7 +124,7 @@ export async function proposeOps(
   /** Pomiń model lokalny — używane na ostatnim szczeblu drabiny, gdy Bielik już raz nie trafił semantycznie. */
   preferApi = false,
 ): Promise<OpsResult> {
-  const cols: Collection[] = route.collections.length ? route.collections : ['items'];
+  const cols = widenCollections(route.collections);
   const opsSchema = buildOpsSchema(cols);
   const schema = jsonSchemaOf(opsSchema);
   const attempts: StageAttempt[] = [];

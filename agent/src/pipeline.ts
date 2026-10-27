@@ -6,7 +6,7 @@ import { applyOps } from './stages/applyData.js';
 import { patchWithApi, patchWithCoder } from './stages/applyCode.js';
 import { gateFeedback, gateSummary, runGate, type GateResult } from './stages/gate.js';
 import * as git from './stages/git.js';
-import { proposeOps, routeRequest, type StageAttempt } from './stages/intent.js';
+import { proposeOps, routeRequest, widenCollections, type StageAttempt } from './stages/intent.js';
 
 /**
  * Pętla: opis → spec → zmiana → bramka → repozytorium.
@@ -63,8 +63,10 @@ export async function run(opts: RunOptions): Promise<RunResult> {
   if (route.kind === 'dane') say(`   kolekcje: ${route.collections.join(', ') || '(brak — przyjmuję items)'}`);
 
   if (opts.dryRun) {
-    journal('abandoned', { kind: route.kind, title: route.title, error: 'dry-run' });
-    return { outcome: 'abandoned', title: route.title, changes: [], note: 'dry-run: nic nie zapisano' };
+    const cols = widenCollections(route.collections);
+    if (route.kind === 'dane') say(`   po dopełnieniu zależności: ${cols.join(', ')}`);
+    journal('dry', { kind: route.kind, title: route.title });
+    return { outcome: 'dry', title: route.title, changes: [], note: 'dry-run: nic nie zapisano' };
   }
 
   if (route.kind === 'kod' && !(await coderAvailable())) {

@@ -61,7 +61,8 @@ async function main(): Promise<void> {
   console.log(`wynik: ${res.outcome}${res.title ? ` — ${res.title}` : ''}`);
   if (res.changes.length) console.log(res.changes.map((c) => '  ' + c).join('\n'));
   if (res.note) console.log(`  ${res.note}`);
-  process.exit(res.outcome === 'merged' || res.outcome === 'branch' ? 0 : 1);
+  const ok = res.outcome === 'merged' || res.outcome === 'branch' || res.outcome === 'dry';
+  process.exit(ok ? 0 : 1);
 }
 
 main().catch((e) => {

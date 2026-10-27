@@ -32,7 +32,7 @@ export type Collection = (typeof COLLECTIONS)[number];
 export const RouteSchema = z
   .object({
     kind: z.enum(['dane', 'kod']),
-    collections: z.array(z.enum(COLLECTIONS)).max(4),
+    collections: z.array(z.enum(COLLECTIONS)).max(5),
     title: z.string().min(3).max(70),
     summary_pl: z.string().min(10).max(500),
     code_request_en: z.string().max(1500),
