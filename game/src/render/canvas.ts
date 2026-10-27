@@ -3,13 +3,14 @@ import { entityAt, idx, timeOfDay } from '../core/tick.js';
 import type { State } from '../core/types.js';
 
 /**
- * Rysowanie świata w proporcjach Animal Crossing.
+ * Rysowanie świata w proporcjach Pokémona.
  *
- * Jedna liczba trzyma tu wszystko w ryzach: **kafel to 1,5 metra**. Z niej wynika
- * cała drabinka wielkości i żaden rysunek nie ma prawa z niej wyłamać:
+ * Kafel to trzy metry, ale człowiek i tak zajmuje cały kafel — i na tym polega cała
+ * sztuczka. Pokémon nie udaje realnych proporcji: ściska świat WZGLĘDEM postaci, żeby
+ * w kadrze zmieściła się ulica z obiema pierzejami, a nie pół elewacji.
  *
- *   człowiek   1 kafel      drzewo     2 kafle
- *   ulica      4 kafle      kamienica  8–13 kafli
+ *   człowiek   1 kafel      drzewo     1,5 kafla
+ *   ulica      2 kafle      kamienica  4–6 kafli
  *
  * Dwie rzeczy decydują o tym, czy obraz czyta się jako świat, a nie jako mapa:
  *
@@ -22,11 +23,14 @@ import type { State } from '../core/types.js';
  *    a pod budynkiem leży cień.
  */
 
-export const TILE = 20;
+export const TILE = 32;
 
 const ZABUDOWA = 'kamienica';
 
-/** Ile rzędów kafli od południa rysujemy jako ścianę, a nie jako dach. */
+/**
+ * Najwięcej rzędów od południa, jakie mogą być ścianą. Płytki budynek dostaje mniej,
+ * bo dom bez ani jednego rzędu dachu przestaje być domem.
+ */
 const SCIANA = 2;
 
 /** Dachy — ceramika w ośmiu odcieniach, żeby sąsiednie pierzeje dało się rozróżnić. */
@@ -53,18 +57,18 @@ const WARSTWY = ['ziemia', 'trawa', 'las', 'bruk', 'rynek', 'woda'];
 /** Warstwy, które dostają spoiny kostki. */
 const BRUKOWANE = new Set(['bruk', 'rynek']);
 
-/** Wysokość surowca w kaflach. Drzewo ma być dwa razy wyższe od człowieka. */
+/** Wysokość surowca w kaflach — w tej skali drzewo jest półtora raza wyższe od gracza. */
 const WYSOKOSC: Record<string, number> = {
-  drzewo: 2,
-  zloze_zelaza: 0.85,
-  kamien_polny: 0.6,
-  krzak: 0.85,
-  trzcina: 1.1,
-  trawa_wysoka: 0.8,
+  drzewo: 1.5,
+  zloze_zelaza: 0.8,
+  kamien_polny: 0.55,
+  krzak: 0.8,
+  trzcina: 1,
+  trawa_wysoka: 0.75,
   lowisko: 1,
-  len: 0.7,
+  len: 0.65,
 };
-const DOMYSLNA = 0.8;
+const DOMYSLNA = 0.75;
 
 function nightAlpha(t: number): number {
   const night = Math.cos(t * Math.PI * 2) * 0.5 + 0.5;
@@ -142,7 +146,7 @@ export function draw(ctx: CanvasRenderingContext2D, state: State, reg: Registry)
 
   // ── 1. teren warstwami, z zaokrąglonym obrysem ──────────────────────────
   const promien = TILE * 0.45;
-  const spoina = 'rgba(90,76,58,0.13)';
+  const spoina = 'rgba(90,76,58,0.08)';
   for (const w of WARSTWY) {
     const biom = reg.content.biomes.find((b) => b.id === w);
     if (!biom) continue;
@@ -194,26 +198,36 @@ export function draw(ctx: CanvasRenderingContext2D, state: State, reg: Registry)
       const px = rx * TILE;
       const py = ry * TILE;
 
-      // Który rząd od południa? Dwa ostatnie to ściana widziana od frontu.
-      let odPoludnia = SCIANA;
-      for (let k = 1; k <= SCIANA; k++) {
+      // Który rząd od południa — i jak głęboki jest w tym miejscu budynek.
+      let odPoludnia = SCIANA + 1;
+      for (let k = 1; k <= SCIANA + 1; k++) {
         if (!tenSam(x, y + k, ten)) { odPoludnia = k - 1; break; }
       }
+      let naPolnoc = 0;
+      while (naPolnoc < 4 && tenSam(x, y - naPolnoc - 1, ten)) naPolnoc++;
+      const glebokosc = Math.min(odPoludnia, SCIANA + 1) + naPolnoc + 1;
+      // Dachu ma być więcej niż ściany — inaczej budynek czyta się jak płot z oknami.
+      const rzedowSciany = glebokosc >= 5 ? SCIANA : 1;
 
-      if (odPoludnia >= SCIANA) {
-        rysujDach(ctx, px, py, t, !tenSam(x, y - 1, ten));
+      if (odPoludnia >= rzedowSciany) {
+        rysujDach(ctx, px, py, t, !tenSam(x, y - 1, ten), odPoludnia === rzedowSciany);
       } else {
-        rysujElewacje(ctx, px, py, x, t, odPoludnia);
+        // Drzwi trafiają na środek pierzei tego budynku, nie co drugi kafel.
+        let zachod = x, wschod = x;
+        while (tenSam(zachod - 1, y, ten)) zachod--;
+        while (tenSam(wschod + 1, y, ten)) wschod++;
+        const drzwi = odPoludnia === 0 && x === ((zachod + wschod) >> 1);
+        rysujElewacje(ctx, px, py, x, t, odPoludnia, rzedowSciany, drzwi);
       }
 
       // Krawędź stawiamy tam, gdzie kończy się TEN budynek.
-      ctx.strokeStyle = przyciemnij(DACHY[t]!, 0.55);
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = przyciemnij(DACHY[t]!, 0.62);
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      if (!tenSam(x, y - 1, ten)) { ctx.moveTo(px, py + 0.5); ctx.lineTo(px + TILE, py + 0.5); }
-      if (!tenSam(x, y + 1, ten)) { ctx.moveTo(px, py + TILE - 0.5); ctx.lineTo(px + TILE, py + TILE - 0.5); }
-      if (!tenSam(x - 1, y, ten)) { ctx.moveTo(px + 0.5, py); ctx.lineTo(px + 0.5, py + TILE); }
-      if (!tenSam(x + 1, y, ten)) { ctx.moveTo(px + TILE - 0.5, py); ctx.lineTo(px + TILE - 0.5, py + TILE); }
+      if (!tenSam(x, y - 1, ten)) { ctx.moveTo(px, py + 1); ctx.lineTo(px + TILE, py + 1); }
+      if (!tenSam(x, y + 1, ten)) { ctx.moveTo(px, py + TILE - 1); ctx.lineTo(px + TILE, py + TILE - 1); }
+      if (!tenSam(x - 1, y, ten)) { ctx.moveTo(px + 1, py); ctx.lineTo(px + 1, py + TILE); }
+      if (!tenSam(x + 1, y, ten)) { ctx.moveTo(px + TILE - 1, py); ctx.lineTo(px + TILE - 1, py + TILE); }
       ctx.stroke();
     }
   }
@@ -283,54 +297,71 @@ export function draw(ctx: CanvasRenderingContext2D, state: State, reg: Registry)
 }
 
 /** Połać dachu. Okap od północy łapie światło — jedno słońce dla całego miasta. */
-function rysujDach(ctx: CanvasRenderingContext2D, px: number, py: number, t: number, polnocny: boolean): void {
+function rysujDach(
+  ctx: CanvasRenderingContext2D, px: number, py: number, t: number, polnocny: boolean, nadScianą: boolean,
+): void {
   const kolor = DACHY[t]!;
   ctx.fillStyle = kolor;
   ctx.fillRect(px, py, TILE, TILE);
   if (polnocny) {
-    ctx.fillStyle = przyciemnij(kolor, -0.16);
-    ctx.fillRect(px, py, TILE, TILE * 0.3);
+    // Kalenica: jasny pas na grzbiecie, żeby połać miała spadek, a nie była plamą.
+    ctx.fillStyle = przyciemnij(kolor, -0.2);
+    ctx.fillRect(px, py, TILE, TILE * 0.26);
   }
-  // Rowki dachówki: delikatne, co trzeci piksel, żeby połać nie była płaską plamą.
+  if (nadScianą) {
+    ctx.fillStyle = przyciemnij(kolor, 0.18);
+    ctx.fillRect(px, py + TILE * 0.7, TILE, TILE * 0.3);
+  }
+  // Rowki dachówki: delikatne, co kilka pikseli, żeby połać nie była płaską plamą.
   ctx.fillStyle = przyciemnij(kolor, 0.1);
-  for (let i = 0; i < TILE; i += 6) ctx.fillRect(px + i, py, 1, TILE);
+  for (let i = 0; i < TILE; i += 8) ctx.fillRect(px + i, py, 1, TILE);
 }
 
 /**
- * Elewacja: dolny rząd to podcienia, górny okna. Rytm liczymy z bezwzględnego x,
- * więc arkady i okna układają się w jedną linię przez całą pierzeję.
+ * Elewacja. Przy płytkim budynku cały front mieści się w jednym rzędzie kafli, więc
+ * okno i arkada dzielą ten sam kafel — okno u góry, przejście u dołu. Rytm liczymy
+ * z bezwzględnego x, żeby arkady układały się w linię przez całą pierzeję, a drzwi
+ * trafiały dokładnie na środek budynku.
  */
-function rysujElewacje(ctx: CanvasRenderingContext2D, px: number, py: number, x: number, t: number, rzad: number): void {
+function rysujElewacje(
+  ctx: CanvasRenderingContext2D, px: number, py: number, x: number, t: number,
+  rzad: number, rzedow: number, drzwi: boolean,
+): void {
   const tynk = TYNKI[t]!;
   ctx.fillStyle = tynk;
   ctx.fillRect(px, py, TILE, TILE);
 
-  if (rzad === 1) {
+  const gorny = rzad === rzedow - 1;
+  if (gorny) {
     // Pod okapem zawsze jest cień.
-    ctx.fillStyle = 'rgba(40,28,20,0.22)';
-    ctx.fillRect(px, py, TILE, TILE * 0.18);
-    if (x % 2 === 0) {
-      const w = TILE * 0.4;
-      const h = TILE * 0.46;
-      const ox = px + (TILE - w) / 2;
-      const oy = py + TILE * 0.34;
-      ctx.fillStyle = '#4b5b63';
-      ctx.fillRect(ox, oy, w, h);
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.fillRect(ox, oy, w, h * 0.3);
-      ctx.strokeStyle = przyciemnij(tynk, 0.35);
-      ctx.lineWidth = 1;
-      ctx.strokeRect(ox + 0.5, oy + 0.5, w - 1, h - 1);
-    }
-    return;
+    ctx.fillStyle = 'rgba(40,28,20,0.26)';
+    ctx.fillRect(px, py, TILE, TILE * 0.16);
   }
 
-  // Podcienia: arkada co drugi kafel, między nimi filar.
-  if (x % 2 === 0) {
-    const w = TILE * 0.56;
+  // Okna: w górnym rzędzie, a przy jednorzędowym froncie — w jego górnej części.
+  if (gorny && x % 2 === 0) {
+    const w = TILE * 0.34;
+    const h = rzedow > 1 ? TILE * 0.44 : TILE * 0.3;
     const ox = px + (TILE - w) / 2;
-    const gora = py + TILE * 0.22;
-    ctx.fillStyle = 'rgba(52,36,26,0.78)';
+    const oy = py + TILE * (rzedow > 1 ? 0.34 : 0.22);
+    ctx.fillStyle = '#4b5b63';
+    ctx.fillRect(ox, oy, w, h);
+    ctx.fillStyle = 'rgba(255,255,255,0.32)';
+    ctx.fillRect(ox, oy, w, h * 0.34);
+    ctx.strokeStyle = przyciemnij(tynk, 0.4);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(ox + 0.5, oy + 0.5, w - 1, h - 1);
+  }
+
+  if (rzad > 0) return;
+
+  // Parter: drzwi na środku pierzei, podcienia co drugi kafel obok nich.
+  const otwor = drzwi || x % 2 === 0;
+  if (otwor) {
+    const w = TILE * (drzwi ? 0.44 : 0.5);
+    const ox = px + (TILE - w) / 2;
+    const gora = py + TILE * (rzedow > 1 ? 0.2 : 0.46);
+    ctx.fillStyle = drzwi ? '#5a3a24' : 'rgba(52,36,26,0.8)';
     ctx.beginPath();
     ctx.moveTo(ox, py + TILE);
     ctx.lineTo(ox, gora + w / 2);
@@ -338,12 +369,18 @@ function rysujElewacje(ctx: CanvasRenderingContext2D, px: number, py: number, x:
     ctx.lineTo(ox + w, py + TILE);
     ctx.closePath();
     ctx.fill();
-  } else {
-    ctx.fillStyle = przyciemnij(tynk, 0.08);
-    ctx.fillRect(px + TILE * 0.35, py + TILE * 0.2, TILE * 0.3, TILE * 0.8);
+    if (drzwi) {
+      ctx.strokeStyle = przyciemnij(tynk, 0.45);
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#d8b25f';
+      ctx.beginPath();
+      ctx.arc(ox + w * 0.76, py + TILE * 0.78, TILE * 0.045, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
   // Próg: ciemny pas tam, gdzie mur styka się z brukiem.
-  ctx.fillStyle = 'rgba(40,28,20,0.3)';
+  ctx.fillStyle = 'rgba(40,28,20,0.32)';
   ctx.fillRect(px, py + TILE - 2, TILE, 2);
 }
 
@@ -459,36 +496,46 @@ function rysujStrukture(ctx: CanvasRenderingContext2D, px: number, py: number, k
 }
 
 /**
- * Człowiek zajmuje kafel, czyli półtora metra, a głowa to blisko połowa postaci.
- * Tak wygląda proporcja Animal Crossing i to ona odróżnia ten świat od mapy.
+ * Postać zajmuje kafel wszerz i półtora kafla wzwyż, a głowa to prawie połowa sylwetki.
+ *
+ * To jest ta jedna rzecz, w której Pokémon świadomie kłamie: przy trzech metrach na
+ * kafel człowiek powinien mieć pół kafla. Gdyby go tak narysować, gracz zgubiłby się
+ * własnym oczom — a tu ma być bohaterem kadru, nie szpilką na planie.
  */
 function rysujPostac(ctx: CanvasRenderingContext2D, px: number, py: number, kolor: string): void {
   const cx = px + TILE / 2;
-  const stopy = py + TILE * 0.9;
-  cien(ctx, cx, stopy, TILE * 0.28);
+  const stopy = py + TILE * 0.94;
+  const kreska = 'rgba(38,30,22,0.8)';
+  cien(ctx, cx, stopy, TILE * 0.3);
 
-  const tulow = TILE * 0.3;
-  const szer = TILE * 0.38;
+  const tulow = TILE * 0.42;
+  const szer = TILE * 0.5;
   ctx.fillStyle = kolor;
+  ctx.strokeStyle = kreska;
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.ellipse(cx, stopy - tulow / 2, szer / 2, tulow / 2, 0, 0, Math.PI * 2);
+  ctx.moveTo(cx - szer / 2, stopy);
+  ctx.lineTo(cx - szer / 2, stopy - tulow * 0.7);
+  ctx.quadraticCurveTo(cx, stopy - tulow * 1.25, cx + szer / 2, stopy - tulow * 0.7);
+  ctx.lineTo(cx + szer / 2, stopy);
+  ctx.closePath();
   ctx.fill();
+  ctx.stroke();
 
-  const rg = TILE * 0.25;
-  const gy = stopy - tulow - rg * 0.75;
-  kolko(ctx, cx, gy, rg, '#f0d2ac');
-  ctx.fillStyle = przyciemnij(kolor, 0.35);
+  const rg = TILE * 0.32;
+  const gy = stopy - tulow - rg * 0.6;
+  kolko(ctx, cx, gy, rg, '#f3d6b0');
+  ctx.fillStyle = przyciemnij(kolor, 0.3);
   ctx.beginPath();
-  ctx.arc(cx, gy, rg, Math.PI, 0);
+  ctx.arc(cx, gy, rg, Math.PI * 0.92, Math.PI * 0.08);
   ctx.fill();
-  ctx.fillStyle = '#2b2219';
+  ctx.fillStyle = '#241c14';
   ctx.beginPath();
-  ctx.arc(cx - rg * 0.38, gy + rg * 0.22, rg * 0.15, 0, Math.PI * 2);
-  ctx.arc(cx + rg * 0.38, gy + rg * 0.22, rg * 0.15, 0, Math.PI * 2);
+  ctx.arc(cx - rg * 0.4, gy + rg * 0.25, rg * 0.16, 0, Math.PI * 2);
+  ctx.arc(cx + rg * 0.4, gy + rg * 0.25, rg * 0.16, 0, Math.PI * 2);
   ctx.fill();
-
-  ctx.strokeStyle = 'rgba(40,32,22,0.5)';
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = kreska;
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.arc(cx, gy, rg, 0, Math.PI * 2);
   ctx.stroke();

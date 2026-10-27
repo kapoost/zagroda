@@ -119,8 +119,9 @@ export function generate(reg: Registry, seed: number): State {
    * Gdzie postawić gracza na Rynku.
    *
    * Nie na środku: Rynek Wielki ma sto metrów boku, więc ze środka widać wyłącznie
-   * bruk i żadnej pierzei. Szukamy kafla placu, który ma kamienicę w zasięgu wzroku,
-   * a z takich bierzemy ten najbliższy środkowi — czyli wejście w plac od pierzei.
+   * bruk. Nie przy pierzei: wtedy pół kadru to pusty plac. Szukamy NAROŻNIKA — kafla,
+   * z którego kamienice widać w dwóch różnych kierunkach naraz. Wtedy pierwszy ekran
+   * gry pokazuje dwie pierzeje i róg placu, czyli miejsce, a nie powierzchnię.
    */
   const rynek = (() => {
     const nrRynku = reg.content.biomes.findIndex((b) => b.id === 'rynek');
@@ -137,22 +138,25 @@ export function generate(reg: Registry, seed: number): State {
     const srodek = { x: Math.round(sx / plac.length), y: Math.round(sy / plac.length) };
     if (nrZabudowy < 0) return srodek;
 
-    const ZASIEG = 5;
+    const ZASIEG = 7;
+    const KIERUNKI = [[0, -1], [0, 1], [1, 0], [-1, 0]] as const;
     let najlepszy: { x: number; y: number } | null = null;
+    let najwiecej = 0;
     let najblizej = Infinity;
     for (const i of plac) {
       const x = i % size, y = (i / size) | 0;
-      const d = (x - srodek.x) ** 2 + (y - srodek.y) ** 2;
-      if (d >= najblizej) continue;
-      let widacPierzeje = false;
-      for (let dy = -ZASIEG; dy <= ZASIEG && !widacPierzeje; dy++) {
-        for (let dx = -ZASIEG; dx <= ZASIEG; dx++) {
-          const nx = x + dx, ny = y + dy;
-          if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
-          if (biome[ny * size + nx] === nrZabudowy) { widacPierzeje = true; break; }
+      let pierzeji = 0;
+      for (const [dx, dy] of KIERUNKI) {
+        for (let k = 1; k <= ZASIEG; k++) {
+          const nx = x + dx * k, ny = y + dy * k;
+          if (nx < 0 || ny < 0 || nx >= size || ny >= size) break;
+          if (biome[ny * size + nx] === nrZabudowy) { pierzeji++; break; }
         }
       }
-      if (!widacPierzeje) continue;
+      if (pierzeji < 2) continue;
+      const d = (x - srodek.x) ** 2 + (y - srodek.y) ** 2;
+      if (pierzeji < najwiecej || (pierzeji === najwiecej && d >= najblizej)) continue;
+      najwiecej = pierzeji;
       najblizej = d;
       najlepszy = { x, y };
     }

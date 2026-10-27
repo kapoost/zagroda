@@ -9,11 +9,12 @@ arcades along a grid of narrow streets. Late summer. Everything is hand-made fro
 the region gives: reed from the water, hay and flax from plots beyond the ramparts,
 field stone, timber, charcoal, bog iron. Technology stops at hand tools.
 
-STYLE — top-down, slightly tilted, in the proportions of Animal Crossing:
-Chunky, rounded, friendly shapes with thick readable outlines. A person is one tile
-and their head is nearly half their height; a tree is twice a person. Warm, sunlit,
-slightly desaturated colours. Soft shadow ellipse under everything that stands on the
-ground. Cute without being saccharine — toy-like, not cartoonish.
+STYLE — top-down tile world in the manner of a Game Boy Advance Pokémon town:
+Crisp readable tiles, firm dark outlines, flat sunlit colour with one or two shading
+steps — no gradients, no painterly blending. Buildings are compact boxes squarely on
+the grid: a pitched roof mass with a lighter ridge, then a plastered front wall with
+windows, arcades and a door. The world is deliberately compressed against the player:
+one tile is 3 metres, yet a person fills a whole tile and stands half a tile taller.
 
 NEVER include: fantasy creatures, magic glow, runes, crystals, neon, chrome, plastic,
 modern objects, cars, weapons of war, skulls, anime faces, or tropical and East Asian
@@ -21,7 +22,8 @@ flora — no bamboo, no palms, no cherry blossom.
 
 CONSISTENCY — this sprite will sit next to dozens of others on the same screen:
 Same camera height and angle for every object. Same sun angle, from the upper left.
-One tile is 1.5 metres — an object twice as tall in the world is twice as tall here.
+Everything except the player keeps its true size: a thing twice as wide in the world
+is twice as wide here.
 
 SUBJECT: A primitive stone axe — a chipped grey stone head lashed to a short wooden
 handle with cord. Single object on a fully transparent background, no shadow, no

@@ -11,42 +11,51 @@ skąd znać. Prompt bez metryk wygeneruje ładny obrazek i bezużyteczny asset.
 
 | | |
 | --- | --- |
-| kafel bazowy | **32 × 32 px** = **1,5 m** terenu |
-| skala renderowania | do rozmiaru kafla na ekranie (20 px), `image-rendering: pixelated` |
-| świat | 512 × 512 kafli = 768 m |
-| widok przy 900 × 790 | ok. 45 × 40 kafli, czyli 67 × 59 m |
+| kafel bazowy | **32 × 32 px** = **3 m** terenu |
+| skala renderowania | do rozmiaru kafla na ekranie (32 px), `image-rendering: pixelated` |
+| świat | 256 × 256 kafli = 768 m |
+| widok przy 900 × 790 | ok. 28 × 24 kafli, czyli 84 × 74 m |
+| obrót siatki | **13,93°** — zmierzony z osi ulic Starego Miasta |
 
 Szesnaście pikseli to rozdzielczość konsoli 16-bitowej: wystarczająco dużo, żeby przedmiot
 był rozpoznawalny, wystarczająco mało, żeby każdy piksel był decyzją. Skala musi być
 całkowita — ×1.5 rozmazuje krawędzie i niszczy cały efekt.
 
-## Proporcje — drabinka Animal Crossing
+## Proporcje — drabinka Pokémona
 
-Wszystko wynika z jednej liczby: **kafel to 1,5 metra**. Człowiek zajmuje dokładnie
-kafel, więc kafel jest miarą, którą gracz czuje stopami.
+Kafel ma trzy metry, ale **człowiek zajmuje cały kafel**. To nie pomyłka, tylko
+jedno świadome kłamstwo, na którym stoi cała ta estetyka: Pokémon ściska świat
+*względem postaci*, żeby w kadrze mieściła się ulica z obiema pierzejami, a nie
+pół elewacji. Gracz ma być bohaterem kadru, nie szpilką na planie.
 
 | | w metrach | w kaflach |
 | --- | --- | --- |
-| **kafel** | **1,5 m** | 1 |
-| człowiek | 1,5 m | **1** |
-| drzewo | 3 m | **2** |
-| ulica | 5–6 m | 3–4 |
-| kamienica (front) | 12–20 m | 8–13 |
-| Rynek Wielki | ok. 100 m | ok. 66 |
-| świat | 768 m | 512 |
+| **kafel** | **3 m** | 1 |
+| człowiek | 1,5 m *(rysowany jak 3)* | **1** |
+| drzewo | ok. 5 m | 1,5 |
+| ulica | 6 m | 2 |
+| kamienica (front) | 12–20 m | 4–6 |
+| Rynek Wielki | ok. 100 m | ok. 33 |
+| świat | 768 m | 256 |
 
-Dwie reguły trzymają tę drabinkę:
+Trzy reguły trzymają tę drabinkę:
 
-- **Dwa razy wyżej w świecie to dwa razy wyżej na rysunku.** Drzewo jest dwa razy
-  wyższe od człowieka i ma być narysowane dokładnie tak.
-- **Głowa to blisko połowa postaci.** To jedyne miejsce, w którym świadomie
-  odchodzimy od anatomii — i to ono odróżnia ten świat od planu miasta.
+- **Postać jest jedynym wyjątkiem.** Wszystko inne ma wymiar z mapy. Jeśli
+  łapiesz się na powiększaniu kolejnej rzeczy „żeby było widać", to znak, że
+  skala jest zła, a nie że ta rzecz jest wyjątkowa.
+- **Kafel szerokości, półtora wzwyż.** Postać wystaje ponad swój kafel i o to
+  chodzi — głowa to prawie połowa sylwetki.
+- **Dachu więcej niż ściany.** Budynek, który ma jeden rząd dachu i dwa ściany,
+  czyta się jak płot z oknami.
 
-Historia tej tabeli jest ostrzeżeniem. Pierwsza wersja miała proporcje Animal
-Crossing przy kaflu 9 metrów, więc człowiek musiałby być wielkości kamienicy;
-druga naprawiła metr kosztem proporcji i gra zaczęła wyglądać jak stare GTA.
-Dopiero skrócenie kafla do półtora metra godzi jedno z drugim — rozmiar świata
-i wielkość postaci to ta sama decyzja, nie dwie.
+Historia tej tabeli jest ostrzeżeniem i warto ją tu zostawić. Pierwsza wersja
+miała proporcje Animal Crossing przy kaflu 9 metrów — człowiek wychodził
+wielkości kamienicy. Druga naprawiła metr kosztem proporcji i gra wyglądała jak
+stare GTA. Trzecia skróciła kafel do półtora metra i pogodziła jedno z drugim,
+ale kamienica zajmowała wtedy trzynaście kafli i w kadrze mieściła się połowa
+jednej pierzei. Dopiero czwarta przestała udawać, że proporcje mają być
+prawdziwe. **Rozmiar świata, wielkość postaci i zasięg kadru to jedna decyzja,
+nie trzy** — i tylko ostatnia wersja podejmuje ją świadomie.
 
 ## Klasy sprite'ów
 
@@ -57,11 +66,11 @@ dolnej krawędzi swojego kafla i może wystawać w górę poza niego.
 | --- | --- | --- | --- | --- |
 | teren | 32 × 32 | — | 4, bez obrysu | bruk, rynek, trawa, ziemia, woda |
 | dach kamienicy | 32 × 32 | — | 3 + obrys | osiem odcieni, po jednym na budynek |
-| elewacja | 32 × 32 | — | 5 + obrys | tynk, okno, arkada podcienia |
+| elewacja | 32 × 32 | — | 5 + obrys | tynk, okno, arkada podcienia, drzwi |
 | mały obiekt | 32 × 32 | dół-środek | 4 + obrys | krzak, len, kamień, trzcina |
-| drzewo | 48 × 64 | dół-środek | 5 + obrys | dwa kafle wysokości, korona szersza niż pień |
+| drzewo | 48 × 48 | dół-środek | 5 + obrys | półtora kafla wzwyż, korona szersza niż pień |
 | struktura stawiana | 32 × 40 | dół-środek | 5 + obrys | skrzynia, piec, warsztat |
-| postać | 32 × 48 | dół-środek | 5 + obrys | kafel szerokości, głowa blisko połowy wysokości |
+| postać | 32 × 48 | dół-środek | 5 + obrys | kafel wszerz, półtora wzwyż, głowa blisko połowy |
 | ikona ekwipunku | 32 × 32 | — | 4 + obrys | każdy przedmiot |
 
 Przejść terenu **nie rysuje się sprite'ami**. Renderer składa je sam: każda warstwa
@@ -174,11 +183,12 @@ arcades along a grid of narrow streets. Late summer. Everything is hand-made fro
 the region gives: reed from the water, hay and flax from plots beyond the ramparts,
 field stone, timber, charcoal, bog iron. Technology stops at hand tools.
 
-STYLE — top-down, slightly tilted, in the proportions of Animal Crossing:
-Chunky, rounded, friendly shapes with thick readable outlines. A person is one tile
-and their head is nearly half their height; a tree is twice a person. Warm, sunlit,
-slightly desaturated colours. Soft shadow ellipse under everything that stands on the
-ground. Cute without being saccharine — toy-like, not cartoonish.
+STYLE — top-down tile world in the manner of a Game Boy Advance Pokémon town:
+Crisp readable tiles, firm dark outlines, flat sunlit colour with one or two shading
+steps — no gradients, no painterly blending. Buildings are compact boxes squarely on
+the grid: a pitched roof mass with a lighter ridge, then a plastered front wall with
+windows, arcades and a door. The world is deliberately compressed against the player:
+one tile is 3 metres, yet a person fills a whole tile and stands half a tile taller.
 
 NEVER include: fantasy creatures, magic glow, runes, crystals, neon, chrome, plastic,
 modern objects, cars, weapons of war, skulls, anime faces, or tropical and East Asian
@@ -186,7 +196,8 @@ flora — no bamboo, no palms, no cherry blossom.
 
 CONSISTENCY — this sprite will sit next to dozens of others on the same screen:
 Same camera height and angle for every object. Same sun angle, from the upper left.
-One tile is 1.5 metres — an object twice as tall in the world is twice as tall here.
+Everything except the player keeps its true size: a thing twice as wide in the world
+is twice as wide here.
 ```
 
 Lista „NEVER" nie jest przesadą. Modele obrazkowe mają silne skojarzenie
@@ -211,11 +222,12 @@ arcades along a grid of narrow streets. Late summer. Everything is hand-made fro
 the region gives: reed from the water, hay and flax from plots beyond the ramparts,
 field stone, timber, charcoal, bog iron. Technology stops at hand tools.
 
-STYLE — top-down, slightly tilted, in the proportions of Animal Crossing:
-Chunky, rounded, friendly shapes with thick readable outlines. A person is one tile
-and their head is nearly half their height; a tree is twice a person. Warm, sunlit,
-slightly desaturated colours. Soft shadow ellipse under everything that stands on the
-ground. Cute without being saccharine — toy-like, not cartoonish.
+STYLE — top-down tile world in the manner of a Game Boy Advance Pokémon town:
+Crisp readable tiles, firm dark outlines, flat sunlit colour with one or two shading
+steps — no gradients, no painterly blending. Buildings are compact boxes squarely on
+the grid: a pitched roof mass with a lighter ridge, then a plastered front wall with
+windows, arcades and a door. The world is deliberately compressed against the player:
+one tile is 3 metres, yet a person fills a whole tile and stands half a tile taller.
 
 NEVER include: fantasy creatures, magic glow, runes, crystals, neon, chrome, plastic,
 modern objects, cars, weapons of war, skulls, anime faces, or tropical and East Asian
@@ -223,7 +235,8 @@ flora — no bamboo, no palms, no cherry blossom.
 
 CONSISTENCY — this sprite will sit next to dozens of others on the same screen:
 Same camera height and angle for every object. Same sun angle, from the upper left.
-One tile is 1.5 metres — an object twice as tall in the world is twice as tall here.
+Everything except the player keeps its true size: a thing twice as wide in the world
+is twice as wide here.
 
 SUBJECT: {OPIS}
 

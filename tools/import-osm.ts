@@ -24,15 +24,14 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SRODEK = { lat: 50.7181, lon: 23.2519 };
 const BOK_METROW = 768;
 /**
- * 1,5 metra na kafel — skala Animal Crossing: człowiek zajmuje dokładnie kafel,
- * kamienica osiem do trzynastu, Rynek Wielki ponad sześćdziesiąt. Przejście
- * wzdłuż jednej pierzei trwa kilkanaście kroków, a nie dwa.
+ * 3 metry na kafel — skala Pokémona.
  *
- * Metr na kafel to jedyna liczba w tym projekcie, z której wynika cała reszta:
- * przy trzech metrach gra wyglądała jak mapa sztabowa i żadne rysowanie tego nie
- * naprawiało.
+ * Pokémon nie udaje realnych proporcji i w tym jest jego sztuczka: świat jest
+ * ściśnięty WZGLĘDEM postaci. Kamienica ma pięć kafli szerokości, człowiek jeden,
+ * więc dom jest pięć razy szerszy od gracza zamiast dziesięciu. Dzięki temu w kadrze
+ * mieści się ulica z obiema pierzejami, a nie pół elewacji.
  */
-const ROZMIAR = 512;
+const ROZMIAR = 256;
 
 /** Kolejność ma znaczenie: późniejsze nadpisuje wcześniejsze. */
 const LEGENDA = ['trawa', 'ziemia', 'las', 'bruk', 'rynek', 'kamienica', 'woda'] as const;
@@ -46,27 +45,38 @@ interface Element { type: string; tags?: Record<string, string>; geometry?: Weze
 const M_NA_STOPIEN_LAT = 111_320;
 const M_NA_STOPIEN_LON = 111_320 * Math.cos((SRODEK.lat * Math.PI) / 180);
 const POL = BOK_METROW / 2;
+/** Zasięg pomiaru kąta: pięciokąt bastionów ma około 600 m w poprzek. */
+const PROMIEN_POMIARU = 300;
 
 /**
  * Kąt, o jaki obrócona jest siatka miasta względem północy.
  *
- * Zamość nie leży równo w osi północ–południe, a kafle owszem. Bez obrotu każda
- * ściana kamienicy wychodzi schodkami, bo prosta pod kątem kilkunastu stopni
- * rasteryzuje się na pilę — i żadne rysowanie tego nie naprawi. Kąt nie jest
- * zgadywany, tylko liczony z samej mapy: bierzemy wszystkie krawędzie budynków,
- * sprowadzamy je modulo 90° (ściana i jej prostopadła to ten sam kierunek)
- * i ważymy długością. Miasto idealne ma jeden wyraźny kierunek i to jest ten.
+ * Zamość nie leży równo w osi północ–południe, a kafle owszem. Bez obrotu prosta pod
+ * kątem kilkunastu stopni rasteryzuje się na piłę i żadne rysowanie tego nie naprawi.
+ * Kąt nie jest zgadywany, tylko liczony z mapy: bierzemy krawędzie, sprowadzamy je
+ * modulo 90° (kierunek i prostopadły to ten sam kierunek) i ważymy długością.
+ *
+ * Liczymy go z OSI ULIC, nie ze ścian budynków. Ulica jest tym, po czym gracz chodzi:
+ * gdy biegnie skosem, rasteryzuje się na schodki i chodnik raz ma dwa kafle, raz jeden,
+ * a gracz co chwilę zahacza o róg. Ściany to tylko tło — a w mieście idealnym i tak
+ * stoją prostopadle do ulic, więc prostując jedno, prostujemy oba.
  */
-function katMiasta(elementy: Element[]): number {
+function katMiasta(elementy: Element[], co: 'ulice' | 'budynki'): number {
   const kubelki = new Array<number>(900).fill(0); // co 0,1°
   for (const e of elementy) {
-    if (!e.tags?.building || !e.geometry) continue;
+    const pasuje = co === 'ulice' ? Boolean(e.tags?.highway) : Boolean(e.tags?.building);
+    if (!pasuje || !e.geometry) continue;
     const g = e.geometry;
     for (let i = 1; i < g.length; i++) {
       const dx = (g[i]!.lon - g[i - 1]!.lon) * M_NA_STOPIEN_LON;
       const dy = (SRODEK.lat - g[i]!.lat - (SRODEK.lat - g[i - 1]!.lat)) * M_NA_STOPIEN_LAT;
       const dl = Math.hypot(dx, dy);
       if (dl < 2) continue;
+      // Tylko Stare Miasto. Przedmieścia mają własną siatkę i gdyby weszły do pomiaru,
+      // przeważyłyby liczbą — a gra toczy się w pięciokącie, nie przy obwodnicy.
+      const sx = (g[i]!.lon - SRODEK.lon) * M_NA_STOPIEN_LON;
+      const sy = (SRODEK.lat - g[i]!.lat) * M_NA_STOPIEN_LAT;
+      if (Math.hypot(sx, sy) > PROMIEN_POMIARU) continue;
       const stopnie = (((Math.atan2(dy, dx) * 180) / Math.PI) % 90 + 90) % 90;
       const k = Math.round(stopnie * 10) % 900;
       kubelki[k] = kubelki[k]! + dl;
@@ -112,15 +122,10 @@ const siatka = new Uint8Array(ROZMIAR * ROZMIAR).fill(nr('trawa'));
 const odcienie = new Uint8Array(ROZMIAR * ROZMIAR);
 const ODCIENI = 8;
 let licznikBudynkow = 0;
-/** Kafle budynku rysowanego właśnie teraz — odcień dostaną dopiero, gdy będzie znany cały obrys. */
-let zbierane: number[] | null = null;
 const ustaw = (x: number, y: number, b: Biom) => {
   if (x < 0 || y < 0 || x >= ROZMIAR || y >= ROZMIAR) return;
   const i = y * ROZMIAR + x;
-  if (nr(b) >= siatka[i]!) {
-    siatka[i] = nr(b);
-    if (b === 'kamienica' && zbierane) zbierane.push(i);
-  }
+  if (nr(b) >= siatka[i]!) siatka[i] = nr(b);
 };
 
 /**
@@ -149,6 +154,42 @@ function pomaluj(kafle: number[]): void {
     if (!zajete.has(kandydat)) { odcien = kandydat; break; }
   }
   for (const i of kafle) odcienie[i] = odcien;
+}
+
+/**
+ * Budynek jako prostokąt wpisany w siatkę.
+ *
+ * Obrys z OSM ma skosy, wykusze i przybudówki — przy trzech metrach na kafel każdy
+ * taki detal zamienia się w jeden odstający piksel. W Pokémonie dom jest pudełkiem
+ * i tak go tu stawiamy: bierzemy prostokąt opisany na obrysie, zaokrąglamy do kafli
+ * i wypełniamy. Kafle zajęte przez wcześniejszy budynek zostają jego — dzięki temu
+ * sąsiednie kamienice nie zlewają się mimo wspólnych granic.
+ *
+ * Co mniejsze niż 2×2 kafle, czyli 36 m², odpada. To szopy, garaże i śmietniki —
+ * w tej skali byłyby plamką wielkości gracza.
+ */
+function budynek(kontury: Wezel[][]): number[] {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const kontur of kontury) {
+    for (const w of kontur) {
+      const q = naSiatke(w);
+      minX = Math.min(minX, q.x); maxX = Math.max(maxX, q.x);
+      minY = Math.min(minY, q.y); maxY = Math.max(maxY, q.y);
+    }
+  }
+  const x0 = Math.round(minX), x1 = Math.round(maxX);
+  const y0 = Math.round(minY), y1 = Math.round(maxY);
+  if (x1 - x0 < 2 || y1 - y0 < 2) return [];
+  const kafle: number[] = [];
+  for (let y = Math.max(0, y0); y < Math.min(ROZMIAR, y1); y++) {
+    for (let x = Math.max(0, x0); x < Math.min(ROZMIAR, x1); x++) {
+      const i = y * ROZMIAR + x;
+      if (odcienie[i]) continue; // cudzy budynek — nie zabieramy
+      siatka[i] = nr('kamienica');
+      kafle.push(i);
+    }
+  }
+  return kafle;
 }
 
 function wielokat(geo: Wezel[], b: Biom): void {
@@ -196,11 +237,11 @@ const DROGI_WASKIE = new Set(['footway', 'path', 'steps', 'track', 'cycleway']);
 function klasyfikuj(t: Record<string, string>): { biom: Biom; linia?: number } | null {
   if (t.building) return { biom: 'kamienica' };
   if (t.natural === 'water' || t.waterway === 'riverbank' || t.waterway === 'moat') return { biom: 'woda' };
-  // Promienie w kaflach, przy 1,5 m na kafel: ulica mieszkalna ma około pięciu metrów
-  // szerokości, chodnik dwóch, Rynek jest placem i zajmuje wszystko dokoła osi.
-  if (t.highway === 'pedestrian' || t.place === 'square') return { biom: 'rynek', linia: 2.4 };
-  if (t.highway && DROGI_SZEROKIE.has(t.highway)) return { biom: 'bruk', linia: 1.6 };
-  if (t.highway && DROGI_WASKIE.has(t.highway)) return { biom: 'bruk', linia: 0.7 };
+  // Promienie w kaflach, przy 3 m na kafel. Ulica wychodzi na dwa kafle, czyli sześć
+  // metrów — tyle, żeby gracz zawsze miał czym iść i żeby chodnik nie rwał się na pół kafla.
+  if (t.highway === 'pedestrian' || t.place === 'square') return { biom: 'rynek', linia: 1.2 };
+  if (t.highway && DROGI_SZEROKIE.has(t.highway)) return { biom: 'bruk', linia: 0.9 };
+  if (t.highway && DROGI_WASKIE.has(t.highway)) return { biom: 'bruk', linia: 0.5 };
   if (t.natural === 'wood' || t.natural === 'tree_row' || t.landuse === 'forest') return { biom: 'las' };
   if (t.leisure === 'park' || t.leisure === 'garden' || t.leisure === 'pitch') return { biom: 'trawa' };
   if (t.historic === 'castle' || t.historic === 'citywalls' || t.barrier === 'city_wall') return { biom: 'kamienica' };
@@ -221,9 +262,13 @@ if (!zrodlo) {
 }
 
 const dane = JSON.parse(readFileSync(zrodlo, 'utf8')) as { elements: Element[] };
-const katStopnie = katMiasta(dane.elements);
+const katStopnie = katMiasta(dane.elements, 'ulice');
+const katScian = katMiasta(dane.elements, 'budynki');
 OBROT = (katStopnie * Math.PI) / 180;
-console.log(`siatka miasta obrócona o ${katStopnie.toFixed(2)}° — kafle idą wzdłuż pierzei`);
+console.log(
+  `siatka obrócona o ${katStopnie.toFixed(2)}° wg osi ulic ` +
+  `(ściany budynków wypadają na ${katScian.toFixed(2)}°, rozjazd ${Math.abs(katStopnie - katScian).toFixed(2)}°)`,
+);
 const zamkniety = (g: Wezel[]) =>
   g.length > 3 && Math.abs(g[0]!.lat - g[g.length - 1]!.lat) < 1e-9 && Math.abs(g[0]!.lon - g[g.length - 1]!.lon) < 1e-9;
 
@@ -254,13 +299,15 @@ for (const faza of [0, 1, 2]) {
     if (faza === 0 && (czyDroga || czyBudynek)) continue;
     if (faza === 1 && !czyDroga) continue;
     if (faza === 2 && !czyBudynek) continue;
-    zbierane = czyBudynek ? [] : null;
+    if (czyBudynek) {
+      const kafle = budynek(kontury);
+      if (kafle.length) pomaluj(kafle);
+      continue;
+    }
     for (const kontur of kontury) {
       if (czyDroga && !zamkniety(kontur)) linia(kontur, k.biom, k.linia!);
       else wielokat(kontur, k.biom);
     }
-    if (zbierane?.length) pomaluj(zbierane);
-    zbierane = null;
   }
 }
 
@@ -272,7 +319,7 @@ for (const faza of [0, 1, 2]) {
  * leży w podmokłym gruncie. Brzeg robi więc dwie rzeczy naraz: domyka łańcuch
  * wytwarzania i rysuje plażę tam, gdzie trawa dotykałaby wody na styk.
  */
-const BRZEG = 4;
+const BRZEG = 3;
 {
   const woda = nr('woda'), trawa = nr('trawa'), ziemia = nr('ziemia');
   const kopia = siatka.slice();
