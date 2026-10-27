@@ -1,21 +1,406 @@
 [
-  { "id": "r_sznurek",            "name": "Skręć sznurek",      "station": "hand",      "inputs": [ { "item": "wlokno", "qty": 2 } ],                                                              "output": { "item": "sznurek", "qty": 1 },           "ticks": 4 },
-  { "id": "r_siekiera_kamienna",  "name": "Siekiera kamienna",  "station": "hand",      "inputs": [ { "item": "galaz", "qty": 2 }, { "item": "kamien", "qty": 2 }, { "item": "sznurek", "qty": 1 } ], "output": { "item": "siekiera_kamienna", "qty": 1 }, "ticks": 10 },
-  { "id": "r_kilof_kamienny",     "name": "Kilof kamienny",     "station": "hand",      "inputs": [ { "item": "galaz", "qty": 2 }, { "item": "kamien", "qty": 3 }, { "item": "sznurek", "qty": 1 } ], "output": { "item": "kilof_kamienny", "qty": 1 },    "ticks": 10 },
-  { "id": "r_stol_warsztatowy",   "name": "Stół warsztatowy",   "station": "hand",      "inputs": [ { "item": "galaz", "qty": 4 }, { "item": "kamien", "qty": 2 }, { "item": "sznurek", "qty": 1 } ], "output": { "item": "stol_warsztatowy", "qty": 1 },  "ticks": 20 },
-  { "id": "r_pochodnia",          "name": "Pochodnia",          "station": "hand",      "inputs": [ { "item": "galaz", "qty": 1 }, { "item": "wegiel_drzewny", "qty": 1 } ],                        "output": { "item": "pochodnia", "qty": 2 },         "ticks": 4 },
-  { "id": "r_deska",              "name": "Zetnij deski",       "station": "workbench", "inputs": [ { "item": "drewno", "qty": 1 } ],                                                              "output": { "item": "deska", "qty": 2 },             "ticks": 5 },
-  { "id": "r_piec",               "name": "Piec",               "station": "workbench", "inputs": [ { "item": "kamien", "qty": 12 }, { "item": "sznurek", "qty": 1 } ],                             "output": { "item": "piec", "qty": 1 },              "ticks": 40 },
-  { "id": "r_wedka",              "name": "Wędka",              "station": "workbench", "inputs": [ { "item": "galaz", "qty": 2 }, { "item": "sznurek", "qty": 2 } ],                               "output": { "item": "wedka", "qty": 1 },             "ticks": 12 },
-  { "id": "r_skrzynia",           "name": "Skrzynia",           "station": "workbench", "inputs": [ { "item": "deska", "qty": 4 }, { "item": "sznurek", "qty": 1 } ],                               "output": { "item": "skrzynia", "qty": 1 },          "ticks": 18 },
-  { "id": "r_sciana_drewniana",   "name": "Ściana drewniana",   "station": "workbench", "inputs": [ { "item": "deska", "qty": 3 } ],                                                               "output": { "item": "sciana_drewniana", "qty": 1 },  "ticks": 6 },
-  { "id": "r_kuchnia_polowa",     "name": "Kuchnia polowa",     "station": "workbench", "inputs": [ { "item": "deska", "qty": 4 }, { "item": "kamien", "qty": 2 } ],                                "output": { "item": "kuchnia_polowa", "qty": 1 },    "ticks": 24 },
-  { "id": "r_krosno",             "name": "Krosno",             "station": "workbench", "inputs": [ { "item": "deska", "qty": 4 }, { "item": "sznurek", "qty": 2 } ],                               "output": { "item": "krosno", "qty": 1 },            "ticks": 24 },
-  { "id": "r_siekiera_zelazna",   "name": "Siekiera żelazna",   "station": "workbench", "inputs": [ { "item": "sztabka_zelaza", "qty": 2 }, { "item": "drewno", "qty": 1 }, { "item": "sznurek", "qty": 1 } ], "output": { "item": "siekiera_zelazna", "qty": 1 }, "ticks": 30 },
-  { "id": "r_kilof_zelazny",      "name": "Kilof żelazny",      "station": "workbench", "inputs": [ { "item": "sztabka_zelaza", "qty": 2 }, { "item": "drewno", "qty": 1 }, { "item": "sznurek", "qty": 1 } ], "output": { "item": "kilof_zelazny", "qty": 1 },    "ticks": 30 },
-  { "id": "r_kosa",               "name": "Kosa",               "station": "workbench", "inputs": [ { "item": "sztabka_zelaza", "qty": 1 }, { "item": "drewno", "qty": 1 }, { "item": "sznurek", "qty": 1 } ], "output": { "item": "kosa", "qty": 1 },            "ticks": 25 },
-  { "id": "r_wegiel_drzewny",     "name": "Wypal węgiel",       "station": "furnace",   "inputs": [ { "item": "drewno", "qty": 2 } ],                                                              "output": { "item": "wegiel_drzewny", "qty": 1 },    "ticks": 30 },
-  { "id": "r_sztabka_zelaza",     "name": "Wytop żelazo",       "station": "furnace",   "inputs": [ { "item": "ruda_zelaza", "qty": 2 }, { "item": "wegiel_drzewny", "qty": 1 } ],                  "output": { "item": "sztabka_zelaza", "qty": 1 },    "ticks": 45 },
-  { "id": "r_pieczona_ryba",      "name": "Upiecz rybę",        "station": "kitchen",   "inputs": [ { "item": "ryba", "qty": 1 }, { "item": "wegiel_drzewny", "qty": 1 } ],                         "output": { "item": "pieczona_ryba", "qty": 1 },     "ticks": 20 },
-  { "id": "r_tkanina",            "name": "Utkaj tkaninę",      "station": "loom",      "inputs": [ { "item": "wlokno", "qty": 3 } ],                                                              "output": { "item": "tkanina", "qty": 1 },           "ticks": 20 }
+  {
+    "id": "r_sznurek",
+    "name": "Skręć sznurek",
+    "station": "hand",
+    "inputs": [
+      {
+        "item": "wlokno",
+        "qty": 2
+      }
+    ],
+    "output": {
+      "item": "sznurek",
+      "qty": 1
+    },
+    "ticks": 4
+  },
+  {
+    "id": "r_siekiera_kamienna",
+    "name": "Siekiera kamienna",
+    "station": "hand",
+    "inputs": [
+      {
+        "item": "galaz",
+        "qty": 2
+      },
+      {
+        "item": "kamien",
+        "qty": 2
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "siekiera_kamienna",
+      "qty": 1
+    },
+    "ticks": 10
+  },
+  {
+    "id": "r_kilof_kamienny",
+    "name": "Kilof kamienny",
+    "station": "hand",
+    "inputs": [
+      {
+        "item": "galaz",
+        "qty": 2
+      },
+      {
+        "item": "kamien",
+        "qty": 3
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "kilof_kamienny",
+      "qty": 1
+    },
+    "ticks": 10
+  },
+  {
+    "id": "r_stol_warsztatowy",
+    "name": "Stół warsztatowy",
+    "station": "hand",
+    "inputs": [
+      {
+        "item": "galaz",
+        "qty": 4
+      },
+      {
+        "item": "kamien",
+        "qty": 2
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "stol_warsztatowy",
+      "qty": 1
+    },
+    "ticks": 20
+  },
+  {
+    "id": "r_pochodnia",
+    "name": "Pochodnia",
+    "station": "hand",
+    "inputs": [
+      {
+        "item": "galaz",
+        "qty": 1
+      },
+      {
+        "item": "wegiel_drzewny",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "pochodnia",
+      "qty": 2
+    },
+    "ticks": 4
+  },
+  {
+    "id": "r_deska",
+    "name": "Zetnij deski",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "drewno",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "deska",
+      "qty": 2
+    },
+    "ticks": 5
+  },
+  {
+    "id": "r_piec",
+    "name": "Piec",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "kamien",
+        "qty": 12
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "piec",
+      "qty": 1
+    },
+    "ticks": 40
+  },
+  {
+    "id": "r_wedka",
+    "name": "Wędka",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "galaz",
+        "qty": 2
+      },
+      {
+        "item": "sznurek",
+        "qty": 2
+      }
+    ],
+    "output": {
+      "item": "wedka",
+      "qty": 1
+    },
+    "ticks": 12
+  },
+  {
+    "id": "r_skrzynia",
+    "name": "Skrzynia",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "deska",
+        "qty": 4
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "skrzynia",
+      "qty": 1
+    },
+    "ticks": 18
+  },
+  {
+    "id": "r_sciana_drewniana",
+    "name": "Ściana drewniana",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "deska",
+        "qty": 3
+      }
+    ],
+    "output": {
+      "item": "sciana_drewniana",
+      "qty": 1
+    },
+    "ticks": 6
+  },
+  {
+    "id": "r_kuchnia_polowa",
+    "name": "Kuchnia polowa",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "deska",
+        "qty": 4
+      },
+      {
+        "item": "kamien",
+        "qty": 2
+      }
+    ],
+    "output": {
+      "item": "kuchnia_polowa",
+      "qty": 1
+    },
+    "ticks": 24
+  },
+  {
+    "id": "r_krosno",
+    "name": "Krosno",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "deska",
+        "qty": 4
+      },
+      {
+        "item": "sznurek",
+        "qty": 2
+      }
+    ],
+    "output": {
+      "item": "krosno",
+      "qty": 1
+    },
+    "ticks": 24
+  },
+  {
+    "id": "r_siekiera_zelazna",
+    "name": "Siekiera żelazna",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "sztabka_zelaza",
+        "qty": 2
+      },
+      {
+        "item": "drewno",
+        "qty": 1
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "siekiera_zelazna",
+      "qty": 1
+    },
+    "ticks": 30
+  },
+  {
+    "id": "r_kilof_zelazny",
+    "name": "Kilof żelazny",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "sztabka_zelaza",
+        "qty": 2
+      },
+      {
+        "item": "drewno",
+        "qty": 1
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "kilof_zelazny",
+      "qty": 1
+    },
+    "ticks": 30
+  },
+  {
+    "id": "r_kosa",
+    "name": "Kosa",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "sztabka_zelaza",
+        "qty": 1
+      },
+      {
+        "item": "drewno",
+        "qty": 1
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "kosa",
+      "qty": 1
+    },
+    "ticks": 25
+  },
+  {
+    "id": "r_wegiel_drzewny",
+    "name": "Wypal węgiel",
+    "station": "furnace",
+    "inputs": [
+      {
+        "item": "drewno",
+        "qty": 2
+      }
+    ],
+    "output": {
+      "item": "wegiel_drzewny",
+      "qty": 1
+    },
+    "ticks": 30
+  },
+  {
+    "id": "r_sztabka_zelaza",
+    "name": "Wytop żelazo",
+    "station": "furnace",
+    "inputs": [
+      {
+        "item": "ruda_zelaza",
+        "qty": 2
+      },
+      {
+        "item": "wegiel_drzewny",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "sztabka_zelaza",
+      "qty": 1
+    },
+    "ticks": 45
+  },
+  {
+    "id": "r_pieczona_ryba",
+    "name": "Upiecz rybę",
+    "station": "kitchen",
+    "inputs": [
+      {
+        "item": "ryba",
+        "qty": 1
+      },
+      {
+        "item": "wegiel_drzewny",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "pieczona_ryba",
+      "qty": 1
+    },
+    "ticks": 20
+  },
+  {
+    "id": "r_tkanina",
+    "name": "Utkaj tkaninę",
+    "station": "loom",
+    "inputs": [
+      {
+        "item": "wlokno",
+        "qty": 3
+      }
+    ],
+    "output": {
+      "item": "tkanina",
+      "qty": 1
+    },
+    "ticks": 20
+  },
+  {
+    "id": "r_kosz_wiklinowy",
+    "name": "Kosz wiklinowy",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "wlokno",
+        "qty": 10
+      },
+      {
+        "item": "sznurek",
+        "qty": 2
+      }
+    ],
+    "output": {
+      "item": "kosz_wiklinowy",
+      "qty": 1
+    },
+    "ticks": 30
+  }
 ]
