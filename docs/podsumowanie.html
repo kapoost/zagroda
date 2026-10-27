@@ -1,0 +1,703 @@
+<title>Zagroda — gra, którą rozwija Bielik</title>
+
+<style>
+  /* ── Tokeny: jasny motyw jako podstawa ─────────────────────────── */
+  :root {
+    --ground: #f1efe2;
+    --plate: #e6e3d2;
+    --plate-2: #dcd9c6;
+    --line: #cfcdb8;
+    --ink: #1b2217;
+    --ink-soft: #4b5245;
+    --dim: #6c7161;
+    --gold: #8a6a12;
+    --gold-soft: #b79a3f;
+    --sea: #1f5886;
+    --shadow: 0 1px 0 rgba(27, 34, 23, 0.06);
+
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --prose: "Iowan Old Style", Georgia, "Times New Roman", serif;
+
+    --measure: 66ch;
+    --gap: clamp(2.25rem, 5vw, 3.5rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #11170f;
+      --plate: #1b2217;
+      --plate-2: #222b1d;
+      --line: #2f3a28;
+      --ink: #e7e2cf;
+      --ink-soft: #c3c0ad;
+      --dim: #8f9583;
+      --gold: #c9a227;
+      --gold-soft: #9c7f22;
+      --sea: #5aa0d6;
+      --shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #11170f;
+    --plate: #1b2217;
+    --plate-2: #222b1d;
+    --line: #2f3a28;
+    --ink: #e7e2cf;
+    --ink-soft: #c3c0ad;
+    --dim: #8f9583;
+    --gold: #c9a227;
+    --gold-soft: #9c7f22;
+    --sea: #5aa0d6;
+    --shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  }
+
+  /* ── Podstawa ───────────────────────────────────────────────────── */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--prose);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: clamp(2rem, 6vw, 4.5rem) clamp(1.1rem, 4vw, 2.5rem) 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+  }
+
+  .prose { max-width: var(--measure); }
+  .prose p { margin: 0 0 1em; }
+  .prose p:last-child { margin-bottom: 0; }
+
+  a { color: var(--gold); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  strong { font-weight: 700; }
+  em { font-style: italic; color: var(--ink); }
+
+  /* ── Typografia nagłówkowa: monospace, bo to projekt z terminala ── */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin: 0 0 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .eyebrow::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(2rem, 6.5vw, 3.25rem);
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+    font-weight: 600;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  h2 {
+    font-family: var(--mono);
+    font-size: clamp(1.25rem, 2.6vw, 1.5rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    margin: 0 0 0.85rem;
+    text-wrap: balance;
+  }
+
+  h3 {
+    font-family: var(--mono);
+    font-size: 0.9375rem;
+    letter-spacing: 0.01em;
+    font-weight: 600;
+    margin: 0 0 0.4rem;
+  }
+
+  .dek {
+    font-size: clamp(1.0625rem, 2.2vw, 1.25rem);
+    color: var(--ink-soft);
+    max-width: 48ch;
+    margin: 1.25rem 0 0;
+    text-wrap: pretty;
+  }
+
+  .meta {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--dim);
+    letter-spacing: 0.04em;
+    margin-top: 1.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+  }
+  .meta b { color: var(--ink-soft); font-weight: 600; }
+
+  /* ── Płyty i obrazy ─────────────────────────────────────────────── */
+  figure { margin: 0; }
+
+  .plate {
+    background: var(--plate);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .plate img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  figcaption {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--dim);
+    margin-top: 0.7rem;
+    max-width: 62ch;
+  }
+  figcaption b { color: var(--ink-soft); font-weight: 600; }
+
+  .shots {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width: 42rem) { .shots { grid-template-columns: 1fr; } }
+
+  /* ── Diagram ────────────────────────────────────────────────────── */
+  .diagram {
+    background: var(--plate);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: clamp(0.75rem, 2.5vw, 1.5rem);
+    overflow-x: auto;
+  }
+  .diagram svg {
+    display: block;
+    width: 100%;
+    min-width: 36rem;
+    height: auto;
+    color: var(--ink);
+  }
+  .dg-box { fill: var(--ground); stroke: currentColor; stroke-opacity: 0.45; stroke-width: 1.25; }
+  .dg-box-gold { fill: var(--ground); stroke: var(--gold); stroke-width: 1.5; }
+  .dg-line { stroke: currentColor; stroke-opacity: 0.55; stroke-width: 1.25; fill: none; }
+  .dg-dash { stroke: var(--gold); stroke-width: 1.25; fill: none; stroke-dasharray: 5 4; }
+  .dg-t { fill: currentColor; font-family: var(--mono); font-size: 12.5px; font-weight: 600; letter-spacing: 0.02em; }
+  .dg-s { fill: var(--dim); font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.02em; }
+  .dg-g { fill: var(--gold); font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; }
+
+  /* ── Liczby ─────────────────────────────────────────────────────── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .stat {
+    background: var(--plate);
+    padding: 1.05rem 1.1rem 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .stat .n {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.75rem;
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+  }
+  .stat .k {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  .stat .note { font-family: var(--mono); font-size: 0.6875rem; color: var(--dim); }
+  .stat.hl .n { color: var(--gold); }
+
+  /* ── Karty zmian ────────────────────────────────────────────────── */
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 46rem) { .cards { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--plate);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--gold);
+    border-radius: 3px;
+    padding: 1.15rem 1.25rem 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .card.code { border-left-color: var(--sea); }
+
+  .tag {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .card.code .tag { color: var(--sea); }
+
+  .card p { margin: 0; font-size: 0.9375rem; color: var(--ink-soft); }
+
+  .route {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--dim);
+    line-height: 1.7;
+  }
+  .route b { color: var(--ink-soft); font-weight: 600; }
+
+  pre {
+    margin: 0;
+    background: var(--ground);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 0.8rem 0.9rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    line-height: 1.65;
+    color: var(--ink-soft);
+  }
+  pre b { color: var(--ink); font-weight: 600; }
+  pre .add { color: var(--gold); }
+  code {
+    font-family: var(--mono);
+    font-size: 0.875em;
+    background: var(--plate-2);
+    padding: 0.08em 0.32em;
+    border-radius: 2px;
+  }
+
+  /* ── Tabela trybów awarii ───────────────────────────────────────── */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 3px; }
+  table { border-collapse: collapse; width: 100%; min-width: 34rem; background: var(--plate); }
+  th, td {
+    text-align: left;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  th {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  td { font-size: 0.875rem; color: var(--ink-soft); }
+  td.num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--dim);
+    width: 2.5rem;
+  }
+  td.fix { color: var(--ink); }
+  tr.win td { color: var(--gold); }
+  tr.win td.num { color: var(--gold); }
+
+  /* ── Lista otwartych spraw ──────────────────────────────────────── */
+  .open { display: flex; flex-direction: column; gap: 1.1rem; max-width: var(--measure); }
+  .open > div { display: flex; flex-direction: column; gap: 0.2rem; }
+  .open p { margin: 0; font-size: 0.9375rem; color: var(--ink-soft); }
+
+  footer {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--dim);
+    border-top: 1px solid var(--line);
+    padding-top: 1.5rem;
+    line-height: 1.8;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    a { transition: color 120ms ease; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">dziennik projektu · 27 października 2026</p>
+    <h1>Zagroda</h1>
+    <p class="dek">
+      Gra w przeglądarce, którą rozwija Bielik — polski model językowy działający
+      lokalnie. Opisujesz zmianę po polsku; system ją klasyfikuje, wprowadza,
+      testuje i albo scala, albo porzuca razem z gałęzią.
+    </p>
+    <p class="meta">
+      <span><b>Bielik 11B v3.0</b> polski ↔ struktura</span>
+      <span><b>Qwen2.5-Coder 14B</b> patche kodu</span>
+      <span><b>Claude Opus 5</b> eskalacja</span>
+      <span><b>M5 · 24 GB</b> wszystko lokalnie</span>
+    </p>
+  </header>
+
+  <figure>
+    <div class="plate">
+      <img src="assets/oboz.png" width="1200" height="736"
+           alt="Zrzut gry Zagroda o zmierzchu: wyspa z biomami, obozowisko z kilkoma postawionymi strukturami wokół gracza, panel boczny z ekwipunkiem i listą receptur." />
+    </div>
+    <figcaption>
+      Obozowisko o 21:04. Jasny kafel po prawej od gracza to <b>kosz wiklinowy</b> —
+      przedmiot, strukturę i recepturę dopisał Bielik i trafiły do <code>main</code>
+      automatycznie. Lista wytwarzania urosła z pięciu pozycji do ośmiu, bo piec
+      i kuchnia stanęły w zasięgu. O tej porze zbieranie kosztuje podwójnie — to już
+      patch Qwena.
+    </figcaption>
+  </figure>
+
+  <section class="prose">
+    <p class="eyebrow">założenie</p>
+    <h2>Model nie jest agentem</h2>
+    <p>
+      Bielik to model ogólnego przeznaczenia, nie koderski. W tool-callingu
+      i generowaniu diffów zawodzi często, nie sporadycznie. Cała architektura jest
+      odpowiedzią właśnie na to: <strong>orkiestracja jest deterministyczna</strong>,
+      a model dostaje wąskie, walidowalne zadania.
+    </p>
+    <p>
+      Z tego wynikają trzy rzeczy, które wyglądają na nadmiarowe, a nie są. Treść gry
+      to dane w JSON — model emituje deklaratywne operacje, a pliki zapisuje zwykły
+      kod. Schemat tych operacji jest budowany na żądanie i możliwie wąski: gałęzie
+      kasowania i łatania pojawiają się w nim dopiero, gdy klasyfikacja wyraźnie ich
+      zażąda. A bramka jakości, schematy i testy są dla agenta <em>niezapisywalne</em>,
+      bo najprostsza droga do zielonego światła ma prowadzić przez naprawienie kodu,
+      nigdy przez rozmontowanie tego, co sprawdza.
+    </p>
+  </section>
+
+  <figure>
+    <p class="eyebrow">pętla</p>
+    <div class="diagram">
+      <svg viewBox="0 0 900 600" role="img"
+           aria-label="Diagram pętli: polski opis trafia do Bielika, który klasyfikuje zmianę jako dane albo kod. Ścieżka danych prowadzi przez operacje i deterministyczny applier, ścieżka kodu przez skill i model Qwen. Obie kończą się na bramce jakości: zielona scala dane do main i otwiera PR dla kodu, czerwona zawraca błędy do modelu.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5"
+                  markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="currentColor" fill-opacity="0.65" />
+          </marker>
+          <marker id="arg" viewBox="0 0 10 10" refX="9" refY="5"
+                  markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="var(--gold)" />
+          </marker>
+        </defs>
+
+        <!-- wejście -->
+        <text class="dg-s" x="450" y="24" text-anchor="middle">opis zmiany po polsku</text>
+        <line class="dg-line" x1="450" y1="36" x2="450" y2="66" marker-end="url(#ar)" />
+
+        <!-- klasyfikacja -->
+        <rect class="dg-box-gold" x="340" y="68" width="220" height="56" rx="3" />
+        <text class="dg-t" x="450" y="92" text-anchor="middle">BIELIK</text>
+        <text class="dg-s" x="450" y="110" text-anchor="middle">klasyfikacja · dane czy kod</text>
+
+        <!-- rozgałęzienie -->
+        <polyline class="dg-line" points="450,124 450,150 210,150 210,174" marker-end="url(#ar)" />
+        <polyline class="dg-line" points="450,124 450,150 690,150 690,174" marker-end="url(#ar)" />
+        <text class="dg-g" x="330" y="144" text-anchor="middle">dane</text>
+        <text class="dg-g" x="570" y="144" text-anchor="middle">kod</text>
+
+        <!-- lewa kolumna: dane -->
+        <rect class="dg-box" x="100" y="176" width="220" height="52" rx="3" />
+        <text class="dg-t" x="210" y="198" text-anchor="middle">OPERACJE</text>
+        <text class="dg-s" x="210" y="215" text-anchor="middle">Bielik, kolekcja po kolekcji</text>
+        <line class="dg-line" x1="210" y1="228" x2="210" y2="252" marker-end="url(#ar)" />
+        <rect class="dg-box" x="100" y="254" width="220" height="52" rx="3" />
+        <text class="dg-t" x="210" y="276" text-anchor="middle">APPLIER</text>
+        <text class="dg-s" x="210" y="293" text-anchor="middle">zwykły kod, nie model</text>
+
+        <!-- prawa kolumna: kod -->
+        <rect class="dg-box" x="580" y="176" width="220" height="52" rx="3" />
+        <text class="dg-t" x="690" y="198" text-anchor="middle">SKILL</text>
+        <text class="dg-s" x="690" y="215" text-anchor="middle">brief · pliki · inwarianty</text>
+        <line class="dg-line" x1="690" y1="228" x2="690" y2="252" marker-end="url(#ar)" />
+        <rect class="dg-box" x="580" y="254" width="220" height="52" rx="3" />
+        <text class="dg-t" x="690" y="276" text-anchor="middle">QWEN-CODER</text>
+        <text class="dg-s" x="690" y="293" text-anchor="middle">patch SEARCH/REPLACE</text>
+
+        <!-- zbieg do bramki -->
+        <polyline class="dg-line" points="210,306 210,336 450,336 450,360" marker-end="url(#ar)" />
+        <polyline class="dg-line" points="690,306 690,336 450,336" />
+
+        <!-- bramka -->
+        <rect class="dg-box-gold" x="310" y="362" width="280" height="58" rx="3" />
+        <text class="dg-t" x="450" y="386" text-anchor="middle">BRAMKA</text>
+        <text class="dg-s" x="450" y="404" text-anchor="middle">treść · typy · testy · symulacja</text>
+
+        <!-- czerwona: zawrót do obu ścieżek -->
+        <polyline class="dg-dash" points="310,391 60,391 60,202 96,202" marker-end="url(#arg)" />
+        <polyline class="dg-dash" points="590,391 840,391 840,202 804,202" marker-end="url(#arg)" />
+        <text class="dg-g" x="60" y="378" text-anchor="start">błędy → model</text>
+        <text class="dg-g" x="840" y="378" text-anchor="end">błędy → model</text>
+
+        <!-- zielona -->
+        <line class="dg-line" x1="450" y1="420" x2="450" y2="462" marker-end="url(#ar)" />
+        <text class="dg-g" x="462" y="446" text-anchor="start">zielona</text>
+        <rect class="dg-box" x="270" y="464" width="360" height="74" rx="3" />
+        <text class="dg-t" x="450" y="490" text-anchor="middle">DANE → merge do main</text>
+        <text class="dg-t" x="450" y="512" text-anchor="middle">KOD → gałąź i PR</text>
+        <text class="dg-s" x="450" y="530" text-anchor="middle">hybrydowa autonomia</text>
+
+        <text class="dg-s" x="450" y="572" text-anchor="middle">po trzech nieudanych rundach gałąź znika razem ze zmianą</text>
+      </svg>
+    </div>
+    <figcaption>
+      Jedyne miejsce, w którym model pisze pliki, to prawa kolumna — i właśnie dlatego
+      patche kodu nie trafiają do <code>main</code> bez człowieka. Po lewej model
+      emituje operacje, a zapisuje je kod.
+    </figcaption>
+  </figure>
+
+  <section>
+    <p class="eyebrow">co naprawdę zrobiły modele</p>
+    <div class="cards">
+
+      <div class="card">
+        <span class="tag">dane · scalone automatycznie</span>
+        <h3>Kosz wiklinowy</h3>
+        <p class="route">
+          <b>„dodaj kosz wiklinowy: pojemny schowek pleciony z trzciny,
+          mieści więcej niż zwykła skrzynia”</b>
+        </p>
+        <p>
+          Bielik dodał przedmiot, strukturę o pojemności 30 (skrzynia ma 20 — wymaganie
+          spełnione) i recepturę z dziesięciu włókien. Druga runda, po tym jak bramka
+          odrzuciła pierwszą z komunikatem o trzcinie.
+        </p>
+        <pre>+ items      kosz_wiklinowy
++ structures kosz_wiklinowy  <b>storage: 30</b>
++ recipes    r_kosz_wiklinowy
+             10×wlokno + 2×sznurek</pre>
+      </div>
+
+      <div class="card code">
+        <span class="tag">kod · przez przegląd</span>
+        <h3>Nocny koszt zbierania</h3>
+        <p class="route">
+          <b>„zbieranie surowców w nocy ma kosztować dwa razy więcej sił
+          niż w dzień”</b>
+        </p>
+        <p>
+          Qwen trafił w <code>isNight()</code> zamiast wymyślać własny próg — bo skill
+          mu to nakazał. Sprawdzone empirycznie: w południe 1 jednostka sił,
+          o północy 2.
+        </p>
+        <pre>function harvest(…) {
+  if (!spend(state, reg,
+<span class="add">    isNight(state, reg) ? 2 : 1</span>
+  )) return;</pre>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">liczby</p>
+    <div class="stats">
+      <div class="stat"><span class="n">30</span><span class="k">przedmiotów</span></div>
+      <div class="stat"><span class="n">22</span><span class="k">receptury</span></div>
+      <div class="stat"><span class="n">10</span><span class="k">struktur</span></div>
+      <div class="stat"><span class="n">119</span><span class="k">testów</span><span class="note">58 gry · 61 agenta</span></div>
+      <div class="stat hl"><span class="n">9,0 s</span><span class="k">bramka</span><span class="note">siedem etapów</span></div>
+      <div class="stat"><span class="n">11</span><span class="k">przebiegów</span><span class="note">2 scalone · 2 na gałęzi · 7 porzuconych</span></div>
+      <div class="stat"><span class="n">59</span><span class="k">wywołań modeli</span><span class="note">40 udanych · 19 nie</span></div>
+      <div class="stat"><span class="n">0</span><span class="k">razy main zepsuty</span></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">jedenaście przebiegów, jedenaście różnych trybów awarii</p>
+    <h2>Żadnego nie naprawił prompt</h2>
+    <div class="prose" style="margin-bottom: 1.4rem">
+      <p>
+        Za każdym razem lekarstwem okazywało się usunięcie danej możliwości ze zbioru
+        dopuszczalnych wyjść modelu — a nie dopisanie kolejnej reguły do promptu.
+      </p>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th class="num">#</th><th>Co robił model</th><th>Czym naprawione</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num">1</td>
+            <td>Skasował skrzynię, choć prosiłem o kosz</td>
+            <td class="fix">Operacja kasowania zniknęła ze schematu</td>
+          </tr>
+          <tr>
+            <td class="num">2</td>
+            <td>Łatał identyfikator, którego nie ma</td>
+            <td class="fix">Operacje łatania zniknęły ze schematu</td>
+          </tr>
+          <tr>
+            <td class="num">3</td>
+            <td>Brał samo <code>items</code> dla rzeczy wymagającej trzech kolekcji</td>
+            <td class="fix">Kolekcje dopełniane o zależności przed budową schematu</td>
+          </tr>
+          <tr>
+            <td class="num">4</td>
+            <td>Mielił kwadransami pod gramatyką</td>
+            <td class="fix">Rozbicie na wywołania per kolekcja — koszt rośnie superliniowo z rozmiarem gramatyki</td>
+          </tr>
+          <tr>
+            <td class="num">5</td>
+            <td>Podawał <code>trzcina</code> jako wsad receptury</td>
+            <td class="fix">Komunikat błędu mówi, czym ten identyfikator naprawdę jest</td>
+          </tr>
+          <tr>
+            <td class="num">6</td>
+            <td>Zrobił kosz będący naraz schowkiem, narzędziem i jedzeniem</td>
+            <td class="fix">Kontrola spójności ról w walidatorze</td>
+          </tr>
+          <tr>
+            <td class="num">7</td>
+            <td>Dorzucił przedmiot, który do niczego nie służy</td>
+            <td class="fix">Kontrola przedmiotów bez zastosowania</td>
+          </tr>
+          <tr>
+            <td class="num">8</td>
+            <td>Przepisywał cały plik, żeby zmienić trzy linijki</td>
+            <td class="fix">Protokół podmian zamiast pełnych plików</td>
+          </tr>
+          <tr>
+            <td class="num">9</td>
+            <td>Ignorował wymyślony przeze mnie format znaczników</td>
+            <td class="fix">Standard <code>SEARCH/REPLACE</code>, który modele znają z treningu</td>
+          </tr>
+          <tr>
+            <td class="num">10</td>
+            <td>Mylił wcięcie o jedną spację i patch przepadał</td>
+            <td class="fix">Dopasowanie tolerancyjne, ale wciąż jednoznaczne</td>
+          </tr>
+          <tr>
+            <td class="num">11</td>
+            <td>Nazwał nocą popołudnie — i bramka to przepuściła</td>
+            <td class="fix"><code>isNight()</code> w rdzeniu; skill wskazuje helper zamiast tłumaczyć liczby</td>
+          </tr>
+          <tr class="win">
+            <td class="num">→</td>
+            <td>Trzy ostatnie przebiegi: dane, kod, kod</td>
+            <td class="fix">Wszystkie zielone</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="prose">
+    <p class="eyebrow">reguła</p>
+    <h2>Gdy model uporczywie zgaduje</h2>
+    <p>
+      …sprawdź najpierw, czy nie każesz mu zgadywać czegoś, co powinno być zapisane.
+      Granica nocy to decyzja gry, więc trafiła do rdzenia. Format patcha to standard,
+      który model zna, a nie mój wynalazek. Co jest przedmiotem, a co surowcem — do
+      komunikatu błędu. Które pola zostawić pustymi — do schematu, nie do promptu.
+    </p>
+    <p>
+      Najczystszym wyrazem tej reguły są <strong>skille</strong>: pięć plików, w których
+      zapisałem to, czego model nie ma skąd wiedzieć — gdzie w kodzie leży punkt
+      zaczepienia, jakich inwariantów nie wolno złamać i które pliki rdzenia w ogóle
+      wysyłać. Dopisanie kolejnego kosztuje pięć minut i zero par treningowych. To jest
+      główna droga rozwoju tego systemu, nie dostrajanie modelu.
+    </p>
+  </section>
+
+  <section>
+    <p class="eyebrow">dwa zrzuty dla porządku</p>
+    <div class="shots">
+      <figure>
+        <div class="plate">
+          <img src="assets/dzien.png" width="1200" height="736"
+               alt="Zagroda w dzień: zielona wyspa z lasami, łąkami i górami, gracz pośrodku, panel boczny z ekwipunkiem." />
+        </div>
+        <figcaption>Dzień, 10:03. Wyspa z sześcioma biomami, 96 × 96 kafli, generowana z seeda.</figcaption>
+      </figure>
+      <figure>
+        <div class="plate">
+          <img src="assets/noc.png" width="1200" height="736"
+               alt="Zagroda w nocy: świat przyciemniony, trzy postawione pochodnie świecą gradientem, w oddali widoczna postać NPC." />
+        </div>
+        <figcaption>Noc, 00:10. Pochodnie oświetlają okolicę; o tej porze każda czynność zbierania kosztuje podwójnie.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">co zostaje otwarte</p>
+    <div class="open">
+      <div>
+        <h3>Kontekst rośnie razem z grą</h3>
+        <p>
+          Prompt klasyfikacji ma dziś 2 435 tokenów i zawiera pełny stan gry. Przy
+          kilkuset przedmiotach trzeba będzie wysyłać wycinek, a nie całość.
+        </p>
+      </div>
+      <div>
+        <h3>Eskalacja do API jest wyłączona</h3>
+        <p>
+          Bez klucza pętla jest w pełni lokalna, ale gdy Bielik nie trafi po trzech
+          rundach, zmiana przepada zamiast trafić do mocniejszego modelu. Włącza się
+          bez zmiany linijki kodu.
+        </p>
+      </div>
+      <div>
+        <h3>Bramka nie sprawdzi, czy zmiana realizuje prośbę</h3>
+        <p>
+          „Mieści więcej niż skrzynia” akurat wyszło, ale walidator tego nie
+          weryfikował — potwierdził tylko, że schowek istnieje. Takie rzeczy wyłapie
+          wyłącznie przegląd człowieka.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Zagroda · monorepo TypeScript · gra 1 780 linii, agent 1 883, testy 835<br />
+    Dziennik każdej próby razem z powodem porażki: <code>.agent/journal.jsonl</code>
+  </footer>
+
+</div>
