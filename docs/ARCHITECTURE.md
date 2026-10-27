@@ -92,17 +92,51 @@ Błędy z bramki wracają do modelu dosłownie — nie streszczone. Komunikat
 `[UNREACHABLE_ITEM] items.fujarka: item "fujarka" jest nieosiągalny w rozgrywce`
 jest dla modelu znacznie użyteczniejszy niż „popraw to".
 
-## Patche kodu: protokół tekstowy, nie JSON
+## Skille: wiedza projektowa poza modelem
 
-Model kodujący musiałby escapować cały plik TypeScript w stringu JSON — w praktyce
-psuje to co drugą odpowiedź. Zamiast tego znaczniki odporne na cudzysłowy,
-backslashe i wielolinijkowe stringi:
+Model kodujący dostaje brief wyrenderowany z pliku `agent/skills/<id>.md`, wybranego
+przez Bielika z menu opisów „kiedy to ten rodzaj zmiany". Skill wskazuje też, które
+pliki rdzenia wysłać jako kontekst — dwa zamiast sześciu to nie tylko oszczędność
+tokenów, ale i mniejsza okazja, żeby model zmienił coś, o co nikt nie prosił.
+
+Lekcja, która doprowadziła do tego kształtu: przy pierwszym udanym patchu Qwen napisał
+`isNight = t > 0.5 && t < 0.75`, czyli nazwał nocą popołudnie, choć skill tłumaczył
+konwencję liczbową. Bramka przepuściła — determinizm i granice energii były zachowane.
+Wniosek nie brzmiał „model jest słaby", tylko **„to nie było pytanie, na które miał
+odpowiadać"**. Granica nocy jest decyzją tej gry, więc mieszka w rdzeniu jako `isNight()`,
+a skille wskazują helper zamiast tłumaczyć liczby. Następny przebieg wyszedł poprawnie.
+
+Reguła ogólna: jeśli model uporczywie zgaduje, sprawdź najpierw, czy nie każesz mu
+zgadywać czegoś, co powinno być zapisane.
+
+## Patche kodu: format SEARCH/REPLACE
+
+Pierwsza wersja kazała modelowi zwracać pełne treści plików. Qwen potrzebował na to
+721 sekund i dziesięciu tysięcy znaków, żeby zmienić trzy linijki — a przy pliku dwa
+razy większym nie zmieściłby się w oknie w ogóle.
+
+Druga wersja używała wymyślonych przeze mnie znaczników `<<<OLD>>>` / `<<<NEW>>>`.
+Model brał znacznik i wsadzał w niego cały plik, bo tego formatu nie widział nigdy
+w treningu.
+
+Trzecia używa `SEARCH/REPLACE` — standardu, który modele koderskie znają:
 
 ```
-<<<FILE game/src/core/tick.ts>>>
-...pełna treść pliku...
-<<<END>>>
+game/src/core/tick.ts
+<<<<<<< SEARCH
+  const cost = reg.content.config.energyPerAction;
+=======
+  const cost = computeCost(state, reg);
+>>>>>>> REPLACE
 ```
+
+Koszt generowania przestał zależeć od rozmiaru pliku — to zmiana klasy złożoności,
+nie optymalizacja.
+
+Dopasowanie jest **tolerancyjne, ale jednoznaczne**: najpierw dosłowne, potem linia po
+linii z pominięciem białych znaków (model regularnie myli wcięcie), z zachowaniem
+wcięcia z pliku. Dwa pasujące miejsca to nadal błąd — zgadywanie, które model miał na
+myśli, jest gorsze niż prośba o doprecyzowanie.
 
 Ścieżki przechodzą przez `canWriteCode()`. Lista zakazu wygrywa z listą dozwoleń.
 

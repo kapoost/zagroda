@@ -42,6 +42,25 @@ Orkiestracja jest deterministyczna. Model nie jest agentem — dostaje wąskie,
 walidowalne zadania. To jedyny sposób, w jaki model ogólnego przeznaczenia może
 rozwijać grę i jej nie zepsuć.
 
+## Skille briefowania kodera
+
+Wiedza o tym, **jak zabrifować model kodujący**, nie siedzi w wagach Bielika, tylko
+w plikach pisanych ręcznie — `agent/skills/*.md`. Bielikowi zostaje klasyfikacja
+(„który to rodzaj zmiany") i wypełnienie dwóch slotów, czyli to, co robi bezbłędnie.
+
+Każdy skill niesie trzy rzeczy, których model nie ma skąd wiedzieć:
+
+| | |
+| --- | --- |
+| gdzie zaczepić | „zużycie energii przechodzi przez `spend()` w `tick.ts`" |
+| czego nie łamać | „koszt nigdy poniżej 1 — inaczej bot progresji zapętla się" |
+| które pliki wysłać | 2–3 zamiast całego rdzenia |
+
+Dopisanie skilla kosztuje pięć minut i nie wymaga ani jednej pary treningowej. Gdy
+jakiś rodzaj zmiany uporczywie nie wychodzi, odpowiedź brzmi „dopisz skill", a nie
+„zbierz dane i trenuj". Gdy żaden nie pasuje, pętla mówi to wprost — i to jest lista
+zadań na przyszłość.
+
 ## Dlaczego to działa
 
 **Większość zmian to dane, nie kod.** Nowa broń, surowiec, potrawa, budynek czy
