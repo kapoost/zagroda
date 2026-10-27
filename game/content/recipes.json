@@ -494,5 +494,29 @@
       "qty": 1
     },
     "ticks": 10
+  },
+  {
+    "id": "r_wedka_zelazna",
+    "name": "Wędka żelazna",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "sztabka_zelaza",
+        "qty": 2
+      },
+      {
+        "item": "deska",
+        "qty": 1
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "wedka_zelazna",
+      "qty": 1
+    },
+    "ticks": 10
   }
 ]

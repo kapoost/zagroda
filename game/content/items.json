@@ -385,5 +385,20 @@
       "power": 2,
       "durability": 800
     }
+  },
+  {
+    "id": "wedka_zelazna",
+    "name": "Wędka żelazna",
+    "desc": "Narzędzie do połowu ryb z trwalszego materiału.",
+    "tags": [
+      "narzedzie"
+    ],
+    "stack": 1,
+    "value": 40,
+    "tool": {
+      "kind": "rod",
+      "power": 2,
+      "durability": 350
+    }
   }
 ]
