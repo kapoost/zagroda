@@ -11,9 +11,12 @@ nie ma czego przewijać.
 
 ## Miejsce
 
-Mała wyspa na chłodnym morzu, późne lato. Wyspa jest jedna i skończona: las na wschodzie,
-łąki pośrodku, skaliste wzniesienie na północy, piaszczysty brzeg dookoła. Nie ma na niej
-dróg, miast ani ruin — tylko to, co ktoś sam postawił.
+**Stare Miasto w Zamościu**, późne lato. Renesansowe miasto idealne zaprojektowane od
+zera: pięciokąt bastionów, Rynek Wielki pośrodku, dwa mniejsze rynki, siatka uliczek
+między kamienicami w podcieniach. Za wałami zagony, trawa i woda.
+
+Plan miasta nie jest wymyślony — pochodzi z OpenStreetMap i odpowiada rzeczywistemu
+układowi ulic. Co w tym planie rośnie i leży, to już kwestia rozgrywki.
 
 ## Czas i technika
 
@@ -22,9 +25,9 @@ koła, szkła, prochu, maszyn, zegarów ani pieniędzy. Wymiana odbywa się rzec
 
 ## Czym rzeczy są zrobione
 
-Wszystko pochodzi z wyspy: trzcina z brzegu, siano z łąki, len na tkaninę, kamień polny,
-drewno dębu i brzozy, węgiel drzewny z mielerza, ruda darniowa z mokradeł. Przedmiot, do
-którego surowiec nie rośnie na tej wyspie, do tego świata nie należy.
+Wszystko pochodzi z okolicy: trzcina znad wody, siano i len z zagonów za wałami, kamień
+polny, drewno, węgiel drzewny z mielerza, ruda darniowa z podmokłej ziemi. Przedmiot, do
+którego surowiec nie rośnie pod Zamościem, do tego świata nie należy.
 
 ## Ludzie
 
@@ -34,7 +37,7 @@ Trzy osoby, bez nazwisk, bez tytułów.
 - **Bartek** — rybak. Mało mówi, zna wodę, mierzy czas pogodą.
 - **Hanka** — kowalka. Żelazo traktuje poważnie, ludzi z humorem.
 
-Nikt tu nie jest bohaterem i nikt nikogo nie ratuje. Gracz jest czwartą osobą na wyspie,
+Nikt tu nie jest bohaterem i nikt nikogo nie ratuje. Gracz jest czwartą osobą w mieście,
 nie wybrańcem.
 
 ## Ton
@@ -60,5 +63,5 @@ Magii, potworów, bogów, klątw, run, kryształów, broni wojennej, zwierząt g
 pieniędzy, poczty, map skarbów. Nie ma też niczego, co rosłoby w cieplejszym klimacie —
 bambusa, palm, wiśni, ryżu.
 
-Jeśli pomysł gracza wymaga którejś z tych rzeczy, znajdź najbliższy odpowiednik z tej
-wyspy zamiast wprowadzać ją do świata.
+Jeśli pomysł gracza wymaga którejś z tych rzeczy, znajdź najbliższy odpowiednik z tego
+miasta zamiast wprowadzać ją do świata.

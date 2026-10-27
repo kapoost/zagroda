@@ -78,7 +78,7 @@ describe('walidator łapie psucie treści', () => {
 
   it('dziurę w przestrzeni biomów', () => {
     const c = clone();
-    c.biomes.find((b: any) => b.id === 'laka').moisture = [0, 0.2];
+    c.biomes.find((b: any) => b.id === 'trawa').moisture = [0, 0.2];
     expect(codes(c)).toContain('BIOME_HOLE');
   });
 

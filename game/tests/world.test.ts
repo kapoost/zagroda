@@ -5,7 +5,7 @@ import { idx, walkable } from '../src/core/tick.js';
 const SEEDS = [1337, 7, 99, 20260, 555];
 
 describe('generacja świata', () => {
-  it.each(SEEDS)('seed %i daje grywalną wyspę', (seed) => {
+  it.each(SEEDS)('seed %i daje grywalne miasto', (seed) => {
     const g = new Game(seed);
     const s = g.state;
     const counts = new Map<string, number>();
@@ -18,9 +18,9 @@ describe('generacja świata', () => {
       .filter(([id]) => g.reg.biomes.get(id)!.walkable)
       .reduce((a, [, n]) => a + n, 0);
 
-    // Wyspa, nie ocean i nie kontynent.
-    expect(land / total).toBeGreaterThan(0.25);
-    expect(land / total).toBeLessThan(0.85);
+    // Miasto: uliczki i zieleń dominują, ale zabudowa i woda zajmują wyraźną część.
+    expect(land / total).toBeGreaterThan(0.5);
+    expect(land / total).toBeLessThan(0.95);
     // Każdy biom z treści musi faktycznie wystąpić, inaczej jego surowce są martwe.
     for (const b of g.reg.content.biomes) expect(counts.get(b.id) ?? 0).toBeGreaterThan(0);
   });
@@ -38,6 +38,34 @@ describe('generacja świata', () => {
     for (const e of s.ents.filter((x) => x.kind === 'npc')) {
       expect(g.reg.content.biomes[s.biome[idx(s, e.x, e.y)]!]!.walkable, `NPC ${e.def}`).toBe(true);
     }
+  });
+
+  it.each(SEEDS)('seed %i: z pozycji startowej widać większość miasta', (seed) => {
+    // Mapa pochodzi z OSM, więc zabudowa potrafi odciąć kieszenie. Gra ma sens tylko
+    // wtedy, gdy przytłaczająca większość przechodnich kafli jest naprawdę osiągalna.
+    const g = new Game(seed);
+    const s = g.state;
+    const widziane = new Uint8Array(s.size * s.size);
+    const kolejka = [idx(s, s.player.x, s.player.y)];
+    widziane[kolejka[0]!] = 1;
+    for (let i = 0; i < kolejka.length; i++) {
+      const c = kolejka[i]!;
+      const cx = c % s.size;
+      const cy = (c - cx) / s.size;
+      for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]] as const) {
+        if (!walkable(s, g.reg, cx + dx, cy + dy)) continue;
+        const n = (cy + dy) * s.size + (cx + dx);
+        if (!widziane[n]) {
+          widziane[n] = 1;
+          kolejka.push(n);
+        }
+      }
+    }
+    let przechodnie = 0;
+    for (let i = 0; i < s.biome.length; i++) {
+      if (g.reg.content.biomes[s.biome[i]!]!.walkable) przechodnie++;
+    }
+    expect(kolejka.length / przechodnie).toBeGreaterThan(0.8);
   });
 
   it('gracz startuje na kaflu, z którego da się wyjść', () => {

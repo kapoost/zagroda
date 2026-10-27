@@ -5,8 +5,8 @@
     "desc": "Gęsty, kłujący, pełen owoców.",
     "color": "#4f7f3f",
     "biomes": [
-      "las",
-      "laka"
+      "trawa",
+      "ziemia"
     ],
     "density": 0.05,
     "hp": 1,
@@ -33,9 +33,8 @@
     "desc": "Leży luzem, wystarczy się schylić.",
     "color": "#a0a0a0",
     "biomes": [
-      "laka",
-      "gory",
-      "plaza"
+      "ziemia",
+      "trawa"
     ],
     "density": 0.04,
     "hp": 1,
@@ -56,12 +55,12 @@
     "desc": "Szeleści na wietrze od wody.",
     "color": "#c9b36b",
     "biomes": [
-      "plaza"
+      "woda"
     ],
-    "density": 0.1,
+    "density": 0.2,
     "hp": 1,
     "tool": "hand",
-    "blocks": false,
+    "blocks": true,
     "regrow": 1200,
     "drops": [
       {
@@ -77,8 +76,7 @@
     "desc": "Stoi tu dłużej niż ty.",
     "color": "#2f5d2b",
     "biomes": [
-      "las",
-      "laka"
+      "trawa"
     ],
     "density": 0.08,
     "hp": 4,
@@ -101,13 +99,13 @@
   },
   {
     "id": "zloze_zelaza",
-    "name": "Złoże żelaza",
-    "desc": "Rdzawa żyła w skale.",
+    "name": "Ruda darniowa",
+    "desc": "Rdzawe grudy w podmokłej ziemi za wałami.",
     "color": "#9c6b4a",
     "biomes": [
-      "gory"
+      "ziemia"
     ],
-    "density": 0.05,
+    "density": 0.04,
     "hp": 6,
     "tool": "pickaxe",
     "blocks": true,
@@ -132,9 +130,9 @@
     "desc": "Woda się tu marszczy.",
     "color": "#1f567f",
     "biomes": [
-      "morze"
+      "woda"
     ],
-    "density": 0.02,
+    "density": 0.2,
     "hp": 1,
     "tool": "rod",
     "blocks": true,
@@ -153,7 +151,7 @@
     "desc": "Po pas, pachnie latem.",
     "color": "#8fc96a",
     "biomes": [
-      "laka"
+      "trawa"
     ],
     "density": 0.12,
     "hp": 1,
@@ -166,6 +164,34 @@
         "min": 1,
         "max": 2
       }
+    ]
+  },
+  {
+    "id": "len",
+    "name": "Len",
+    "desc": "Niebieskie kwiaty na przydomowym zagonie.",
+    "color": "#9aa8c9",
+    "biomes": [
+      "trawa",
+      "ziemia"
+    ],
+    "density": 0.05,
+    "hp": 1,
+    "tool": "hand",
+    "blocks": false,
+    "drops": [
+      {
+        "item": "wlokno",
+        "min": 1,
+        "max": 2
+      }
+    ],
+    "regrow": 1500,
+    "seasons": [
+      "wiosna",
+      "lato",
+      "jesien",
+      "zima"
     ]
   }
 ]

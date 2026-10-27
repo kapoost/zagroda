@@ -1,8 +1,8 @@
 [
   {
-    "id": "morze",
-    "name": "Morze",
-    "color": "#2a6fa8",
+    "id": "woda",
+    "name": "Woda",
+    "color": "#3f6b7a",
     "walkable": false,
     "elevation": [
       0,
@@ -15,78 +15,78 @@
     "priority": 10
   },
   {
-    "id": "plaza",
-    "name": "Plaża",
-    "color": "#e0cf9a",
+    "id": "ziemia",
+    "name": "Ziemia",
+    "color": "#a89070",
     "walkable": true,
     "elevation": [
       0.3,
-      0.38
+      0.42
+    ],
+    "moisture": [
+      0,
+      1
+    ],
+    "priority": 4
+  },
+  {
+    "id": "trawa",
+    "name": "Trawa",
+    "color": "#7fb65c",
+    "walkable": true,
+    "elevation": [
+      0.42,
+      0.72
+    ],
+    "moisture": [
+      0,
+      0.5
+    ],
+    "priority": 5
+  },
+  {
+    "id": "bruk",
+    "name": "Bruk",
+    "color": "#b8ab97",
+    "walkable": true,
+    "elevation": [
+      0.42,
+      0.72
+    ],
+    "moisture": [
+      0.5,
+      1
+    ],
+    "priority": 6
+  },
+  {
+    "id": "rynek",
+    "name": "Rynek",
+    "color": "#d6cab2",
+    "walkable": true,
+    "elevation": [
+      0.72,
+      0.88
+    ],
+    "moisture": [
+      0,
+      1
+    ],
+    "priority": 7
+  },
+  {
+    "id": "kamienica",
+    "name": "Kamienica",
+    "color": "#9a6b3f",
+    "walkable": false,
+    "elevation": [
+      0.88,
+      1
     ],
     "moisture": [
       0,
       1
     ],
     "priority": 9
-  },
-  {
-    "id": "laka",
-    "name": "Łąka",
-    "color": "#7fb65c",
-    "walkable": true,
-    "elevation": [
-      0.38,
-      0.75
-    ],
-    "moisture": [
-      0,
-      0.45
-    ],
-    "priority": 5
-  },
-  {
-    "id": "las",
-    "name": "Las",
-    "color": "#3e7a3a",
-    "walkable": true,
-    "elevation": [
-      0.38,
-      0.75
-    ],
-    "moisture": [
-      0.45,
-      1
-    ],
-    "priority": 5
-  },
-  {
-    "id": "gory",
-    "name": "Góry",
-    "color": "#8d8d8d",
-    "walkable": true,
-    "elevation": [
-      0.75,
-      1
-    ],
-    "moisture": [
-      0,
-      0.6
-    ],
-    "priority": 7
-  },
-  {
-    "id": "snieg",
-    "name": "Śnieżnik",
-    "color": "#e8eef2",
-    "walkable": true,
-    "elevation": [
-      0.75,
-      1
-    ],
-    "moisture": [
-      0.6,
-      1
-    ],
-    "priority": 7
   }
 ]

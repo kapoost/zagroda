@@ -114,6 +114,10 @@ export class Bot {
   private ensureStation(station: string): boolean {
     if (station === 'hand') return true;
     if (stationAvailable(this.game.state, this.game.reg, station)) return true;
+    // Najpierw wróć do stanowiska, które już stoi. Bez tego bot buduje drugie, zjadając
+    // materiał, po który właśnie poszedł — na ciasnej mapie miejskiej droga po surowce
+    // zawsze wyprowadza go poza promień stanowiska i pętla nigdy się nie domyka.
+    if (this.goToStation(station)) return true;
     const reg = this.game.reg;
     const structure = reg.content.structures.find((s) => s.station === station);
     if (!structure) return false;
@@ -135,6 +139,10 @@ export class Bot {
         const ty = s.player.y + d.dy;
         if (!walkable(s, reg, tx, ty)) continue;
         if (entityAt(s, tx, ty)) continue;
+        // Nie zamuruj się własnym budynkiem. Na ciasnej mapie miejskiej bot potrafił
+        // postawić piec na jedynym wolnym sąsiednim kaflu i zostać uwięziony we wnęce
+        // między kamienicami — wyglądało to potem jak „surowiec nieosiągalny”.
+        if (reg.structures.get(structure ?? '')?.blocks !== false && !this.maWyjscie(tx, ty)) continue;
         if (!this.step({ face: f })) return false;
         if (!this.step({ place: itemId })) return false;
         // Postawienie może się nie udać cicho (woda, zajęty kafel) — weryfikuj wynik.
@@ -185,6 +193,37 @@ export class Bot {
     return count(this.game.state, item) >= qty;
   }
 
+  /** Czy po zablokowaniu kafla (bx, by) graczowi zostanie jakiekolwiek wyjście. */
+  private maWyjscie(bx: number, by: number): boolean {
+    const s = this.game.state;
+    return (['n', 'e', 's', 'w'] as Facing[]).some((f) => {
+      const d = DIRS[f]!;
+      const x = s.player.x + d.dx;
+      const y = s.player.y + d.dy;
+      if (x === bx && y === by) return false;
+      return walkable(s, this.game.reg, x, y);
+    });
+  }
+
+  /** Wróć pod istniejące stanowisko tego rodzaju, jeśli gdziekolwiek stoi. */
+  private goToStation(station: string): boolean {
+    const s = this.game.state;
+    const reg = this.game.reg;
+    const cel = new Uint8Array(s.size * s.size);
+    let jest = false;
+    for (const e of s.ents) {
+      if (e.kind !== 'placed') continue;
+      if (reg.structures.get(e.def)?.station !== station) continue;
+      cel[e.y * s.size + e.x] = 1;
+      jest = true;
+    }
+    if (!jest) return false;
+    const droga = this.pathToTargets(cel);
+    if (!droga) return false;
+    for (const f of droga.path) if (!this.step({ move: f })) return false;
+    return stationAvailable(s, reg, station);
+  }
+
   /** Dojdź do najbliższego OSIĄGALNEGO żywego węzła surowca i wyczerp go. */
   private goHarvest(resourceId: string): boolean {
     const s = this.game.state;
@@ -232,7 +271,14 @@ export class Bot {
       }
     }
     if (!any) return null;
+    return this.pathToTargets(target);
+  }
 
+  /** BFS po kaflach przechodnich do pierwszego kafla sąsiadującego z celem. */
+  private pathToTargets(target: Uint8Array): { path: Facing[]; face: Facing; tx: number; ty: number } | null {
+    const s = this.game.state;
+    const reg = this.game.reg;
+    const size = s.size;
     const order: Facing[] = ['n', 'e', 's', 'w'];
     const prev = new Int32Array(size * size).fill(-1);
     const from = new Uint8Array(size * size);

@@ -1,6 +1,29 @@
+import mapa from '../../content/mapa.json';
 import type { Registry } from '../content/registry.js';
 import { fbm, hash2 } from './rng.js';
 import type { Entity, State } from './types.js';
+
+/**
+ * Świat nie jest losowany, tylko zaimportowany: kształt Starego Miasta w Zamościu
+ * pochodzi z OpenStreetMap (tools/import-osm.ts). Szum zostaje do rozsiewania surowców,
+ * bo to one mają się różnić między partiami, a nie plan miasta.
+ *
+ * Gdyby mapy zabrakło, generator wraca do szumu — dzięki temu zakresy wysokości
+ * i wilgotności w biomach nadal mają sens i nadal są sprawdzane przez bramkę.
+ */
+function zMapy(reg: Registry, size: number): Uint8Array | null {
+  if (mapa.rozmiar !== size) return null;
+  const indeks = new Map(reg.content.biomes.map((b, i) => [b.id, i]));
+  const out = new Uint8Array(size * size);
+  let i = 0;
+  for (const odcinek of mapa.kafle.split(' ')) {
+    const [ile, nrLegendy] = odcinek.split('x').map(Number);
+    const biom = indeks.get(mapa.legenda[nrLegendy!]!);
+    if (biom === undefined) return null;
+    for (let k = 0; k < ile!; k++) out[i++] = biom;
+  }
+  return i === out.length ? out : null;
+}
 
 /** Generacja świata. Czysta funkcja seeda i treści — ten sam seed daje ten sam świat. */
 
@@ -41,16 +64,30 @@ const clamp01 = (v: number) => (v < 0 ? 0 : v > 0.999 ? 0.999 : v);
 
 export function generate(reg: Registry, seed: number): State {
   const size = reg.content.config.worldSize;
-  const biome = new Uint8Array(size * size);
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      biome[y * size + x] = biomeIndexAt(reg, x, y, seed, size);
+  let biome = zMapy(reg, size);
+  if (!biome) {
+    biome = new Uint8Array(size * size);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        biome[y * size + x] = biomeIndexAt(reg, x, y, seed, size);
+      }
     }
   }
 
   const ents: Entity[] = [];
   const entAt = new Int32Array(size * size);
   const resources = reg.content.resources;
+
+  const przechodni = (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < size && y < size && reg.content.biomes[biome![y * size + x]!]!.walkable;
+
+  /**
+   * Czy da się stanąć obok. Surowiec bez przechodniego sąsiada jest nieosiągalny —
+   * trzcina pośrodku zalewu albo krzak zamknięty kamienicami wygląda w grze jak treść,
+   * a zachowuje się jak jej brak. Reguła dotyczy wszystkich biomów, nie tylko wody.
+   */
+  const dostepny = (x: number, y: number) =>
+    przechodni(x - 1, y) || przechodni(x + 1, y) || przechodni(x, y - 1) || przechodni(x, y + 1);
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -59,6 +96,7 @@ export function generate(reg: Registry, seed: number): State {
         const r = resources[ri]!;
         if (!r.biomes.includes(b.id)) continue;
         if (hash2(x, y, seed + 131 * (ri + 1)) >= r.density) continue;
+        if (!dostepny(x, y)) continue;
         entAt[y * size + x] = ents.length + 1;
         ents.push({ kind: 'resource', def: r.id, x, y, hp: r.hp, respawnAt: 0 });
         break;

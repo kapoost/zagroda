@@ -112,7 +112,6 @@ function wearTool(state: State, reg: Registry): boolean {
     delete state.player.wear[held];
     give(state, held, -1);
     log(state, `${reg.items.get(held)!.name} rozpada się w rękach.`);
-    if (count(state, held) <= 0) state.player.held = null;
     return true;
   }
   state.player.wear[held] = w;
@@ -202,7 +201,6 @@ function doPlace(state: State, reg: Registry, itemId: string): void {
     storage: {},
   });
   log(state, `Stawiasz: ${item.name}.`);
-  if (count(state, itemId) <= 0 && state.player.held === itemId) state.player.held = null;
 }
 
 function doEat(state: State, reg: Registry, itemId: string): void {
@@ -212,7 +210,6 @@ function doEat(state: State, reg: Registry, itemId: string): void {
   const max = reg.content.config.energyMax;
   state.player.energy = Math.min(max, state.player.energy + item.edible.energy);
   log(state, `Zjadasz: ${item.name}.`);
-  if (count(state, itemId) <= 0 && state.player.held === itemId) state.player.held = null;
 }
 
 function respawnPass(state: State, reg: Registry): void {
@@ -272,6 +269,12 @@ export function tick(state: State, input: Input, reg: Registry): State {
   if (input.craft) doCraft(state, reg, input.craft);
   if (input.place) doPlace(state, reg, input.place);
   if (input.eat) doEat(state, reg, input.eat);
+
+  // Jedna reguła zamiast trzech rozsianych: ręka nie może trzymać czegoś, czego nie ma.
+  // Wytwarzanie zużywa wsad i jako jedyne tego nie pilnowało — fuzz to złapał.
+  if (state.player.held !== null && count(state, state.player.held) <= 0) {
+    state.player.held = null;
+  }
 
   respawnPass(state, reg);
 
