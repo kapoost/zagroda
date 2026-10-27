@@ -2,7 +2,6 @@ node_modules/
 dist/
 .DS_Store
 .env
-.agent/journal.jsonl
-.agent/tmp/
+.agent/
 *.log
 .playwright-mcp/
