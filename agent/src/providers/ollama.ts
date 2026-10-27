@@ -20,7 +20,7 @@ export let lastCallSeconds = 0;
 export async function ollamaChat(req: ChatRequest): Promise<string> {
   const started = Date.now();
   const ctl = new AbortController();
-  const t = setTimeout(() => ctl.abort(), CFG.timeoutMs);
+  const t = setTimeout(() => ctl.abort(), CFG.timeoutMs[req.ctx ?? 'pl']);
   try {
     const res = await fetch(`${CFG.ollamaUrl}/api/chat`, {
       method: 'POST',

@@ -75,6 +75,7 @@ export function runGate(): GateResult {
     { name: 'typy', run: () => sh('node_modules/.bin/tsc', ['-p', 'game/tsconfig.json', '--noEmit']) },
     { name: 'typy-agent', run: () => sh('node_modules/.bin/tsc', ['-p', 'agent/tsconfig.json', '--noEmit']) },
     { name: 'testy', run: () => sh('node_modules/.bin/vitest', ['run', '--root', 'game']) },
+    { name: 'testy-agent', run: () => sh('node_modules/.bin/vitest', ['run', '--root', 'agent']) },
     { name: 'symulacja', run: stageSim },
   ];
 

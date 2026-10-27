@@ -14,7 +14,10 @@ import { ollamaChat } from '../providers/ollama.js';
  * Ścieżki są filtrowane przez canWriteCode() — model nie dotknie schematów, testów ani bramki.
  */
 
-const MARK_START = /^<<<FILE\s+(.+?)>>>$/;
+const MARK_FILE = /^<<<FILE\s+(.+?)>>>$/;
+const MARK_REPLACE = /^<<<REPLACE\s+(.+?)>>>$/;
+const MARK_OLD = /^<<<OLD>>>$/;
+const MARK_NEW = /^<<<NEW>>>$/;
 const MARK_END = /^<<<END>>>$/;
 
 const CODE_SYSTEM = `You are a senior TypeScript engineer working on a deterministic 2D open-world
@@ -31,42 +34,86 @@ HARD CONSTRAINTS:
    explain a non-obvious constraint.
 5. Return COMPLETE file contents, never diffs or fragments.
 
-OUTPUT FORMAT — reply with nothing else:
-<<<FILE path/to/file.ts>>>
+OUTPUT FORMAT — prefer REPLACE; it is cheaper and safer than rewriting a whole file:
+
+<<<REPLACE game/src/core/tick.ts>>>
+<<<OLD>>>
+the exact snippet to replace, copied verbatim from the file above
+<<<NEW>>>
+the replacement
+<<<END>>>
+
+The OLD snippet must appear EXACTLY ONCE in the file, copied character for character
+including indentation. Include enough surrounding lines to make it unique. Emit several
+REPLACE blocks if the change touches several places.
+
+Use the whole-file form only when creating a NEW file:
+
+<<<FILE game/src/core/newthing.ts>>>
 ...complete file content...
 <<<END>>>
 
-You may emit several file blocks. Only these paths are writable:
+Reply with nothing but these blocks. Only these paths are writable:
 ${WRITE_ALLOW.join('\n')}`;
 
-export interface CodePatch {
-  path: string;
-  content: string;
-}
+export type CodeEdit =
+  | { kind: 'file'; path: string; content: string }
+  | { kind: 'replace'; path: string; old: string; next: string };
 
-export function parseFileBlocks(raw: string): CodePatch[] {
-  const out: CodePatch[] = [];
-  let path: string | null = null;
-  let buf: string[] = [];
-  for (const line of raw.split('\n')) {
-    const start = line.trim().match(MARK_START);
-    if (start && path === null) {
-      path = start[1]!.trim();
-      buf = [];
+/**
+ * Protokół tekstowy, nie JSON — i to jest celowe. Model kodujący musiałby escapować cały
+ * plik TypeScript w stringu JSON; w praktyce psuje to co drugą odpowiedź.
+ *
+ * REPLACE jest formą domyślną: podmiana dopasowanego dosłownie fragmentu jest o rząd
+ * wielkości tańsza w tokenach od przepisywania pliku i nie daje modelowi okazji, by przy
+ * okazji zmienić coś, o co nikt nie prosił. Dopasowanie musi być jednoznaczne — zero albo
+ * więcej niż jedno trafienie to błąd, który wraca do modelu.
+ */
+export function parseEdits(raw: string): CodeEdit[] {
+  const out: CodeEdit[] = [];
+  const lines = raw.split('\n');
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i]!.trim();
+
+    const file = line.match(MARK_FILE);
+    if (file) {
+      const path = file[1]!.trim();
+      const buf: string[] = [];
+      i++;
+      while (i < lines.length && !MARK_END.test(lines[i]!.trim())) buf.push(lines[i++]!);
+      out.push({ kind: 'file', path, content: stripFence(buf.join('\n')) + '\n' });
+      i++;
       continue;
     }
-    if (path !== null && MARK_END.test(line.trim())) {
-      out.push({ path, content: buf.join('\n').replace(/^\s*```[a-z]*\n/, '').replace(/\n```\s*$/, '') + '\n' });
-      path = null;
+
+    const repl = line.match(MARK_REPLACE);
+    if (repl) {
+      const path = repl[1]!.trim();
+      i++;
+      while (i < lines.length && !MARK_OLD.test(lines[i]!.trim())) i++;
+      i++;
+      const oldBuf: string[] = [];
+      while (i < lines.length && !MARK_NEW.test(lines[i]!.trim())) oldBuf.push(lines[i++]!);
+      i++;
+      const newBuf: string[] = [];
+      while (i < lines.length && !MARK_END.test(lines[i]!.trim())) newBuf.push(lines[i++]!);
+      i++;
+      if (oldBuf.length) {
+        out.push({ kind: 'replace', path, old: stripFence(oldBuf.join('\n')), next: stripFence(newBuf.join('\n')) });
+      }
       continue;
     }
-    if (path !== null) buf.push(line);
+
+    i++;
   }
   return out;
 }
 
+const stripFence = (s: string) => s.replace(/^\s*```[a-z]*\n/, '').replace(/\n```\s*$/, '');
+
 /** Pliki rdzenia podawane modelowi jako kontekst. */
-function contextFiles(): CodePatch[] {
+function contextFiles(): Array<{ path: string; content: string }> {
   const wanted = [
     'game/src/core/types.ts',
     'game/src/core/tick.ts',
@@ -87,23 +134,50 @@ export interface CodeResult {
   model: string;
 }
 
-function applyPatches(patches: CodePatch[]): CodeResult {
-  const written: string[] = [];
+function applyEdits(edits: CodeEdit[]): CodeResult {
+  const written = new Set<string>();
   const rejected: string[] = [];
-  for (const p of patches) {
-    const verdict = canWriteCode(p.path);
+
+  for (const e of edits) {
+    const verdict = canWriteCode(e.path);
     if (!verdict.ok) {
-      rejected.push(`${p.path}: ${verdict.why}`);
+      rejected.push(`${e.path}: ${verdict.why}`);
       continue;
     }
-    if (!p.content.trim()) {
-      rejected.push(`${p.path}: pusta treść pliku`);
+    const abs = resolve(ROOT, e.path);
+
+    if (e.kind === 'file') {
+      if (!e.content.trim()) {
+        rejected.push(`${e.path}: pusta treść pliku`);
+        continue;
+      }
+      writeFileSync(abs, e.content, 'utf8');
+      written.add(e.path);
       continue;
     }
-    writeFileSync(resolve(ROOT, p.path), p.content, 'utf8');
-    written.push(p.path);
+
+    if (!existsSync(abs)) {
+      rejected.push(`${e.path}: plik nie istnieje, więc nie ma czego podmieniać`);
+      continue;
+    }
+    const current = readFileSync(abs, 'utf8');
+    const hits = current.split(e.old).length - 1;
+    if (hits === 0) {
+      rejected.push(
+        `${e.path}: fragment do podmiany nie występuje w pliku — skopiuj go dosłownie, ` +
+          `ze spacjami wcięć. Pierwsza linia, której szukałeś: "${e.old.split('\n')[0]?.trim()}"`,
+      );
+      continue;
+    }
+    if (hits > 1) {
+      rejected.push(`${e.path}: fragment do podmiany występuje ${hits} razy — dodaj otaczające linie, żeby był jednoznaczny`);
+      continue;
+    }
+    writeFileSync(abs, current.replace(e.old, e.next), 'utf8');
+    written.add(e.path);
   }
-  return { ok: written.length > 0, written, rejected, model: '' };
+
+  return { ok: written.size > 0 && rejected.length === 0, written: [...written], rejected, model: '' };
 }
 
 function buildPrompt(request: string, feedback: string[]): string {
@@ -123,14 +197,14 @@ export async function patchWithCoder(request: string, feedback: string[]): Promi
     system: CODE_SYSTEM,
     user: buildPrompt(request, feedback),
     temperature: feedback.length ? 0.3 : 0.1,
-    numPredict: 12_000,
+    numPredict: 4000,
     ctx: 'code',
   });
-  const res = applyPatches(parseFileBlocks(raw));
+  const res = applyEdits(parseEdits(raw));
   res.model = CFG.models.code;
   if (!res.ok) {
     throw new Error(
-      res.rejected.length ? `model nie dostarczył zapisywalnego pliku: ${res.rejected.join('; ')}` : 'brak bloków plików w odpowiedzi',
+      res.rejected.length ? res.rejected.join('; ') : 'w odpowiedzi nie było żadnego bloku REPLACE ani FILE',
     );
   }
   return res;
@@ -139,12 +213,10 @@ export async function patchWithCoder(request: string, feedback: string[]): Promi
 /** Eskalacja patcha kodu do API. */
 export async function patchWithApi(request: string, feedback: string[]): Promise<CodeResult> {
   const raw = await apiComplete(CODE_SYSTEM, buildPrompt(request, feedback), 48_000);
-  const res = applyPatches(parseFileBlocks(raw));
+  const res = applyEdits(parseEdits(raw));
   res.model = CFG.models.api;
   if (!res.ok) {
-    throw new Error(
-      res.rejected.length ? `API nie dostarczyło zapisywalnego pliku: ${res.rejected.join('; ')}` : 'brak bloków plików w odpowiedzi API',
-    );
+    throw new Error(res.rejected.length ? res.rejected.join('; ') : 'w odpowiedzi API nie było żadnego bloku REPLACE ani FILE');
   }
   return res;
 }

@@ -21,7 +21,7 @@ export const CFG = {
    * zabrakłoby miejsca na odpowiedź dłuższą niż jeden plik.
    */
   numCtx: { pl: 16384, code: 32768 } as Record<'pl' | 'code', number>,
-  timeoutMs: 240_000,
+  timeoutMs: { pl: 240_000, code: 900_000 } as Record<'pl' | 'code', number>,
   /** Hybrydowa autonomia: zmiany czysto danych z zieloną bramką wjeżdżają same. */
   autoMergeData: true,
 };
