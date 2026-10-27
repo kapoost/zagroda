@@ -75,6 +75,8 @@ export function give(state: State, item: string, qty: number): void {
 }
 
 function log(state: State, msg: string): void {
+  // Powtórzony komunikat pod rząd zalewa dziennik i wypycha z niego to, co ważne.
+  if (state.log[state.log.length - 1] === msg) return;
   state.log.push(msg);
   if (state.log.length > MAX_LOG) state.log.splice(0, state.log.length - MAX_LOG);
 }
@@ -275,7 +277,11 @@ export function dayOf(state: State, reg: Registry): number {
   return Math.floor(state.tick / reg.content.config.dayTicks) + 1;
 }
 
+/** Gracz budzi się rano, nie o północy — stąd przesunięcie zegara względem ticku zero. */
+const DAY_OFFSET = 0.32;
+
 /** 0 = północ, 0.5 = południe. */
 export function timeOfDay(state: State, reg: Registry): number {
-  return (state.tick % reg.content.config.dayTicks) / reg.content.config.dayTicks;
+  const d = reg.content.config.dayTicks;
+  return ((state.tick % d) / d + DAY_OFFSET) % 1;
 }

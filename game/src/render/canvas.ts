@@ -9,7 +9,8 @@ export const TILE = 26;
 function nightAlpha(t: number): number {
   // Zmierzch i świt zamiast skokowej zmiany: 0 w południe, maksimum o północy.
   const night = Math.cos(t * Math.PI * 2) * 0.5 + 0.5;
-  return Math.min(0.55, night * 0.62);
+  // Noc ma być nastrojowa, nie nieprzejrzysta — przy pełnej ciemności nie dałoby się grać.
+  return Math.min(0.42, Math.pow(night, 1.6) * 0.48);
 }
 
 export function draw(ctx: CanvasRenderingContext2D, state: State, reg: Registry): void {

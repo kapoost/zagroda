@@ -18,7 +18,8 @@
     height: 100vh;
     overflow: hidden;
   }
-  #world { flex: 1; display: block; background: #0d1512; }
+  /* min-width:0 + basis 0 — bez tego canvas rozpycha flexa swoją szerokością atrybutową i rośnie z każdym resize. */
+  #world { flex: 1 1 0; min-width: 0; display: block; background: #0d1512; }
   #side {
     width: 290px;
     flex: none;

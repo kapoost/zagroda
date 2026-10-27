@@ -5,3 +5,4 @@ dist/
 .agent/journal.jsonl
 .agent/tmp/
 *.log
+.playwright-mcp/

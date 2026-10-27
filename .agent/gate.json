@@ -11,25 +11,25 @@
     {
       "name": "typy",
       "ok": true,
-      "ms": 468,
+      "ms": 530,
       "output": ""
     },
     {
       "name": "typy-agent",
       "ok": true,
-      "ms": 433,
+      "ms": 510,
       "output": ""
     },
     {
       "name": "testy",
       "ok": true,
-      "ms": 1486,
-      "output": "RUN  v2.1.9 /Users/kapoost/zu/game\n\n ✓ tests/content.test.ts (13 tests) 19ms\n ✓ tests/world.test.ts (16 tests) 42ms\n ✓ tests/determinism.test.ts (5 tests) 52ms\n ✓ tests/progression.test.ts (6 tests) 379ms\n ✓ tests/invariants.test.ts (8 tests) 992ms\n\n Test Files  5 passed (5)\n      Tests  48 passed (48)\n   Start at  11:55:20\n   Duration  1.24s (transform 86ms, setup 0ms, collect 241ms, tests 1.48s, environment 0ms, prepare 175ms)"
+      "ms": 1418,
+      "output": "RUN  v2.1.9 /Users/kapoost/zu/game\n\n ✓ tests/content.test.ts (13 tests) 18ms\n ✓ tests/world.test.ts (16 tests) 43ms\n ✓ tests/determinism.test.ts (5 tests) 56ms\n ✓ tests/progression.test.ts (6 tests) 355ms\n ✓ tests/invariants.test.ts (8 tests) 909ms\n\n Test Files  5 passed (5)\n      Tests  48 passed (48)\n   Start at  11:58:05\n   Duration  1.19s (transform 117ms, setup 0ms, collect 315ms, tests 1.38s, environment 0ms, prepare 273ms)"
     },
     {
       "name": "symulacja",
       "ok": true,
-      "ms": 79,
+      "ms": 81,
       "output": "seed 1337: siekiera_kamienna=55t, stol_warsztatowy=62t, deska=116t, wedka=1565t, sztabka_zelaza=2834t, pieczona_ryba=2094t\nseed 4242: siekiera_kamienna=49t, stol_warsztatowy=73t, deska=208t, wedka=414t, sztabka_zelaza=3120t, pieczona_ryba=1661t"
     }
   ],

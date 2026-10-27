@@ -20,10 +20,6 @@ const refs: HudRefs = {
 };
 
 function resize(): void {
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  canvas.width = Math.floor(canvas.clientWidth * dpr);
-  canvas.height = Math.floor(canvas.clientHeight * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   canvas.width = canvas.clientWidth;
   canvas.height = canvas.clientHeight;
 }
@@ -58,8 +54,11 @@ window.addEventListener('keydown', (e) => {
     if (DIRS[e.code]) held.add(e.code);
     return;
   }
-  if (DIRS[e.code]) {
+  const dir = DIRS[e.code];
+  if (dir) {
     held.add(e.code);
+    // Krótkie stuknięcie bywa krótsze niż tick — zapamiętaj ruch, żeby żadne nie przepadło.
+    pending.move = dir;
     e.preventDefault();
     return;
   }
@@ -107,11 +106,13 @@ function frame(now: number): void {
     steps++;
     const input: Input = { ...pending };
     pending = {};
-    for (const code of held) {
-      const dir = DIRS[code];
-      if (dir) {
-        input.move = dir;
-        break;
+    if (!input.move) {
+      for (const code of held) {
+        const d = DIRS[code];
+        if (d) {
+          input.move = d;
+          break;
+        }
       }
     }
     game.step(input);
