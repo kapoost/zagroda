@@ -3,6 +3,7 @@ import { CFG } from '../config.js';
 import { digest } from '../contentIo.js';
 import { apiComplete, apiReady } from '../providers/anthropic.js';
 import { lastCallSeconds, ollamaChat } from '../providers/ollama.js';
+import { lore } from '../lore.js';
 import { skillMenu } from '../skills.js';
 import {
   RouteSchema,
@@ -17,7 +18,10 @@ import {
 
 /** Polski opis zmiany → maszynowa specyfikacja. To jedyne miejsce, gdzie Bielik pracuje na polszczyźnie. */
 
-const ROUTE_SYSTEM = `Jesteś projektantem gry "Zagroda" — otwarty świat z wytwarzaniem przedmiotów.
+const ROUTE_SYSTEM = `ŚWIAT GRY — każda zmiana ma się w nim zmieścić:
+${lore()}
+
+Jesteś projektantem gry "Zagroda" — otwarty świat z wytwarzaniem przedmiotów.
 Dostajesz opis zmiany po polsku i klasyfikujesz go. Odpowiadasz WYŁĄCZNIE obiektem JSON.
 
 Pola:
@@ -43,7 +47,10 @@ Pola:
 Zasada: wybieraj "dane", kiedy tylko to możliwe. Nowa broń, surowiec, potrawa, budynek
 czy postać to zawsze "dane".`;
 
-const OPS_SYSTEM = `Jesteś projektantem gry "Zagroda". Tworzysz wpisy treści gry jako JSON.
+const OPS_SYSTEM = `ŚWIAT GRY — każdy wpis, który tworzysz, ma do niego pasować:
+${lore()}
+
+Jesteś projektantem gry "Zagroda". Tworzysz wpisy treści gry jako JSON.
 Odpowiadasz WYŁĄCZNIE obiektem JSON zgodnym ze schematem.
 
 TWARDE REGUŁY (ich złamanie powoduje odrzucenie zmiany):

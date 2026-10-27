@@ -153,7 +153,12 @@ się po trzydziestym spricie i nic tego nie posklei.
 ## Blok świata — obowiązkowy w każdym prompcie
 
 Metryki pilnują, żeby sprite dało się wstawić w siatkę. **Blok świata pilnuje, żeby
-należał do tej samej gry co pozostałe.** Bez niego model dostaje poprawne reguły
+należał do tej samej gry co pozostałe.**
+
+> Źródłem prawdy o świecie jest [`LORE.md`](LORE.md) — ten sam plik, który trafia do
+> każdego wywołania Bielika. Blok poniżej jest jego angielskim skrótem na potrzeby modeli
+> obrazkowych. **Zmiana w lore pociąga zmianę tutaj**, inaczej teksty i grafika zaczną
+> opisywać dwie różne wyspy. Bez niego model dostaje poprawne reguły
 techniczne i zero pojęcia, czy trzcina rośnie nad Bałtykiem czy w tropikach — a wtedy
 zgaduje, i każdy sprite zgaduje inaczej.
 
