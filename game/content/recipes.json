@@ -470,5 +470,29 @@
       "qty": 1
     },
     "ticks": 20
+  },
+  {
+    "id": "r_kosa_zelazna",
+    "name": "Kosa żelazna",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "sztabka_zelaza",
+        "qty": 1
+      },
+      {
+        "item": "drewno",
+        "qty": 1
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "kosa_zelazna",
+      "qty": 1
+    },
+    "ticks": 10
   }
 ]

@@ -370,5 +370,20 @@
       "power": 1,
       "durability": 600
     }
+  },
+  {
+    "id": "kosa_zelazna",
+    "name": "Kosa żelazna",
+    "desc": "Narzędzie do ścinania trawy i zbóż.",
+    "tags": [
+      "narzedzie"
+    ],
+    "stack": 1,
+    "value": 40,
+    "tool": {
+      "kind": "scythe",
+      "power": 2,
+      "durability": 50
+    }
   }
 ]

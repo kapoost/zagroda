@@ -27,3 +27,11 @@ Gracz może teraz wytwarzać nowe narzędzie - kamienny młot, który jest wytrz
 
 - + items: mlot_kamienny ("Kamienny młot")
 - + recipes: r_mlot_kamienny ("Kamienny młot")
+
+## Żelazna kosa
+*2026-10-27 17:54 · dane · wykonawca: bielik*
+
+Dodano nowe narzędzie: żelazną kosę, która jest mocniejsza od zwykłej kosy.
+
+- + items: kosa_zelazna ("Kosa żelazna")
+- + recipes: r_kosa_zelazna ("Kosa żelazna")
