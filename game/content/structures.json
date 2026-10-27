@@ -1,0 +1,9 @@
+[
+  { "id": "warsztat",           "name": "Stół warsztatowy", "desc": "Serce każdego obozu.",            "color": "#9a6b3f", "blocks": true,  "station": "workbench" },
+  { "id": "piec_hutniczy",      "name": "Piec hutniczy",    "desc": "Wytapia rudę i wypala węgiel.",   "color": "#5c5048", "blocks": true,  "station": "furnace" },
+  { "id": "palenisko_kuchenne", "name": "Kuchnia polowa",   "desc": "Tu powstaje ciepły posiłek.",     "color": "#b4603a", "blocks": true,  "station": "kitchen" },
+  { "id": "krosno_tkackie",     "name": "Krosno",           "desc": "Zamienia włókno w tkaninę.",      "color": "#c2a06a", "blocks": true,  "station": "loom" },
+  { "id": "skrzynia_drewniana", "name": "Skrzynia",         "desc": "Schowek na nadmiar dobytku.",     "color": "#8a6534", "blocks": true,  "storage": 20 },
+  { "id": "sciana",             "name": "Ściana drewniana", "desc": "Granica między tu a tam.",        "color": "#7a5a33", "blocks": true },
+  { "id": "pochodnia_stojaca",  "name": "Pochodnia",        "desc": "Światło w nocy.",                 "color": "#ffcc55", "blocks": false }
+]

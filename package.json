@@ -1,0 +1,21 @@
+{
+  "name": "zu",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "game",
+    "agent"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w game",
+    "build": "npm run build -w game",
+    "test": "npm run test -w game",
+    "typecheck": "tsc -p game/tsconfig.json --noEmit && tsc -p agent/tsconfig.json --noEmit",
+    "gate": "tsx tools/gate.ts",
+    "zu": "npm run zu -w agent --",
+    "sim": "tsx tools/sim.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

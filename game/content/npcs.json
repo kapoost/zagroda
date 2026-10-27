@@ -1,0 +1,20 @@
+[
+  { "id": "zofia", "name": "Zofia", "color": "#d46a9f", "home": { "x": 40, "y": 44 }, "likes": ["jagoda", "tkanina"],
+    "dialogues": [
+      "Zbierasz? Dobrze. Ta wyspa płaci tym, którzy się schylą.",
+      "Jagody z południowej łąki są najsłodsze po deszczu.",
+      "Jak uzbierasz za dużo, postaw skrzynię. Nie noś wszystkiego ze sobą."
+    ] },
+  { "id": "bartek", "name": "Bartek", "color": "#4f9fd4", "home": { "x": 22, "y": 60 }, "likes": ["ryba", "sznurek"],
+    "dialogues": [
+      "Woda się marszczy tam, gdzie warto zarzucić.",
+      "Wędka to gałąź i dwa sznurki. Resztę robi cierpliwość.",
+      "Rybę zjesz surową, ale pieczona trzyma dłużej."
+    ] },
+  { "id": "hanka", "name": "Hanka", "color": "#c98a3a", "home": { "x": 68, "y": 30 }, "likes": ["sztabka_zelaza", "wegiel_drzewny"],
+    "dialogues": [
+      "Kamienne narzędzia to etap. Żelazo to decyzja.",
+      "Najpierw piec, potem węgiel, dopiero potem sztabka. W tej kolejności.",
+      "Góry na wschodzie mają rudę płytko pod skałą."
+    ] }
+]

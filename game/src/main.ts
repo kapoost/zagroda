@@ -1,0 +1,123 @@
+import { Game } from './core/game.js';
+import type { Facing, Input } from './core/types.js';
+import { draw } from './render/canvas.js';
+import { availableRecipes, inventoryIds, renderHud, type HudRefs } from './render/hud.js';
+
+/** Spięcie rdzenia z przeglądarką: pętla o stałym kroku, wejście z klawiatury, rysowanie. */
+
+const TICK_MS = 95;
+
+const game = new Game();
+const canvas = document.getElementById('world') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+const refs: HudRefs = {
+  clock: document.getElementById('clock')!,
+  energy: document.getElementById('energy')!,
+  held: document.getElementById('held')!,
+  inventory: document.getElementById('inventory')!,
+  recipes: document.getElementById('recipes')!,
+  log: document.getElementById('log')!,
+};
+
+function resize(): void {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = Math.floor(canvas.clientWidth * dpr);
+  canvas.height = Math.floor(canvas.clientHeight * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const held = new Set<string>();
+/** Akcje jednorazowe: odpalają się na wciśnięcie, nie na auto-powtarzanie klawisza. */
+let pending: Input = {};
+
+const DIRS: Record<string, Facing> = {
+  KeyW: 'n', ArrowUp: 'n',
+  KeyS: 's', ArrowDown: 's',
+  KeyA: 'w', ArrowLeft: 'w',
+  KeyD: 'e', ArrowRight: 'e',
+};
+
+function cycleHeld(step: number): void {
+  const ids = inventoryIds(game.state, game.reg);
+  if (!ids.length) {
+    pending.hold = null;
+    return;
+  }
+  const cur = game.state.player.held;
+  const i = cur ? ids.indexOf(cur) : -1;
+  const next = ids[(i + step + ids.length * 2) % ids.length]!;
+  pending.hold = i === -1 && step < 0 ? ids[ids.length - 1]! : next;
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.repeat) {
+    if (DIRS[e.code]) held.add(e.code);
+    return;
+  }
+  if (DIRS[e.code]) {
+    held.add(e.code);
+    e.preventDefault();
+    return;
+  }
+  switch (e.code) {
+    case 'Space':
+      pending.act = true;
+      e.preventDefault();
+      break;
+    case 'KeyE':
+      cycleHeld(1);
+      break;
+    case 'KeyQ':
+      cycleHeld(-1);
+      break;
+    case 'KeyG':
+      if (game.state.player.held) pending.place = game.state.player.held;
+      break;
+    case 'KeyF':
+      if (game.state.player.held) pending.eat = game.state.player.held;
+      break;
+    default: {
+      const n = Number(e.key);
+      if (Number.isInteger(n) && n >= 1 && n <= 9) {
+        const r = availableRecipes(game.state, game.reg)[n - 1];
+        if (r) pending.craft = r.id;
+      }
+    }
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  held.delete(e.code);
+});
+window.addEventListener('blur', () => held.clear());
+
+let acc = 0;
+let prev = performance.now();
+
+function frame(now: number): void {
+  acc += now - prev;
+  prev = now;
+  let steps = 0;
+  while (acc >= TICK_MS && steps < 4) {
+    acc -= TICK_MS;
+    steps++;
+    const input: Input = { ...pending };
+    pending = {};
+    for (const code of held) {
+      const dir = DIRS[code];
+      if (dir) {
+        input.move = dir;
+        break;
+      }
+    }
+    game.step(input);
+  }
+  draw(ctx, game.state, game.reg);
+  renderHud(refs, game.state, game.reg);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);

@@ -1,0 +1,277 @@
+import {
+  ContentSchema,
+  STATIONS,
+  type Biome,
+  type Content,
+  type Item,
+  type Npc,
+  type Recipe,
+  type Resource,
+  type Station,
+  type Structure,
+  type ToolKind,
+} from './schema.js';
+
+/**
+ * Walidacja treści + kontrole integralności.
+ *
+ * Schemat Zod sprawdza KSZTAŁT jednego wpisu. Ten plik sprawdza SPÓJNOŚĆ całości:
+ * czy referencje się rozwiązują, czy graf receptur jest acykliczny, czy każdy item
+ * jest w ogóle osiągalny w rozgrywce, i czy nie da się zrobić pętli nieskończonego zysku.
+ *
+ * NIEZAPISYWALNY dla agenta.
+ */
+
+/** Crafting może podnieść wartość wsadu najwyżej tyle razy. */
+const VALUE_MULT = 4;
+
+export interface Issue {
+  code: string;
+  msg: string;
+  where?: string;
+}
+
+export interface Registry {
+  content: Content;
+  items: Map<string, Item>;
+  structures: Map<string, Structure>;
+  resources: Map<string, Resource>;
+  recipes: Map<string, Recipe>;
+  biomes: Map<string, Biome>;
+  npcs: Map<string, Npc>;
+  /** Biomy posortowane malejąco po priorytecie — kolejność rozstrzygania w worldgenie. */
+  biomeOrder: Biome[];
+  /** Itemy osiągalne w rozgrywce, wyliczone punktem stałym. */
+  obtainable: Set<string>;
+}
+
+export type ValidateResult =
+  | { ok: true; registry: Registry; issues: [] }
+  | { ok: false; issues: Issue[] };
+
+const byId = <T extends { id: string }>(xs: T[]) => new Map(xs.map((x) => [x.id, x]));
+
+export function validateContent(raw: unknown): ValidateResult {
+  const parsed = ContentSchema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      issues: parsed.error.issues.map((i) => ({
+        code: 'SCHEMA',
+        msg: i.message,
+        where: i.path.join('.'),
+      })),
+    };
+  }
+  const c = parsed.data;
+  const issues: Issue[] = [];
+  const err = (code: string, msg: string, where?: string) => issues.push({ code, msg, where });
+
+  // --- 1. unikalność identyfikatorów ---------------------------------------
+  const collections: Array<[string, Array<{ id: string }>]> = [
+    ['items', c.items],
+    ['structures', c.structures],
+    ['resources', c.resources],
+    ['recipes', c.recipes],
+    ['biomes', c.biomes],
+    ['npcs', c.npcs],
+  ];
+  for (const [name, xs] of collections) {
+    const seen = new Set<string>();
+    for (const x of xs) {
+      if (seen.has(x.id)) err('DUP_ID', `zduplikowane id "${x.id}"`, name);
+      seen.add(x.id);
+    }
+  }
+
+  const items = byId(c.items);
+  const structures = byId(c.structures);
+  const resources = byId(c.resources);
+  const recipes = byId(c.recipes);
+  const biomes = byId(c.biomes);
+  const npcs = byId(c.npcs);
+
+  // --- 2. referencje ------------------------------------------------------
+  const needItem = (id: string, where: string) => {
+    if (!items.has(id)) err('REF_ITEM', `nie ma itemu "${id}"`, where);
+  };
+  for (const it of c.items) {
+    if (it.placeable && !structures.has(it.placeable.structure)) {
+      err('REF_STRUCTURE', `nie ma struktury "${it.placeable.structure}"`, `items.${it.id}`);
+    }
+  }
+  for (const r of c.resources) {
+    for (const b of r.biomes) {
+      if (!biomes.has(b)) err('REF_BIOME', `nie ma biomu "${b}"`, `resources.${r.id}`);
+    }
+    for (const d of r.drops) needItem(d.item, `resources.${r.id}.drops`);
+  }
+  for (const r of c.recipes) {
+    for (const i of r.inputs) needItem(i.item, `recipes.${r.id}.inputs`);
+    needItem(r.output.item, `recipes.${r.id}.output`);
+    const dupInput = new Set<string>();
+    for (const i of r.inputs) {
+      if (dupInput.has(i.item)) err('DUP_INPUT', `wsad "${i.item}" powtórzony`, `recipes.${r.id}`);
+      dupInput.add(i.item);
+    }
+    if (r.inputs.some((i) => i.item === r.output.item)) {
+      err('SELF_RECIPE', `receptura produkuje własny wsad`, `recipes.${r.id}`);
+    }
+  }
+  for (const n of c.npcs) {
+    for (const l of n.likes) needItem(l, `npcs.${n.id}.likes`);
+    if (n.home.x >= c.config.worldSize || n.home.y >= c.config.worldSize) {
+      err('NPC_OOB', `dom NPC poza światem`, `npcs.${n.id}`);
+    }
+  }
+  for (const s of c.config.startInventory) needItem(s.item, 'config.startInventory');
+
+  // --- 3. pokrycie przestrzeni biomów ------------------------------------
+  // Worldgen mapuje (wysokość, wilgotność) na biom. Dziura w pokryciu = kafel bez biomu.
+  const GRID = 20;
+  const holes: string[] = [];
+  for (let i = 0; i < GRID; i++) {
+    for (let j = 0; j < GRID; j++) {
+      const e = (i + 0.5) / GRID;
+      const m = (j + 0.5) / GRID;
+      const hit = c.biomes.some(
+        (b) => e >= b.elevation[0] && e < b.elevation[1] && m >= b.moisture[0] && m < b.moisture[1],
+      );
+      if (!hit && holes.length < 5) holes.push(`(h=${e.toFixed(2)}, w=${m.toFixed(2)})`);
+    }
+  }
+  if (holes.length) {
+    err('BIOME_HOLE', `przestrzeń biomów nie jest pokryta, np. ${holes.join(', ')}`, 'biomes');
+  }
+  if (!c.biomes.some((b) => b.walkable)) {
+    err('NO_WALKABLE', 'żaden biom nie jest przechodni', 'biomes');
+  }
+
+  // --- 4. acykliczność grafu receptur ------------------------------------
+  const deps = new Map<string, Set<string>>();
+  for (const r of c.recipes) {
+    const set = deps.get(r.output.item) ?? new Set<string>();
+    for (const i of r.inputs) set.add(i.item);
+    deps.set(r.output.item, set);
+  }
+  const WHITE = 0, GREY = 1, BLACK = 2;
+  const mark = new Map<string, number>();
+  const stack: string[] = [];
+  const visit = (id: string): boolean => {
+    const s = mark.get(id) ?? WHITE;
+    if (s === GREY) {
+      err('RECIPE_CYCLE', `cykl w recepturach: ${[...stack, id].join(' → ')}`, 'recipes');
+      return false;
+    }
+    if (s === BLACK) return true;
+    mark.set(id, GREY);
+    stack.push(id);
+    for (const d of deps.get(id) ?? []) if (!visit(d)) break;
+    stack.pop();
+    mark.set(id, BLACK);
+    return true;
+  };
+  for (const id of deps.keys()) visit(id);
+
+  // --- 5. ekonomia: crafting nie może być drukarką pieniędzy -------------
+  for (const r of c.recipes) {
+    const inVal = r.inputs.reduce((a, i) => a + (items.get(i.item)?.value ?? 0) * i.qty, 0);
+    const outVal = (items.get(r.output.item)?.value ?? 0) * r.output.qty;
+    if (inVal > 0 && outVal > inVal * VALUE_MULT) {
+      err(
+        'ECON',
+        `wartość wyjścia ${outVal} przekracza ${VALUE_MULT}× wartość wsadu ${inVal}`,
+        `recipes.${r.id}`,
+      );
+    }
+  }
+
+  // Twarde błędy referencyjne unieważniają analizę osiągalności.
+  if (issues.length) return { ok: false, issues };
+
+  // --- 6. osiągalność: punkt stały po narzędziach i stacjach -------------
+  const obtainable = new Set<string>(c.config.startInventory.map((s) => s.item));
+  const toolsOf = (): Set<ToolKind> => {
+    const t = new Set<ToolKind>(['hand']);
+    for (const id of obtainable) {
+      const k = items.get(id)?.tool?.kind;
+      if (k) t.add(k);
+    }
+    return t;
+  };
+  const stationsOf = (): Set<Station> => {
+    const s = new Set<Station>(['hand']);
+    for (const id of obtainable) {
+      const st = items.get(id)?.placeable?.structure;
+      const station = st ? structures.get(st)?.station : undefined;
+      if (station) s.add(station);
+    }
+    return s;
+  };
+  const harvestable = new Set<string>();
+  const craftable = new Set<string>();
+  for (let pass = 0; pass < 64; pass++) {
+    const before = obtainable.size;
+    const tools = toolsOf();
+    const stations = stationsOf();
+    for (const r of c.resources) {
+      if (!tools.has(r.tool)) continue;
+      harvestable.add(r.id);
+      for (const d of r.drops) obtainable.add(d.item);
+    }
+    for (const r of c.recipes) {
+      if (!stations.has(r.station)) continue;
+      if (!r.inputs.every((i) => obtainable.has(i.item))) continue;
+      craftable.add(r.id);
+      obtainable.add(r.output.item);
+    }
+    if (obtainable.size === before) break;
+  }
+
+  for (const it of c.items) {
+    if (!obtainable.has(it.id)) {
+      err('UNREACHABLE_ITEM', `item "${it.id}" jest nieosiągalny w rozgrywce`, `items.${it.id}`);
+    }
+  }
+  for (const r of c.resources) {
+    if (!harvestable.has(r.id)) {
+      err(
+        'UNREACHABLE_RESOURCE',
+        `surowiec "${r.id}" wymaga narzędzia "${r.tool}", którego nie da się zdobyć`,
+        `resources.${r.id}`,
+      );
+    }
+  }
+  for (const r of c.recipes) {
+    if (!craftable.has(r.id)) {
+      err(
+        'UNREACHABLE_RECIPE',
+        `receptura "${r.id}" nigdy nie jest wykonalna (stacja "${r.station}" lub wsad poza zasięgiem)`,
+        `recipes.${r.id}`,
+      );
+    }
+  }
+  for (const st of new Set(c.recipes.map((r) => r.station))) {
+    if (st === 'hand') continue;
+    const provided = c.structures.some((s) => s.station === st);
+    if (!provided) err('NO_STATION', `żadna struktura nie daje stacji "${st}"`, 'structures');
+  }
+  for (const s of c.structures) {
+    if (s.station && !STATIONS.includes(s.station)) {
+      err('BAD_STATION', `nieznana stacja "${s.station}"`, `structures.${s.id}`);
+    }
+  }
+
+  if (issues.length) return { ok: false, issues };
+
+  const biomeOrder = [...c.biomes].sort((a, b) => b.priority - a.priority || a.id.localeCompare(b.id));
+  return {
+    ok: true,
+    issues: [],
+    registry: { content: c, items, structures, resources, recipes, biomes, npcs, biomeOrder, obtainable },
+  };
+}
+
+export function formatIssues(issues: Issue[]): string {
+  return issues.map((i) => `  [${i.code}] ${i.where ? i.where + ': ' : ''}${i.msg}`).join('\n');
+}

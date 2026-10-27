@@ -1,0 +1,16 @@
+[
+  { "id": "krzak",         "name": "Krzak jagodowy", "desc": "Gęsty, kłujący, pełen owoców.", "color": "#4f7f3f", "biomes": ["las", "laka"],          "density": 0.05,  "hp": 1, "tool": "hand",    "blocks": false, "regrow": 1800,
+    "drops": [ { "item": "galaz", "min": 1, "max": 2 }, { "item": "jagoda", "min": 1, "max": 3, "chance": 0.6 } ] },
+  { "id": "kamien_polny",  "name": "Kamień polny",   "desc": "Leży luzem, wystarczy się schylić.", "color": "#a0a0a0", "biomes": ["laka", "gory", "plaza"], "density": 0.04,  "hp": 1, "tool": "hand",    "blocks": false, "regrow": 2400,
+    "drops": [ { "item": "kamien", "min": 1, "max": 2 } ] },
+  { "id": "trzcina",       "name": "Trzcina",        "desc": "Szeleści na wietrze od wody.",  "color": "#c9b36b", "biomes": ["plaza"],                "density": 0.10,  "hp": 1, "tool": "hand",    "blocks": false, "regrow": 1200,
+    "drops": [ { "item": "wlokno", "min": 1, "max": 2 } ] },
+  { "id": "drzewo",        "name": "Drzewo",         "desc": "Stoi tu dłużej niż ty.",        "color": "#2f5d2b", "biomes": ["las", "laka"],          "density": 0.08,  "hp": 4, "tool": "axe",     "blocks": true,  "regrow": 6000,
+    "drops": [ { "item": "drewno", "min": 2, "max": 4 }, { "item": "galaz", "min": 1, "max": 2, "chance": 0.5 } ] },
+  { "id": "zloze_zelaza",  "name": "Złoże żelaza",   "desc": "Rdzawa żyła w skale.",          "color": "#9c6b4a", "biomes": ["gory"],                 "density": 0.05,  "hp": 6, "tool": "pickaxe", "blocks": true,  "regrow": 0,
+    "drops": [ { "item": "ruda_zelaza", "min": 1, "max": 3 }, { "item": "kamien", "min": 1, "max": 2, "chance": 0.7 } ] },
+  { "id": "lowisko",       "name": "Łowisko",        "desc": "Woda się tu marszczy.",         "color": "#1f567f", "biomes": ["morze"],                "density": 0.02,  "hp": 1, "tool": "rod",     "blocks": true,  "regrow": 900,
+    "drops": [ { "item": "ryba", "min": 1, "max": 1 } ] },
+  { "id": "trawa_wysoka",  "name": "Trawa wysoka",   "desc": "Po pas, pachnie latem.",        "color": "#8fc96a", "biomes": ["laka"],                 "density": 0.12,  "hp": 1, "tool": "scythe",  "blocks": false, "regrow": 1500,
+    "drops": [ { "item": "siano", "min": 1, "max": 2 } ] }
+]

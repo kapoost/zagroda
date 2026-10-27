@@ -1,0 +1,114 @@
+{
+  "ok": true,
+  "failed": null,
+  "stages": [
+    {
+      "name": "tresc",
+      "ok": true,
+      "ms": 7,
+      "output": "treść spójna: 27 itemów, 19 receptur, 7 surowców, 6 biomów, 3 NPC"
+    },
+    {
+      "name": "typy",
+      "ok": true,
+      "ms": 468,
+      "output": ""
+    },
+    {
+      "name": "typy-agent",
+      "ok": true,
+      "ms": 433,
+      "output": ""
+    },
+    {
+      "name": "testy",
+      "ok": true,
+      "ms": 1486,
+      "output": "RUN  v2.1.9 /Users/kapoost/zu/game\n\n ✓ tests/content.test.ts (13 tests) 19ms\n ✓ tests/world.test.ts (16 tests) 42ms\n ✓ tests/determinism.test.ts (5 tests) 52ms\n ✓ tests/progression.test.ts (6 tests) 379ms\n ✓ tests/invariants.test.ts (8 tests) 992ms\n\n Test Files  5 passed (5)\n      Tests  48 passed (48)\n   Start at  11:55:20\n   Duration  1.24s (transform 86ms, setup 0ms, collect 241ms, tests 1.48s, environment 0ms, prepare 175ms)"
+    },
+    {
+      "name": "symulacja",
+      "ok": true,
+      "ms": 79,
+      "output": "seed 1337: siekiera_kamienna=55t, stol_warsztatowy=62t, deska=116t, wedka=1565t, sztabka_zelaza=2834t, pieczona_ryba=2094t\nseed 4242: siekiera_kamienna=49t, stol_warsztatowy=73t, deska=208t, wedka=414t, sztabka_zelaza=3120t, pieczona_ryba=1661t"
+    }
+  ],
+  "metrics": [
+    {
+      "seed": 1337,
+      "entities": 914,
+      "landShare": 0.59,
+      "milestones": [
+        {
+          "goal": "siekiera_kamienna",
+          "ok": true,
+          "ticks": 55
+        },
+        {
+          "goal": "stol_warsztatowy",
+          "ok": true,
+          "ticks": 62
+        },
+        {
+          "goal": "deska",
+          "ok": true,
+          "ticks": 116
+        },
+        {
+          "goal": "wedka",
+          "ok": true,
+          "ticks": 1565
+        },
+        {
+          "goal": "sztabka_zelaza",
+          "ok": true,
+          "ticks": 2834
+        },
+        {
+          "goal": "pieczona_ryba",
+          "ok": true,
+          "ticks": 2094
+        }
+      ],
+      "hashAfter10k": "282b7363"
+    },
+    {
+      "seed": 4242,
+      "entities": 717,
+      "landShare": 0.442,
+      "milestones": [
+        {
+          "goal": "siekiera_kamienna",
+          "ok": true,
+          "ticks": 49
+        },
+        {
+          "goal": "stol_warsztatowy",
+          "ok": true,
+          "ticks": 73
+        },
+        {
+          "goal": "deska",
+          "ok": true,
+          "ticks": 208
+        },
+        {
+          "goal": "wedka",
+          "ok": true,
+          "ticks": 414
+        },
+        {
+          "goal": "sztabka_zelaza",
+          "ok": true,
+          "ticks": 3120
+        },
+        {
+          "goal": "pieczona_ryba",
+          "ok": true,
+          "ticks": 1661
+        }
+      ],
+      "hashAfter10k": "ca24b1cb"
+    }
+  ]
+}

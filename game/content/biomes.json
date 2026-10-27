@@ -1,0 +1,8 @@
+[
+  { "id": "morze",  "name": "Morze",     "color": "#2a6fa8", "walkable": false, "elevation": [0, 0.30],    "moisture": [0, 1],    "priority": 10 },
+  { "id": "plaza",  "name": "Plaża",     "color": "#e0cf9a", "walkable": true,  "elevation": [0.30, 0.38], "moisture": [0, 1],    "priority": 9 },
+  { "id": "laka",   "name": "Łąka",      "color": "#7fb65c", "walkable": true,  "elevation": [0.38, 0.75], "moisture": [0, 0.45], "priority": 5 },
+  { "id": "las",    "name": "Las",       "color": "#3e7a3a", "walkable": true,  "elevation": [0.38, 0.75], "moisture": [0.45, 1], "priority": 5 },
+  { "id": "gory",   "name": "Góry",      "color": "#8d8d8d", "walkable": true,  "elevation": [0.75, 1],    "moisture": [0, 0.6],  "priority": 7 },
+  { "id": "snieg",  "name": "Śnieżnik",  "color": "#e8eef2", "walkable": true,  "elevation": [0.75, 1],    "moisture": [0.6, 1],  "priority": 7 }
+]

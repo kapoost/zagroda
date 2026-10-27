@@ -1,0 +1,127 @@
+import type { Registry } from '../content/registry.js';
+import { fbm, hash2 } from './rng.js';
+import type { Entity, State } from './types.js';
+
+/** Generacja świata. Czysta funkcja seeda i treści — ten sam seed daje ten sam świat. */
+
+/** Parametry kształtu wyspy. Strojone pod rozkład biomów — patrz tests/world.test.ts. */
+const ELEV_CONTRAST = 2.6;
+const ELEV_AMP = 1.18;
+const ISLAND_FALLOFF = 0.45;
+const MOIST_CONTRAST = 1.8;
+
+export function biomeIndexAt(reg: Registry, x: number, y: number, seed: number, size: number): number {
+  const half = size / 2;
+  const dx = (x - half) / half;
+  const dy = (y - half) / half;
+  const d = Math.min(1, Math.sqrt(dx * dx + dy * dy));
+  // fbm ma małą wariancję (średnia wygładzonych oktaw), więc najpierw rozciągamy kontrast,
+  // inaczej cała wyspa byłaby jedną płaską łąką bez gór.
+  const stretched = (fbm(x, y, seed, 26, 4) - 0.5) * ELEV_CONTRAST + 0.5;
+  const e = clamp01(stretched * ELEV_AMP - d * d * ISLAND_FALLOFF);
+  const m = clamp01((fbm(x, y, seed + 9973, 18, 3) - 0.5) * MOIST_CONTRAST + 0.5);
+
+  const biomes = reg.content.biomes;
+  let best = -1;
+  let bestPrio = -1;
+  for (let i = 0; i < biomes.length; i++) {
+    const b = biomes[i]!;
+    if (e < b.elevation[0] || e >= b.elevation[1]) continue;
+    if (m < b.moisture[0] || m >= b.moisture[1]) continue;
+    if (b.priority > bestPrio) {
+      bestPrio = b.priority;
+      best = i;
+    }
+  }
+  // Pokrycie jest wymuszone przez kontrolę BIOME_HOLE, więc tu jesteśmy już bezpieczni.
+  return best >= 0 ? best : 0;
+}
+
+const clamp01 = (v: number) => (v < 0 ? 0 : v > 0.999 ? 0.999 : v);
+
+export function generate(reg: Registry, seed: number): State {
+  const size = reg.content.config.worldSize;
+  const biome = new Uint8Array(size * size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      biome[y * size + x] = biomeIndexAt(reg, x, y, seed, size);
+    }
+  }
+
+  const ents: Entity[] = [];
+  const entAt = new Int32Array(size * size);
+  const resources = reg.content.resources;
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const b = reg.content.biomes[biome[y * size + x]!]!;
+      for (let ri = 0; ri < resources.length; ri++) {
+        const r = resources[ri]!;
+        if (!r.biomes.includes(b.id)) continue;
+        if (hash2(x, y, seed + 131 * (ri + 1)) >= r.density) continue;
+        entAt[y * size + x] = ents.length + 1;
+        ents.push({ kind: 'resource', def: r.id, x, y, hp: r.hp, respawnAt: 0 });
+        break;
+      }
+    }
+  }
+
+  const walkable = (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < size && y < size && reg.content.biomes[biome[y * size + x]!]!.walkable;
+
+  // NPC lądują na najbliższym przechodnim i wolnym kaflu względem swojego "domu".
+  for (const npc of reg.content.npcs) {
+    const spot = nearestFree(npc.home.x, npc.home.y, size, walkable, entAt);
+    if (!spot) continue;
+    entAt[spot.y * size + spot.x] = ents.length + 1;
+    ents.push({ kind: 'npc', def: npc.id, x: spot.x, y: spot.y, hp: 1, respawnAt: 0 });
+  }
+
+  const start = nearestFree(Math.floor(size / 2), Math.floor(size / 2), size, walkable, entAt);
+  const inv: Record<string, number> = {};
+  for (const s of reg.content.config.startInventory) inv[s.item] = (inv[s.item] ?? 0) + s.qty;
+
+  return {
+    seed,
+    size,
+    tick: 0,
+    biome,
+    entAt,
+    ents,
+    player: {
+      x: start?.x ?? 1,
+      y: start?.y ?? 1,
+      facing: 's',
+      energy: reg.content.config.energyMax,
+      inv,
+      wear: {},
+      held: null,
+    },
+    craft: null,
+    rng: seed ^ 0x9e3779b9,
+    log: ['Budzisz się na wyspie. Nic nie masz. Wszystko jest do zebrania.'],
+  };
+}
+
+/** Spirala kwadratowa wokół punktu — deterministyczna kolejność przeszukiwania. */
+function nearestFree(
+  cx: number,
+  cy: number,
+  size: number,
+  walkable: (x: number, y: number) => boolean,
+  entAt: Int32Array,
+): { x: number; y: number } | null {
+  for (let r = 0; r < size; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        const x = cx + dx;
+        const y = cy + dy;
+        if (!walkable(x, y)) continue;
+        if (entAt[y * size + x] !== 0) continue;
+        return { x, y };
+      }
+    }
+  }
+  return null;
+}
