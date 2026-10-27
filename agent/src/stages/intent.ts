@@ -21,6 +21,8 @@ Pola:
   nowy surowiec do zbierania to "resources".
 - title: krótki tytuł zmiany po polsku, bez kropki
 - summary_pl: 2-3 zdania, co dokładnie się zmieni i dlaczego
+- removes_content: true TYLKO jeśli gracz wprost prosi o usunięcie czegoś, co już jest w grze.
+  Dodanie nowej rzeczy to zawsze false.
 - code_request_en: PO ANGIELSKU, techniczny opis zmiany w kodzie; puste przy "dane"
 
 Zasada: wybieraj "dane", kiedy tylko to możliwe. Nowa broń, surowiec, potrawa, budynek
@@ -38,7 +40,14 @@ TWARDE REGUŁY (ich złamanie powoduje odrzucenie zmiany):
 4. Ekonomia: wartość wyjścia receptury nie może przekroczyć 4× wartości wsadu.
 5. Receptury nie mogą tworzyć cyklu (A→B i B→A).
 6. Nowy surowiec musi wymagać narzędzia, które da się zdobyć.
-7. Wartości liczbowe mieszczą się w granicach schematu — nie próbuj ich obejść.`;
+7. Wartości liczbowe mieszczą się w granicach schematu — nie próbuj ich obejść.
+8. Jeden pomysł = JEDEN przedmiot. Nie twórz wariantów ani duplikatów tej samej rzeczy.
+9. Zmieniaj istniejące wpisy (patch_*) WYŁĄCZNIE wtedy, gdy zadanie tego wprost wymaga.
+   Domyślnie tylko DODAJESZ nowe wpisy.
+10. Przedmiot, który się stawia w świecie, wymaga pary: wpisu w "structures" oraz pola
+   "placeable" w przedmiocie wskazującego na id tej struktury.
+11. Każdy nowy przedmiot potrzebuje receptury albo wypadania z surowca — inaczej jest
+   nieosiągalny i zmiana zostanie odrzucona.`;
 
 function vocabBlock(): string {
   return `RODZAJE NARZĘDZI: ${VOCAB.tools.join(', ')}\nSTACJE: ${VOCAB.stations.join(', ')}`;
@@ -112,8 +121,8 @@ export function widenCollections(cols: Collection[]): Collection[] {
   if (set.has('items') || set.has('resources') || set.has('structures')) {
     set.add('items');
     set.add('recipes');
+    set.add('structures');
   }
-  if (set.has('structures')) set.add('items');
   return [...set].slice(0, 5);
 }
 
@@ -125,7 +134,7 @@ export async function proposeOps(
   preferApi = false,
 ): Promise<OpsResult> {
   const cols = widenCollections(route.collections);
-  const opsSchema = buildOpsSchema(cols);
+  const opsSchema = buildOpsSchema(cols, route.removes_content);
   const schema = jsonSchemaOf(opsSchema);
   const attempts: StageAttempt[] = [];
 

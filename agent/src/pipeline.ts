@@ -171,7 +171,7 @@ async function runDataChange(
   let last: GateResult | null = null;
   let changes: string[] = [];
   let resolvedBy: JournalEntry['resolvedBy'] = null;
-  const rounds = apiReady() ? 3 : 2;
+  const rounds = apiReady() ? 3 : 4;
 
   for (let round = 1; round <= rounds; round++) {
     const preferApi = round === rounds && apiReady() && round > 1;

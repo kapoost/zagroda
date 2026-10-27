@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ROOT } from '../config.js';
 
@@ -26,8 +26,11 @@ export interface GateResult {
 }
 
 export function runGate(): GateResult {
-  const r = spawnSync('npm', ['run', '--silent', 'gate'], { cwd: ROOT, encoding: 'utf8', env: process.env });
   const path = resolve(ROOT, '.agent/gate.json');
+  // Kasujemy przed uruchomieniem: czytanie nieświeżego wyniku to najgorszy możliwy błąd
+  // w tym miejscu — agent uznałby zepsutą grę za sprawną.
+  rmSync(path, { force: true });
+  const r = spawnSync('npm', ['run', '--silent', 'gate'], { cwd: ROOT, encoding: 'utf8', env: process.env });
   if (existsSync(path)) {
     try {
       return JSON.parse(readFileSync(path, 'utf8')) as GateResult;

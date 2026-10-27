@@ -36,6 +36,8 @@ export const RouteSchema = z
     title: z.string().min(3).max(70),
     summary_pl: z.string().min(10).max(500),
     code_request_en: z.string().max(1500),
+    /** Czy zmiana naprawdę wymaga skasowania istniejących wpisów. */
+    removes_content: z.boolean(),
   })
   .strict();
 
@@ -56,7 +58,7 @@ export type OpsSpec = {
 } & Record<string, unknown>;
 
 /** Schemat operacji zawężony do kolekcji wskazanych w fazie routingu. */
-export function buildOpsSchema(cols: Collection[]): z.ZodObject<z.ZodRawShape> {
+export function buildOpsSchema(cols: Collection[], allowRemove = false): z.ZodObject<z.ZodRawShape> {
   const shape: z.ZodRawShape = {};
   for (const c of cols) {
     if (c === 'config') {
@@ -69,7 +71,11 @@ export function buildOpsSchema(cols: Collection[]): z.ZodObject<z.ZodRawShape> {
       .array(z.object({ id: Id, patch: def.partial() }).strict())
       .max(8);
   }
-  shape.remove = z.array(z.object({ collection: z.enum(COLLECTIONS), id: Id }).strict()).max(4);
+  // Kasowanie jest poza schematem, dopóki routing go wyraźnie nie zażąda. Model, który nie
+  // ma jak usunąć wpisu, nie usunie go przez przypadek — a to był realny tryb awarii.
+  if (allowRemove) {
+    shape.remove = z.array(z.object({ collection: z.enum(COLLECTIONS), id: Id }).strict()).max(4);
+  }
   return z.object(shape).strict();
 }
 
