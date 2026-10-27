@@ -11,6 +11,16 @@ import type { Entity, State } from './types.js';
  * Gdyby mapy zabrakło, generator wraca do szumu — dzięki temu zakresy wysokości
  * i wilgotności w biomach nadal mają sens i nadal są sprawdzane przez bramkę.
  */
+function rozpakuj(rle: string, dlugosc: number): Uint8Array | null {
+  const out = new Uint8Array(dlugosc);
+  let i = 0;
+  for (const odcinek of rle.split(' ')) {
+    const [ile, v] = odcinek.split('x').map(Number);
+    for (let k = 0; k < ile!; k++) out[i++] = v!;
+  }
+  return i === dlugosc ? out : null;
+}
+
 function zMapy(reg: Registry, size: number): Uint8Array | null {
   if (mapa.rozmiar !== size) return null;
   const indeks = new Map(reg.content.biomes.map((b, i) => [b.id, i]));
@@ -65,6 +75,7 @@ const clamp01 = (v: number) => (v < 0 ? 0 : v > 0.999 ? 0.999 : v);
 export function generate(reg: Registry, seed: number): State {
   const size = reg.content.config.worldSize;
   let biome = zMapy(reg, size);
+  const dachy = (biome && rozpakuj(mapa.dachy, size * size)) || new Uint8Array(size * size);
   if (!biome) {
     biome = new Uint8Array(size * size);
     for (let y = 0; y < size; y++) {
@@ -125,6 +136,7 @@ export function generate(reg: Registry, seed: number): State {
     tick: 0,
     biome,
     entAt,
+    dachy,
     ents,
     player: {
       x: start?.x ?? 1,

@@ -22,8 +22,13 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
  * tu prawdziwa, nie dorysowana.
  */
 const SRODEK = { lat: 50.7181, lon: 23.2519 };
-const BOK_METROW = 900;
-const ROZMIAR = 96;
+const BOK_METROW = 768;
+/**
+ * 3 metry na kafel — skala starych GTA: człowiek zajmuje kafel, kamienica kilka,
+ * ulica dwa do czterech. Przy 9 metrach na kafel człowiek byłby ułamkiem kafla,
+ * a cała gra mapą sztabową.
+ */
+const ROZMIAR = 256;
 
 /** Kolejność ma znaczenie: późniejsze nadpisuje wcześniejsze. */
 const LEGENDA = ['ziemia', 'trawa', 'las', 'bruk', 'rynek', 'kamienica', 'woda'] as const;
@@ -46,10 +51,24 @@ function naSiatke(w: Wezel): { x: number; y: number } {
 }
 
 const siatka = new Uint8Array(ROZMIAR * ROZMIAR).fill(nr('ziemia'));
+/**
+ * Odcień dachu per kafel, 0 = brak budynku.
+ *
+ * Bez tego sąsiadujące kamienice zlewają się w jedną brązową bryłę, bo przy trzech
+ * metrach na kafel dzielą ścianę. Zamojski Rynek żyje właśnie z tego, że widać
+ * pojedyncze pierzeje — więc każdy budynek dostaje własny odcień i własną krawędź.
+ */
+const odcienie = new Uint8Array(ROZMIAR * ROZMIAR);
+const ODCIENI = 8;
+let licznikBudynkow = 0;
+let biezacyOdcien = 0;
 const ustaw = (x: number, y: number, b: Biom) => {
   if (x < 0 || y < 0 || x >= ROZMIAR || y >= ROZMIAR) return;
   const i = y * ROZMIAR + x;
-  if (nr(b) >= siatka[i]!) siatka[i] = nr(b);
+  if (nr(b) >= siatka[i]!) {
+    siatka[i] = nr(b);
+    if (b === 'kamienica') odcienie[i] = biezacyOdcien;
+  }
 };
 
 function wielokat(geo: Wezel[], b: Biom): void {
@@ -147,6 +166,7 @@ for (const faza of [0, 1, 2]) {
     if (faza === 0 && (czyDroga || czyBudynek)) continue;
     if (faza === 1 && !czyDroga) continue;
     if (faza === 2 && !czyBudynek) continue;
+    if (czyBudynek) biezacyOdcien = (licznikBudynkow++ % ODCIENI) + 1;
     for (const kontur of kontury) {
       if (czyDroga && !zamkniety(kontur)) linia(kontur, k.biom, k.linia!);
       else wielokat(kontur, k.biom);
@@ -155,13 +175,18 @@ for (const faza of [0, 1, 2]) {
 }
 
 // RLE: plik ma być czytelny w diffie i mały w repozytorium.
-const rle: string[] = [];
-let biezacy = siatka[0]!, licznik = 0;
-for (const v of siatka) {
-  if (v === biezacy) licznik++;
-  else { rle.push(`${licznik}x${biezacy}`); biezacy = v; licznik = 1; }
+function spakuj(dane: Uint8Array): string {
+  const out: string[] = [];
+  let biezacy = dane[0]!;
+  let licznik = 0;
+  for (const v of dane) {
+    if (v === biezacy) licznik++;
+    else { out.push(`${licznik}x${biezacy}`); biezacy = v; licznik = 1; }
+  }
+  out.push(`${licznik}x${biezacy}`);
+  return out.join(' ');
 }
-rle.push(`${licznik}x${biezacy}`);
+const rle = spakuj(siatka).split(' ');
 
 const wynik = {
   miejsce: 'Zamość, Stare Miasto',
@@ -172,12 +197,14 @@ const wynik = {
   rozmiar: ROZMIAR,
   legenda: [...LEGENDA],
   kafle: rle.join(' '),
+  odcieni: ODCIENI,
+  dachy: spakuj(odcienie),
 };
 writeFileSync(resolve(ROOT, 'game/content/mapa.json'), JSON.stringify(wynik, null, 2) + '\n', 'utf8');
 
 const licz = new Map<string, number>();
 for (const v of siatka) licz.set(LEGENDA[v]!, (licz.get(LEGENDA[v]!) ?? 0) + 1);
-console.log(`zapisano game/content/mapa.json — ${rle.length} odcinków RLE, ${(JSON.stringify(wynik).length / 1024).toFixed(1)} kB`);
+console.log(`zapisano game/content/mapa.json — ${rle.length} odcinków RLE, ${licznikBudynkow} budynków, ${(JSON.stringify(wynik).length / 1024).toFixed(1)} kB`);
 for (const [k, v] of [...licz].sort((a, b) => b[1] - a[1])) {
   console.log(`  ${k.padEnd(10)} ${String(v).padStart(5)} kafli  ${((v / siatka.length) * 100).toFixed(1)}%`);
 }

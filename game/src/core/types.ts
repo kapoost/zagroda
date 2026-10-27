@@ -46,6 +46,8 @@ export interface State {
   biome: Uint8Array;
   /** kafel -> (indeks encji + 1); 0 = pusto */
   entAt: Int32Array;
+  /** Odcień dachu per kafel, 0 = nie budynek. Pozwala odróżnić sąsiadujące kamienice. */
+  dachy: Uint8Array;
   ents: Entity[];
   player: Player;
   craft: CraftJob | null;

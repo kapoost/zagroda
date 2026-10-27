@@ -11,44 +11,40 @@ skąd znać. Prompt bez metryk wygeneruje ładny obrazek i bezużyteczny asset.
 
 | | |
 | --- | --- |
-| kafel bazowy | **16 × 16 px** |
-| skala renderowania | **×2** (32 px na ekranie), `image-rendering: pixelated` |
-| świat | 96 × 96 kafli |
-| widok przy 900 × 736 | ok. 28 × 23 kafli |
+| kafel bazowy | **16 × 16 px** = 3 m terenu |
+| skala renderowania | ×1, `image-rendering: pixelated` |
+| świat | 256 × 256 kafli = 768 m |
+| widok przy 900 × 790 | ok. 56 × 49 kafli, czyli 170 × 150 m |
 
 Szesnaście pikseli to rozdzielczość konsoli 16-bitowej: wystarczająco dużo, żeby przedmiot
 był rozpoznawalny, wystarczająco mało, żeby każdy piksel był decyzją. Skala musi być
 całkowita — ×1.5 rozmazuje krawędzie i niszczy cały efekt.
 
-## Proporcje — drabina skali
+## Proporcje — skala realna, nie zabawkowa
 
-To ta część, która niesie charakter. Gra ma proporcje **Animal Crossing**: wszystko jest
-krępe, zaokrąglone i odrobinę za duże, jak dobrze zrobiona drewniana zabawka. Jednostką
-odniesienia jest postać; każdy inny obiekt ma zapisany stosunek do niej, żeby trzydziesty
-sprite nie rozjechał się z pierwszym.
+Pierwsza wersja tego dokumentu opisywała proporcje Animal Crossing: wszystko krępe,
+zaokrąglone i odrobinę za duże. To był błąd, który ujawnił się dopiero po wczytaniu
+prawdziwego planu miasta — **kafel ma trzy metry**, więc człowiek w proporcjach AC byłby
+wielkości kamienicy. Dwie decyzje się wykluczały i trzeba było wybrać.
 
-| obiekt | wymiar | względem postaci |
+Wybrana jest skala **starych, widzianych z góry GTA**: realne proporcje człowieka do
+świata. Człowiek jest mały, miasto duże, a kadr pokazuje kilka ulic naraz.
+
+| | w metrach | w kaflach |
 | --- | --- | --- |
-| **gracz, NPC** | 16 × 24 | **1,0** — jednostka odniesienia |
-| krzak, kamień polny, trzcina | 16 × 16 | 0,7 |
-| skrzynia, kosz, pochodnia, legowisko | 16 × 24 | 1,0 — meble sięgają postaci |
-| piec, warsztat, namiot | 32 × 40 | 1,6 — wyraźnie większe od człowieka |
-| drzewo | 16 × 48 | **2,0** — krępe i okrągłe, nie strzeliste |
+| **kafel** | **3 m** | 1 |
+| człowiek | 1,5 m | **0,5** |
+| ulica | 6–12 m | 2–4 |
+| kamienica | 12–20 m | 4–7 |
+| Rynek Wielki | ok. 100 m | ok. 33 |
+| świat | 768 m | 256 |
 
-Drzewo dwa razy wyższe od postaci to proporcja z Animal Crossing i brzmi za mało, dopóki
-nie zobaczy się tego obok siebie: drzewo ma być pękate i przysadziste, a nie górować nad
-wyspą. Strzeliste drzewo natychmiast przestawia grę w inny gatunek.
+Postać zajmuje **pół kafla**, nie cały. To jedyna liczba, którą trzeba zapamiętać —
+z niej wynika cała reszta. Nie ma tu wielkich głów ani krępych sylwetek: człowiek
+oglądany z góry z kilkunastu metrów to przede wszystkim sylwetka i cień.
 
-**Postać — podział 24 pikseli wysokości:**
-
-```
-głowa      10 px   (42% — tu siedzi cały urok)
-tułów      10 px
-stopy       4 px
-```
-
-Głowa jest szersza niż tułów. Oczy to dwa ciemne piksele, bez ust — przy szesnastu
-pikselach usta zamieniają się w plamę. Ręce krótkie, zaokrąglone, bez palców.
+Przy 16 px na kafel jeden człowiek ma 8 px. Detal twarzy nie istnieje i nie ma go
+udawać — czytelność niesie kontur, kolor ubrania i cień pod stopami.
 
 ## Klasy sprite'ów
 
@@ -57,18 +53,18 @@ dolnej krawędzi swojego kafla i może wystawać w górę poza niego.
 
 | klasa | wymiar | kotwica | kolorów + obrys | przykłady |
 | --- | --- | --- | --- | --- |
-| teren | 16 × 16 | — | 4, bez obrysu | morze, łąka, las |
-| przejście terenu | 16 × 16 | — | 4, bez obrysu | brzeg, skraj lasu |
-| mały obiekt | 16 × 16 | dół-środek | 4 + obrys | krzak, kamień polny, trzcina |
-| wysoki obiekt | 16 × 48 | dół-środek | 5 + obrys | drzewo |
-| średni obiekt | 16 × 32 | dół-środek | 5 + obrys | złoże żelaza, wysoka trawa |
-| struktura 1×1 | 16 × 24 | dół-środek | 5 + obrys | skrzynia, pochodnia, legowisko |
-| struktura 2×2 | 32 × 40 | dół-środek | 6 + obrys | piec, warsztat, namiot |
-| postać | 16 × 24 | dół-środek | 5 + obrys | gracz, NPC |
+| teren | 16 × 16 | — | 4, bez obrysu | bruk, rynek, trawa, ziemia, woda |
+| przejście terenu | 16 × 16 | — | 4, bez obrysu | krawężnik, brzeg wody |
+| dach kamienicy | 16 × 16 | — | 3 + obrys | osiem odcieni, krawędź po obrysie budynku |
+| mały obiekt | 16 × 16 | dół-środek | 4 + obrys | krzak, len, kamień, trzcina |
+| drzewo | 16 × 24 | dół-środek | 5 + obrys | korona wystaje o pół kafla |
+| struktura stawiana | 16 × 16 | dół-środek | 5 + obrys | skrzynia, piec, warsztat |
+| postać | 8 × 12 | dół-środek | 4 + obrys | gracz i NPC, pół kafla szerokości |
 | ikona ekwipunku | 16 × 16 | — | 4 + obrys | każdy przedmiot |
 
 Postacie dodatkowo: **4 kierunki × 3 klatki** (stoi, krok lewy, krok prawy) w jednym pliku
-jako siatka 48 × 96.
+jako siatka 24 × 48. Przy ośmiu pikselach na postać klatki różnią się układem nóg
+i przesunięciem o piksel, nic więcej.
 
 ## Paleta — 32 kolory, zamknięta
 
@@ -166,27 +162,26 @@ To ta sama lekcja co z `isNight()` w rdzeniu: czego nie zapiszesz, to model wymy
 
 ```
 WORLD — every sprite belongs to the same place; keep this consistent across all of them:
-A small island homestead in a cool temperate climate, late summer. Everything here is
-hand-made from what the island gives: reed from the shore, hay from the meadow, linen
-cloth, field stone, oak and birch wood, charcoal, bog iron. Technology stops at hand
-tools — no gears, no machinery, no gunpowder, no glass, no wheels. Three people live
-here: a shopkeeper, a fisherman, a smith.
+The Old Town of Zamość, a Renaissance fortress town on a regular plan: a pentagon of
+earthen bastions, a great market square, arcaded tenement houses along a grid of narrow
+streets. Late summer. Everything is hand-made from what the region gives: reed from the
+water, hay and flax from plots beyond the ramparts, field stone, timber, charcoal, bog
+iron. Technology stops at hand tools.
 
-STYLE — cosy life-sim, the proportions and warmth of Animal Crossing:
-Everything is rounded, chunky and slightly oversized, as if it were a well-made wooden
-toy. Soft silhouettes, no sharp corners, no thin spindly shapes. Objects look inviting
-and handleable rather than realistic. Cheerful and warm, never grim, never gritty,
-never menacing. Characters are cute and squat with oversized heads.
+STYLE — top-down city at a realistic scale, like early overhead GTA:
+The camera looks straight down from roughly fifteen metres. One tile is three metres,
+so a person is half a tile and a tenement is five. Shapes are read from above: roofs,
+pavement, courtyards, treetops. Honest proportions — no oversized heads, no toy
+exaggeration, no cute mascots. Muted, dusty, sunlit colours; strong readable silhouettes
+rather than small detail.
 
-NEVER include: realistic human proportions, fantasy creatures, magic glow, runes,
-crystals, neon, chrome, plastic, modern objects, weapons of war, skulls, gore,
-horror, or tropical and East Asian flora — no bamboo, no palms, no cherry blossom,
-no pagoda shapes.
+NEVER include: fantasy creatures, magic glow, runes, crystals, neon, chrome, plastic,
+modern objects, cars, weapons of war, skulls, anime faces, chibi proportions, or
+tropical and East Asian flora — no bamboo, no palms, no cherry blossom.
 
 CONSISTENCY — this sprite will sit next to dozens of others on the same screen:
-Same camera angle for every object: a high three-quarter view, roughly 60 degrees
-from vertical, so each object shows its front face prominently and a little of its
-top surface. Same sun angle. Same level of stylisation.
+Same camera height and angle for every object. Same sun angle, from the upper left.
+An object twice as tall in the world is drawn twice as tall here.
 ```
 
 Lista „NEVER" nie jest przesadą. Modele obrazkowe mają silne skojarzenie
@@ -205,27 +200,26 @@ Pixel art sprite for a top-down 2D survival and crafting game in the style of
 illustration with a pixel filter.
 
 WORLD — every sprite belongs to the same place; keep this consistent across all of them:
-A small island homestead in a cool temperate climate, late summer. Everything here is
-hand-made from what the island gives: reed from the shore, hay from the meadow, linen
-cloth, field stone, oak and birch wood, charcoal, bog iron. Technology stops at hand
-tools — no gears, no machinery, no gunpowder, no glass, no wheels. Three people live
-here: a shopkeeper, a fisherman, a smith.
+The Old Town of Zamość, a Renaissance fortress town on a regular plan: a pentagon of
+earthen bastions, a great market square, arcaded tenement houses along a grid of narrow
+streets. Late summer. Everything is hand-made from what the region gives: reed from the
+water, hay and flax from plots beyond the ramparts, field stone, timber, charcoal, bog
+iron. Technology stops at hand tools.
 
-STYLE — cosy life-sim, the proportions and warmth of Animal Crossing:
-Everything is rounded, chunky and slightly oversized, as if it were a well-made wooden
-toy. Soft silhouettes, no sharp corners, no thin spindly shapes. Objects look inviting
-and handleable rather than realistic. Cheerful and warm, never grim, never gritty,
-never menacing. Characters are cute and squat with oversized heads.
+STYLE — top-down city at a realistic scale, like early overhead GTA:
+The camera looks straight down from roughly fifteen metres. One tile is three metres,
+so a person is half a tile and a tenement is five. Shapes are read from above: roofs,
+pavement, courtyards, treetops. Honest proportions — no oversized heads, no toy
+exaggeration, no cute mascots. Muted, dusty, sunlit colours; strong readable silhouettes
+rather than small detail.
 
-NEVER include: realistic human proportions, fantasy creatures, magic glow, runes,
-crystals, neon, chrome, plastic, modern objects, weapons of war, skulls, gore,
-horror, or tropical and East Asian flora — no bamboo, no palms, no cherry blossom,
-no pagoda shapes.
+NEVER include: fantasy creatures, magic glow, runes, crystals, neon, chrome, plastic,
+modern objects, cars, weapons of war, skulls, anime faces, chibi proportions, or
+tropical and East Asian flora — no bamboo, no palms, no cherry blossom.
 
 CONSISTENCY — this sprite will sit next to dozens of others on the same screen:
-Same camera angle for every object: a high three-quarter view, roughly 60 degrees
-from vertical, so each object shows its front face prominently and a little of its
-top surface. Same sun angle. Same level of stylisation.
+Same camera height and angle for every object. Same sun angle, from the upper left.
+An object twice as tall in the world is drawn twice as tall here.
 
 SUBJECT: {OPIS}
 
