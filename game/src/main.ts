@@ -94,6 +94,12 @@ window.addEventListener('keyup', (e) => {
 });
 window.addEventListener('blur', () => held.clear());
 
+// Uchwyt deweloperski: w trybie dev pozwala obejrzeć stan i przestawić zegar bez
+// czekania czterech minut na zmianę doby. W buildzie produkcyjnym nie istnieje.
+if (import.meta.env.DEV) {
+  (window as unknown as { zagroda: unknown }).zagroda = game;
+}
+
 let acc = 0;
 let prev = performance.now();
 
