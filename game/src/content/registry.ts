@@ -228,6 +228,27 @@ export function validateContent(raw: unknown): ValidateResult {
     }
   }
 
+  // --- 5b. granice względne: droższe narzędzie musi być w czymś lepsze ---
+  // Granice bezwzględne ze schematu (durability 10..5000) przepuszczają narzędzie,
+  // które kosztuje więcej od poprzednika i jest od niego gorsze pod każdym względem.
+  // Tak właśnie przeszedł młot "dużo wytrzymalszy od kilofa" z wytrzymałością 30
+  // przy kilofie 200: każda liczba z osobna mieściła się w zakresie.
+  const narzedzia = c.items.filter((i) => i.tool);
+  for (const a of narzedzia) {
+    for (const b of narzedzia) {
+      if (a.id === b.id || a.tool!.kind !== b.tool!.kind) continue;
+      if (a.value <= b.value) continue;
+      if (a.tool!.power > b.tool!.power || a.tool!.durability > b.tool!.durability) continue;
+      err(
+        'DOMINACJA',
+        `kosztuje więcej niż "${b.id}" (${a.value} do ${b.value}), a nie jest od niego lepsze: ` +
+          `siła ${a.tool!.power} do ${b.tool!.power}, wytrzymałość ${a.tool!.durability} do ${b.tool!.durability}. ` +
+          `Podnieś siłę albo wytrzymałość, albo zbij wartość`,
+        `items.${a.id}`,
+      );
+    }
+  }
+
   // Twarde błędy referencyjne unieważniają analizę osiągalności.
   if (issues.length) return { ok: false, issues };
 

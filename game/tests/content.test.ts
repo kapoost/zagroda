@@ -22,6 +22,25 @@ describe('treść gry', () => {
  * Jeśli któryś przestanie przechodzić, agent dostał cichą furtkę do zepsucia gry.
  */
 describe('walidator łapie psucie treści', () => {
+
+  it('narzędzie droższe od poprzednika i pod każdym względem gorsze', () => {
+    const c = clone();
+    const kilof = c.items.find((i: any) => i.id === 'kilof_kamienny');
+    c.items.push({
+      ...kilof,
+      id: 'mlot_atrapa',
+      name: 'Młot atrapa',
+      value: kilof.value + 10,
+      tool: { kind: 'pickaxe', power: kilof.tool.power, durability: 30 },
+    });
+    expect(codes(c)).toContain('DOMINACJA');
+  });
+
+  it('tag spoza zamkniętego słownika', () => {
+    const c = clone();
+    c.items[0].tags = ['narzucie'];
+    expect(codes(c)).toContain('SCHEMA');
+  });
   it('wiszącą referencję do itemu', () => {
     const c = clone();
     c.recipes[0].inputs[0].item = 'nie_ma_takiego';

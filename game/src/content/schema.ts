@@ -20,19 +20,32 @@ const Range01 = z
   .refine(([a, b]) => a < b, 'zakres: pierwsza wartość musi być mniejsza');
 
 export const TOOL_KINDS = ['hand', 'axe', 'pickaxe', 'hoe', 'rod', 'scythe'] as const;
+/**
+ * Słownik tagów jest ZAMKNIĘTY i to nie jest przesada.
+ *
+ * Dopóki tag był dowolnym identyfikatorem, model dopisał przedmiotowi tag "narzucie"
+ * i nic tego nie złapało — ani schemat, ani walidator, ani testy. Enum robi dwie rzeczy
+ * naraz: bramka łapie literówkę, a gramatyka dekodowania sprawia, że model fizycznie nie
+ * może jej wypisać. Przedmiot bez pasującego tagu zostawia pustą listę; to jest poprawna
+ * odpowiedź, a wymyślanie nowego słowa nie jest.
+ */
+export const TAGS = [
+  'surowiec', 'polprodukt', 'narzedzie', 'jedzenie', 'paliwo', 'budynek', 'schowek', 'swiatlo',
+] as const;
 export const STATIONS = ['hand', 'workbench', 'furnace', 'kitchen', 'loom'] as const;
 export const SEASONS = ['wiosna', 'lato', 'jesien', 'zima'] as const;
 
 export type ToolKind = (typeof TOOL_KINDS)[number];
 export type Station = (typeof STATIONS)[number];
 export type Season = (typeof SEASONS)[number];
+export type Tag = (typeof TAGS)[number];
 
 export const ItemSchema = z
   .object({
     id: Id,
     name: PlName,
     desc: Desc.default(''),
-    tags: z.array(Id).max(8).default([]),
+    tags: z.array(z.enum(TAGS)).max(8).default([]),
     stack: z.number().int().min(1).max(999).default(99),
     /** Wartość handlowa — używana przez kontrolę ekonomii (bez pętli nieskończonego zysku). */
     value: z.number().int().min(1).max(10000).default(1),

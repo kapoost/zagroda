@@ -43,6 +43,11 @@ export const RouteSchema = z
     skill_id: z.enum(SKILL_IDS),
     /** Co gracz zauważy, gdy zmiana zadziała — trafia do briefu i do changeloga. */
     observable_pl: z.string().max(300),
+    /**
+     * To samo co observable_pl, ale jako warunek na liczbę — żeby ktoś mógł to sprawdzić.
+     * Patrz stages/intencja.ts: bramka dowodzi spójności, te warunki dowodzą intencji.
+     */
+    checks: z.array(z.string().min(5).max(140)).max(4),
     /** Czy zmiana naprawdę wymaga skasowania istniejących wpisów. */
     removes_content: z.boolean(),
     /** Czy zmiana dotyka istniejących wpisów, czy tylko dodaje nowe. */

@@ -5,6 +5,7 @@ import { requireModel } from './providers/ollama.js';
 import { applyOps } from './stages/applyData.js';
 import { patchWithApi, patchWithCoder, type CodeTask } from './stages/applyCode.js';
 import { gateFeedback, gateSummary, runGate, type GateResult } from './stages/gate.js';
+import { feedbackAsercji, sprawdzAsercje } from './stages/intencja.js';
 import * as git from './stages/git.js';
 import { proposeOps, routeRequest, widenCollections, type StageAttempt } from './stages/intent.js';
 import { FALLBACK_FILES, findSkill, genericBrief, renderBrief } from './skills.js';
@@ -123,10 +124,19 @@ export async function run(opts: RunOptions): Promise<RunResult> {
     say(`commit ${commit} · ${gateSummary(result.gate)}`);
 
     // --- faza 4: hybrydowa autonomia -------------------------------------
-    const autoMerge = route.kind === 'dane' && CFG.autoMergeData && !opts.noMerge;
+    //
+    // Auto-merge nie jest prawem zmiany danych, tylko nagrodą za sprawdzalną obietnicę.
+    // Zmiana bez ani jednego warunku intencji przeszła wyłącznie kontrolę spójności —
+    // a to za mało, żeby wejść na main bez czyjegokolwiek spojrzenia. Tak właśnie wszedł
+    // młot słabszy od kilofa: bramka zielona, obietnica żadna.
+    const obiecana = result.asercji > 0;
+    const autoMerge = route.kind === 'dane' && CFG.autoMergeData && !opts.noMerge && obiecana;
+    if (route.kind === 'dane' && !obiecana) {
+      say('brak warunków intencji — zmiana idzie na gałąź, nie na main');
+    }
     if (autoMerge) {
       git.mergeToMain(branch, route.title);
-      say(`scalone do main (zmiana czysto danych, bramka zielona)`);
+      say(`scalone do main (${result.asercji} warunków intencji spełnionych, bramka zielona)`);
       journal('merged', { kind: route.kind, title: route.title, branch, gate: { ok: true, failed: null } });
       return { outcome: 'merged', title: route.title, branch, commit, changes: result.changes, gate: result.gate, resolvedBy };
     }
@@ -166,6 +176,8 @@ interface StepResult {
   gate: GateResult;
   changes: string[];
   resolvedBy: JournalEntry['resolvedBy'];
+  /** Ile warunków intencji udało się sprawdzić. Zero znaczy: nikt tej zmiany nie obiecał. */
+  asercji: number;
 }
 
 /** Ścieżka danych: spec → deterministyczny applier → bramka → feedback. */
@@ -202,13 +214,32 @@ async function runDataChange(
     say('uruchamiam bramkę…');
     last = runGate();
     attempts.push({ stage: 'bramka', model: '-', ok: last.ok, note: last.failed ?? undefined });
-    if (last.ok) return { gate: last, changes, resolvedBy };
+
+    if (last.ok) {
+      // Bramka dowiodła spójności. Teraz pytanie, czy to jest TA zmiana, o którą proszono.
+      const wyniki = sprawdzAsercje(route.checks);
+      const zle = feedbackAsercji(wyniki);
+      attempts.push({
+        stage: 'intencja',
+        model: '-',
+        ok: zle.length === 0,
+        note: wyniki.length ? wyniki.map((w) => `${w.ok ? '✓' : '✗'} ${w.asercja}`).join(' | ') : 'brak warunków',
+      });
+      if (!zle.length) {
+        for (const w of wyniki) say(`   ✓ ${w.asercja}`);
+        return { gate: last, changes, resolvedBy, asercji: wyniki.length };
+      }
+      say(`warunki intencji niespełnione: ${zle.join('; ')}`);
+      feedback = zle;
+      if (round < rounds) git.revertWorktree();
+      continue;
+    }
 
     say(`bramka czerwona na etapie "${last.failed}"`);
     feedback = gateFeedback(last);
     if (round < rounds) git.revertWorktree();
   }
-  return { gate: last ?? { ok: false, failed: 'brak-propozycji', stages: [] }, changes, resolvedBy };
+  return { gate: last ?? { ok: false, failed: 'brak-propozycji', stages: [] }, changes, resolvedBy, asercji: 0 };
 }
 
 /** Ścieżka kodu: Qwen-Coder → bramka → feedback → eskalacja do API. */
@@ -266,11 +297,12 @@ async function runCodeChange(
     say('uruchamiam bramkę…');
     last = runGate();
     attempts.push({ stage: 'bramka', model: '-', ok: last.ok, note: last.failed ?? undefined });
-    if (last.ok) return { gate: last, changes, resolvedBy };
+    // Zmiana kodu i tak idzie przez PR, więc warunków intencji tu nie liczymy.
+    if (last.ok) return { gate: last, changes, resolvedBy, asercji: 0 };
 
     say(`bramka czerwona na etapie "${last.failed}"`);
     feedback = gateFeedback(last);
     git.revertWorktree();
   }
-  return { gate: last ?? { ok: false, failed: 'brak-patcha', stages: [] }, changes, resolvedBy };
+  return { gate: last ?? { ok: false, failed: 'brak-patcha', stages: [] }, changes, resolvedBy, asercji: 0 };
 }

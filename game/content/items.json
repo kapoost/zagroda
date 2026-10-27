@@ -359,16 +359,16 @@
   {
     "id": "mlot_kamienny",
     "name": "Kamienny młot",
-    "desc": "Wytrzymałe narzędzie do rozbijania skał.",
+    "desc": "Ciężki, obuchowy. Tłucze kamień dłużej niż kilof, zanim się rozleci.",
     "tags": [
-      "narzucie"
+      "narzedzie"
     ],
     "stack": 1,
-    "value": 20,
+    "value": 24,
     "tool": {
       "kind": "pickaxe",
       "power": 1,
-      "durability": 30
+      "durability": 600
     }
   }
 ]

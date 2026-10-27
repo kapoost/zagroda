@@ -41,6 +41,14 @@ Pola:
   (np. "osłab jagody", "zmień cenę skrzyni"). Dodanie nowej rzeczy to zawsze false.
 - code_request_en: PO ANGIELSKU, techniczny opis zmiany w kodzie; puste przy "dane"
 - observable_pl: jedno zdanie po polsku — co gracz zauważy, gdy zmiana zadziała
+- checks: to samo zdanie przełożone na WARUNKI NA LICZBY, które ktoś może sprawdzić.
+  Składnia: lewa_strona OPERATOR prawa_strona, gdzie strona to liczba albo ścieżka
+  kolekcja.id.pole — na przykład "items.kosa_zelazna.tool.power > items.kosa.tool.power"
+  albo "config.energyMax >= 100". Operatory: > < >= <= == !=
+  ZAWSZE wpisz warunek, gdy w opisie zmiany jest stopniowanie: "wytrzymalszy",
+  "tańszy", "mocniejszy", "rzadszy", "szybszy" — to są porównania i dają się policzyć.
+  Porównuj z tym, co JUŻ JEST w grze, a nie z liczbą wziętą z powietrza.
+  Gdy zmiana niczego nie porównuje, wpisz pustą listę.
 - skill_id: przy "kod" wybierz z listy poniżej ten rodzaj zmiany, który pasuje najlepiej;
   wpisz "brak", jeśli żaden naprawdę nie pasuje. Przy "dane" zawsze "brak".
 

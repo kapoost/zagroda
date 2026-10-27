@@ -453,12 +453,16 @@
     "station": "workbench",
     "inputs": [
       {
-        "item": "siekiera_kamienna",
-        "qty": 1
+        "item": "galaz",
+        "qty": 2
       },
       {
         "item": "kamien",
-        "qty": 2
+        "qty": 4
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
       }
     ],
     "output": {
