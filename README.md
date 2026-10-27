@@ -56,6 +56,11 @@ naprawienie kodu, nie rozmontowanie testów.
 ekwipunkiem i musi dojść do każdego kamienia milowego. Receptura, której w praktyce
 nie da się wykonać, pęknie tutaj — nawet jeśli schematy są zielone.
 
+**Komunikat błędu jest interfejsem.** Czyta go model, który ma zmianę poprawić, więc
+walidator nie mówi „nie ma itemu trzcina", tylko „trzcina to surowiec rosnący w świecie,
+nie przedmiot — użyj tego, co z niego wypada: wlokno". Ta jedna zmiana przeniosła pętlę
+z „trzy rundy, ten sam błąd" do „druga runda, zielono".
+
 ## Model danych
 
 | Plik | Co opisuje |

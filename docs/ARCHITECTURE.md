@@ -65,6 +65,9 @@ kształtu, tylko całości:
 - **pokrycie biomów**: każdy punkt przestrzeni (wysokość, wilgotność) ma przypisany biom
 - **ekonomia**: wartość wyjścia receptury ≤ 4× wartość wsadu — nie da się zrobić
   drukarki pieniędzy
+- **spójność ról**: przedmiot stawiany w świecie nie jest narzędziem ani jedzeniem,
+  narzędzie nie jest jedzeniem, `"hand"` to brak narzędzia a nie jego rodzaj
+- **brak ślepych uliczek**: każdy przedmiot ma rolę albo jest zużywany przez recepturę
 
 **Typy** — `tsc --noEmit` dla gry i agenta.
 
@@ -111,6 +114,21 @@ Hybrydowa:
 - **każdy patch kodu rdzenia** → gałąź i PR, czeka na człowieka
 
 Agent nigdy nie pracuje na `main`. Przy porzuceniu zmiany gałąź znika razem z nią.
+
+## Czego bramka nie złapie
+
+Dwie ostatnie kontrole powstały dopiero po przeglądzie pierwszej scalonej zmiany,
+i to jest pouczające. Bielik dodał kosz, który przeszedł wszystkie cztery etapy
+i był jednocześnie schowkiem, narzędziem ręcznym i jedzeniem — bo spłaszczenie
+gramatyki (patrz wyżej) zamieniło pola opcjonalne w wymagane, a model zamiast
+wpisać null zaczął je wymyślać. Poprawka wydajnościowa stworzyła problem
+merytoryczny; luka była jednak nazywalna i domknięta w kilkanaście minut.
+
+Co nadal zostaje poza zasięgiem bramki: czy zmiana realizuje to, o co gracz prosił.
+„Mieści więcej niż skrzynia" to wymaganie, którego walidator nie sprawdzi — może
+jedynie potwierdzić, że schowek istnieje i ma jakąś pojemność. Przegląd człowieka
+albo mocniejszy model na szczeblu eskalacji to jedyne miejsca, gdzie taka rzecz
+wychodzi na jaw.
 
 ## Co jest słabym punktem
 
