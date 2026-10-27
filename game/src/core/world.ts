@@ -137,7 +137,7 @@ export function generate(reg: Registry, seed: number): State {
     },
     craft: null,
     rng: seed ^ 0x9e3779b9,
-    log: ['Budzisz się na wyspie. Nic nie masz. Wszystko jest do zebrania.'],
+    log: ['Budzisz się na Rynku. Nic nie masz. Całe miasto jest do obejścia.'],
   };
 }
 

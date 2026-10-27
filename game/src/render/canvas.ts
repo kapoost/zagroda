@@ -4,7 +4,11 @@ import type { State } from '../core/types.js';
 
 /** Rysowanie świata. Czysta prezentacja — nie wolno tu zmieniać stanu gry. */
 
-export const TILE = 26;
+/**
+ * Mniejszy kafel niż na wyspie: plan Zamościa ma sens dopiero wtedy, gdy widać
+ * kilka ulic naraz. Przy 26 px gracz oglądał fragment zabudowy bez kontekstu.
+ */
+export const TILE = 18;
 
 function nightAlpha(t: number): number {
   // Zmierzch i świt zamiast skokowej zmiany: 0 w południe, maksimum o północy.
