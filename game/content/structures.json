@@ -60,5 +60,19 @@
     "color": "#87CEEB",
     "blocks": false,
     "storage": 30
+  },
+  {
+    "id": "legowisko",
+    "name": "Legowisko",
+    "desc": "Słoma ułożona pod ścianą.",
+    "color": "#c8b06a",
+    "blocks": false
+  },
+  {
+    "id": "namiot_plocienny",
+    "name": "Namiot",
+    "desc": "Płótno rozpięte na gałęziach.",
+    "color": "#9a8c6a",
+    "blocks": true
   }
 ]

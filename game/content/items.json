@@ -331,13 +331,29 @@
     }
   },
   {
-    "id": "wypelnienie_kosza",
-    "name": "Wypełnienie kosza",
-    "desc": "Materiał do wyściełania kosza.",
+    "id": "mata_slomiana",
+    "name": "Mata słomiana",
+    "desc": "Plecione posłanie na jedną noc.",
     "tags": [
-      "material"
+      "budynek"
     ],
     "stack": 10,
-    "value": 2
+    "value": 10,
+    "placeable": {
+      "structure": "legowisko"
+    }
+  },
+  {
+    "id": "namiot",
+    "name": "Namiot płócienny",
+    "desc": "Dach nad głową, gdy daleko do domu.",
+    "tags": [
+      "budynek"
+    ],
+    "stack": 5,
+    "value": 35,
+    "placeable": {
+      "structure": "namiot_plocienny"
+    }
   }
 ]

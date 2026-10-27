@@ -118,6 +118,16 @@ describe('walidator łapie psucie treści', () => {
     expect(codes(c)).toContain('SCHEMA');
   });
 
+  it('przedmiot, który do niczego nie służy', () => {
+    const c = clone();
+    c.items.push({ id: 'bibelot', name: 'Bibelot', value: 3 });
+    c.recipes.push({
+      id: 'r_bibelot', name: 'Bibelot', station: 'hand',
+      inputs: [{ item: 'kamien', qty: 1 }], output: { item: 'bibelot', qty: 1 }, ticks: 2,
+    });
+    expect(codes(c)).toContain('BEZ_ZASTOSOWANIA');
+  });
+
   it('nieznane pole w definicji itemu', () => {
     const c = clone();
     c.items[0].godmode = true;

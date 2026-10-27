@@ -404,13 +404,13 @@
     "ticks": 20
   },
   {
-    "id": "r_wypelnienie_kosza",
-    "name": "Wypełnienie kosza",
+    "id": "r_mata_slomiana",
+    "name": "Mata słomiana",
     "station": "workbench",
     "inputs": [
       {
-        "item": "wlokno",
-        "qty": 5
+        "item": "siano",
+        "qty": 4
       },
       {
         "item": "sznurek",
@@ -418,9 +418,33 @@
       }
     ],
     "output": {
-      "item": "wypelnienie_kosza",
+      "item": "mata_slomiana",
       "qty": 1
     },
-    "ticks": 15
+    "ticks": 12
+  },
+  {
+    "id": "r_namiot",
+    "name": "Namiot płócienny",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "tkanina",
+        "qty": 3
+      },
+      {
+        "item": "galaz",
+        "qty": 2
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "namiot",
+      "qty": 1
+    },
+    "ticks": 35
   }
 ]

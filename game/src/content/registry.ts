@@ -284,6 +284,26 @@ export function validateContent(raw: unknown): ValidateResult {
       );
     }
   }
+  /**
+   * Przedmiot bez zastosowania.
+   *
+   * Długoterminowy tryb awarii tego projektu: model dokłada przez miesiące przedmioty,
+   * które przechodzą każdą pojedynczą kontrolę i do niczego nie służą. Każdy z osobna
+   * jest nieszkodliwy; sto takich zamienia grę w śmietnik. Przedmiot musi mieć rolę
+   * (narzędzie, jedzenie, coś stawianego) albo być zużywany przez jakąś recepturę.
+   */
+  const usedAsInput = new Set(c.recipes.flatMap((r) => r.inputs.map((i) => i.item)));
+  for (const it of c.items) {
+    if (it.tool || it.edible || it.placeable || usedAsInput.has(it.id)) continue;
+    err(
+      'BEZ_ZASTOSOWANIA',
+      `przedmiot "${it.id}" do niczego nie służy: nie jest narzędziem, jedzeniem ani czymś, ` +
+        'co się stawia, i żadna receptura go nie zużywa. Nadaj mu rolę albo dodaj recepturę, ' +
+        'która go używa',
+      `items.${it.id}`,
+    );
+  }
+
   for (const r of c.recipes) {
     if (!craftable.has(r.id)) {
       err(
