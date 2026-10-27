@@ -129,6 +129,18 @@ export function validateContent(raw: unknown): ValidateResult {
     if (it.placeable && !structures.has(it.placeable.structure)) {
       err('REF_STRUCTURE', `nie ma struktury "${it.placeable.structure}"`, `items.${it.id}`);
     }
+    // Spójność ról. Model, który musi wypełnić każde pole schematu, chętnie dopisuje
+    // przedmiotowi wszystkie naraz — i powstaje kosz, który jest narzędziem i jedzeniem.
+    // Pola nieużywane mają być nullem; te kontrole wymuszają to po stronie treści.
+    if (it.placeable && it.tool) {
+      err('ROLA', 'przedmiot stawiany w świecie nie może być jednocześnie narzędziem', `items.${it.id}`);
+    }
+    if (it.placeable && it.edible) {
+      err('ROLA', 'przedmiotu stawianego w świecie nie da się zjeść', `items.${it.id}`);
+    }
+    if (it.tool && it.edible) {
+      err('ROLA', 'narzędzie nie jest jednocześnie jedzeniem', `items.${it.id}`);
+    }
   }
   for (const r of c.resources) {
     for (const b of r.biomes) {

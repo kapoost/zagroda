@@ -38,7 +38,8 @@ export const ItemSchema = z
     value: z.number().int().min(1).max(10000).default(1),
     tool: z
       .object({
-        kind: z.enum(TOOL_KINDS),
+        // "hand" oznacza BRAK narzędzia, więc żaden przedmiot nie może być narzędziem ręcznym.
+        kind: z.enum(TOOL_KINDS).refine((k) => k !== 'hand', '"hand" to brak narzędzia, nie rodzaj narzędzia'),
         power: z.number().int().min(1).max(5),
         durability: z.number().int().min(10).max(5000),
       })

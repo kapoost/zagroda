@@ -59,12 +59,18 @@ TWARDE REGUŁY (ich złamanie powoduje odrzucenie zmiany):
    "placeable" w przedmiocie wskazującego na id tej struktury.
 11. Każdy nowy przedmiot potrzebuje receptury albo wypadania z surowca — inaczej jest
    nieosiągalny i zmiana zostanie odrzucona.
+12. POLA, KTÓRE NIE DOTYCZĄ DANEJ RZECZY, USTAW NA null. Schemat wymaga obecności klucza,
+   ale wartością ma być null. Skrzynia nie jest narzędziem ("tool": null) ani jedzeniem
+   ("edible": null). Siekiera nie jest budynkiem ("placeable": null). Przedmiot nie może
+   pełnić dwóch ról naraz — taka zmiana zostanie odrzucona.
+13. "hand" oznacza gołe ręce, czyli BRAK narzędzia. Żaden przedmiot nie ma "kind": "hand".
 
 PRZYKŁAD dobrze zbudowanej odpowiedzi dla zadania "dodaj plecioną matę do spania":
 {
   "add_items": [
     { "id": "mata_sloma", "name": "Mata słomiana", "desc": "Plecione posłanie.",
       "tags": ["budynek"], "value": 6, "stack": 10,
+      "tool": null, "edible": null,
       "placeable": { "structure": "poslanie_slomiane" } }
   ],
   "add_structures": [
@@ -78,7 +84,8 @@ PRZYKŁAD dobrze zbudowanej odpowiedzi dla zadania "dodaj plecioną matę do spa
   ]
 }
 Zwróć uwagę: jeden przedmiot, jedna struktura, jedna receptura ze wsadu, który
-już istnieje w grze. Wartość wyjścia (6) mieści się w 4× wartości wsadu (4×1 + 1×3 = 7).`;
+już istnieje w grze. Wartość wyjścia (6) mieści się w 4× wartości wsadu (4×1 + 1×3 = 7).
+Mata jest budynkiem, więc "tool" i "edible" są nullem — nie wymyślaj dla nich wartości.`;
 
 function vocabBlock(): string {
   return `RODZAJE NARZĘDZI: ${VOCAB.tools.join(', ')}\nSTACJE: ${VOCAB.stations.join(', ')}`;

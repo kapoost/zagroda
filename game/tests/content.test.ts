@@ -100,6 +100,24 @@ describe('walidator łapie psucie treści', () => {
     expect(codes(c)).toContain('SCHEMA');
   });
 
+  it('przedmiot, który jest naraz budynkiem i narzędziem', () => {
+    const c = clone();
+    c.items.find((i: any) => i.id === 'skrzynia').tool = { kind: 'axe', power: 1, durability: 100 };
+    expect(codes(c)).toContain('ROLA');
+  });
+
+  it('przedmiot, który jest naraz budynkiem i jedzeniem', () => {
+    const c = clone();
+    c.items.find((i: any) => i.id === 'skrzynia').edible = { energy: 5 };
+    expect(codes(c)).toContain('ROLA');
+  });
+
+  it('narzędzie o rodzaju "hand" — czyli brak narzędzia udający narzędzie', () => {
+    const c = clone();
+    c.items.find((i: any) => i.id === 'siekiera_kamienna').tool.kind = 'hand';
+    expect(codes(c)).toContain('SCHEMA');
+  });
+
   it('nieznane pole w definicji itemu', () => {
     const c = clone();
     c.items[0].godmode = true;
