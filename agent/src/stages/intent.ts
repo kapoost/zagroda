@@ -53,7 +53,27 @@ Pola:
   wpisz "brak", jeśli żaden naprawdę nie pasuje. Przy "dane" zawsze "brak".
 
 Zasada: wybieraj "dane", kiedy tylko to możliwe. Nowa broń, surowiec, potrawa, budynek
-czy postać to zawsze "dane".`;
+czy postać to zawsze "dane".
+
+PRZYKŁAD dla zadania "dodaj żelazną siekierę, mocniejszą i trwalszą od kamiennej":
+{
+  "kind": "dane",
+  "collections": ["items", "recipes"],
+  "title": "Żelazna siekiera",
+  "summary_pl": "Nowe narzędzie do ścinki, lepsze od kamiennego. Wymaga sztabek żelaza, więc pojawia się dopiero po uruchomieniu pieca.",
+  "code_request_en": "",
+  "observable_pl": "Gracz ścina drzewo szybciej i siekiera wytrzymuje dłużej.",
+  "checks": [
+    "items.siekiera_zelazna.tool.power > items.siekiera_kamienna.tool.power",
+    "items.siekiera_zelazna.tool.durability > items.siekiera_kamienna.tool.durability"
+  ],
+  "skill_id": "brak",
+  "removes_content": false,
+  "modifies_existing": false
+}
+Zwróć uwagę: w zadaniu były DWA stopniowania ("mocniejszą", "trwalszą"), więc w checks
+są DWA warunki — każdy porównuje nowy wpis z tym, który już jest w grze. Gdyby w zadaniu
+nie było żadnego stopniowania, checks byłoby pustą listą.`;
 
 const OPS_SYSTEM = `ŚWIAT GRY — każdy wpis, który tworzysz, ma do niego pasować:
 ${lore()}
