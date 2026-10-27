@@ -77,13 +77,31 @@ const A = 2;
     expect(out[0]).toMatchObject({ old: '  if (x) {\n    return 1;\n  }', next: '  if (x) {\n\n    return 2;\n  }' });
   });
 
-  it('pomija blok bez rozpoznanej ścieżki', () => {
+  it('zgłasza blok bez rozpoznanej ścieżki zamiast go pomijać', () => {
+    // Cicho pominięty blok to najgorszy możliwy wynik: patch wygląda na kompletny,
+    // a brakuje w nim jednej ze zmian — i może mimo to przejść bramkę.
     const out = parseEdits(`<<<<<<< SEARCH
 a
 =======
 b
 >>>>>>> REPLACE`);
-    expect(out).toEqual([]);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.kind).toBe('orphan');
+  });
+
+  it('zgłasza drugi i trzeci blok, gdy model podał ścieżkę tylko raz', () => {
+    const out = parseEdits(`game/src/core/tick.ts
+<<<<<<< SEARCH
+a
+=======
+b
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+c
+=======
+d
+>>>>>>> REPLACE`);
+    expect(out.map((e) => e.kind)).toEqual(['replace', 'orphan']);
   });
 
   it('czyta blok FILE dla nowego pliku', () => {

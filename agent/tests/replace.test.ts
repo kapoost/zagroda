@@ -64,3 +64,21 @@ describe('podmiana fragmentu', () => {
     expect(r.ok).toBe(false);
   });
 });
+
+describe('wzorce podstawienia w kodzie modelu', () => {
+  it('nie interpretuje $& jako wzorca podstawienia', () => {
+    // String.replace traktuje $&, $`, $' i $1 jako wzorce. Kod modelu potrafi je
+    // zawierać, a skutek byłby cichy: do pliku trafiłby fragment zamiast tekstu.
+    const file = 'const a = 1;\n';
+    const r = applyReplace(file, 'const a = 1;', 'const a = 2; // zachowaj $& dosłownie');
+    expect(r.ok).toBe(true);
+    expect(r.ok && r.next).toContain('zachowaj $& dosłownie');
+    expect(r.ok && r.next).not.toContain('zachowaj const a = 1;');
+  });
+
+  it('nie interpretuje $1 ani $`', () => {
+    const file = 'x();\n';
+    const r = applyReplace(file, 'x();', 'y($1, $`);');
+    expect(r.ok && r.next).toContain('y($1, $`);');
+  });
+});

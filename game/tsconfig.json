@@ -4,7 +4,8 @@
     "outDir": "dist/types",
     "rootDir": ".",
     "types": [
-      "vite/client"
+      "vite/client",
+      "node"
     ]
   },
   "include": [

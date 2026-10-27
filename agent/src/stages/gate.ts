@@ -38,10 +38,22 @@ export function runGate(): GateResult {
       /* spadamy do wariantu awaryjnego */
     }
   }
+  // Brak pliku wyniku oznacza, że bramka nie doszła do końca — to awaria, nie przepustka.
+  // Traktowanie kodu wyjścia 0 jako zielonego światła pozwoliłoby zacommitować zmianę,
+  // której nikt nie sprawdził.
   return {
-    ok: r.status === 0,
-    failed: r.status === 0 ? null : 'bramka',
-    stages: [{ name: 'bramka', ok: r.status === 0, ms: 0, output: `${r.stdout ?? ''}${r.stderr ?? ''}`.slice(-4000) }],
+    ok: false,
+    failed: 'bramka-nie-odpowiedziala',
+    stages: [
+      {
+        name: 'bramka-nie-odpowiedziala',
+        ok: false,
+        ms: 0,
+        output:
+          `Bramka zakończyła się kodem ${r.status} i nie zapisała .agent/gate.json.\n` +
+          `${r.stdout ?? ''}${r.stderr ?? ''}`.slice(-3500),
+      },
+    ],
   };
 }
 

@@ -47,11 +47,22 @@ export function revertWorktree(): void {
   git(['clean', '-qfd'], true);
 }
 
-export function abandonBranch(branch: string, backTo = 'main'): void {
+/**
+ * Porzucenie gałęzi po nieudanej zmianie.
+ *
+ * Kasuje WYŁĄCZNIE gałąź bez własnych commitów. Gałąź, na której coś już zacommitowano,
+ * przeszła bramkę — jej skasowanie zabrałoby pracę nie do odzyskania, bo nie wskazuje
+ * na nią wtedy żadna referencja. Wcześniej chroniła przed tym tylko ta okoliczność,
+ * że HEAD stał na kasowanej gałęzi i git odmawiał; to nie jest zabezpieczenie, tylko zbieg.
+ */
+export function abandonBranch(branch: string, backTo = 'main'): { deleted: boolean } {
   git(['checkout', '-q', '--', '.'], true);
   git(['clean', '-qfd'], true);
   git(['checkout', '-q', backTo]);
+  const ahead = git(['rev-list', '--count', `${backTo}..${branch}`], true);
+  if (ahead !== '0') return { deleted: false };
   git(['branch', '-qD', branch], true);
+  return { deleted: true };
 }
 
 export interface CommitInput {

@@ -34,7 +34,7 @@ HARD CONSTRAINTS:
    you cannot write them.
 4. Keep the existing code style: explicit types, no default exports, comments only where they
    explain a non-obvious constraint.
-5. Return COMPLETE file contents, never diffs or fragments.
+5. Change as little as possible. Touch only what the task requires.
 
 OUTPUT FORMAT — use SEARCH/REPLACE blocks. NEVER output a whole file.
 
@@ -66,7 +66,9 @@ ${WRITE_ALLOW.join('\n')}`;
 
 export type CodeEdit =
   | { kind: 'file'; path: string; content: string }
-  | { kind: 'replace'; path: string; old: string; next: string };
+  | { kind: 'replace'; path: string; old: string; next: string }
+  /** Blok, którego nie dało się przypisać do pliku — musi zostać zgłoszony, nie pominięty. */
+  | { kind: 'orphan'; why: string };
 
 /**
  * Protokół tekstowy, nie JSON — i to jest celowe. Model kodujący musiałby escapować cały
@@ -114,7 +116,18 @@ export function parseEdits(raw: string): CodeEdit[] {
       const newBuf: string[] = [];
       while (i < lines.length && !SEARCH_CLOSE.test(lines[i]!.trim())) newBuf.push(lines[i++]!);
       i++;
-      if (path && oldBuf.length) {
+      if (!oldBuf.length) {
+        out.push({ kind: 'orphan', why: 'blok SEARCH/REPLACE bez fragmentu do podmiany' });
+      } else if (!path) {
+        // Cicho pominięty blok to najgorszy możliwy wynik: patch wygląda na kompletny,
+        // a brakuje w nim jednej z trzech zmian.
+        out.push({
+          kind: 'orphan',
+          why:
+            'blok SEARCH/REPLACE bez ścieżki pliku bezpośrednio nad nim — powtórz ścieżkę ' +
+            `przed KAŻDYM blokiem. Szukany fragment zaczynał się od "${(oldBuf[0] ?? '').trim().slice(0, 50)}"`,
+        });
+      } else {
         out.push({ kind: 'replace', path, old: trimFences(oldBuf), next: trimFences(newBuf) });
       }
       continue;
@@ -171,7 +184,9 @@ export function applyReplace(
   newText: string,
 ): { ok: true; next: string } | { ok: false; why: string } {
   const exact = current.split(oldText).length - 1;
-  if (exact === 1) return { ok: true, next: current.replace(oldText, newText) };
+  // Funkcja, nie string: w zwykłym replace sekwencje $&, $`, $' i $1 są wzorcami
+  // podstawienia, a kod modelu potrafi je zawierać. Efekt byłby cichy i trudny do wykrycia.
+  if (exact === 1) return { ok: true, next: current.replace(oldText, () => newText) };
   if (exact > 1) {
     return { ok: false, why: `fragment występuje ${exact} razy — dodaj otaczające linie, żeby był jednoznaczny` };
   }
@@ -221,6 +236,10 @@ function applyEdits(edits: CodeEdit[]): CodeResult {
   const rejected: string[] = [];
 
   for (const e of edits) {
+    if (e.kind === 'orphan') {
+      rejected.push(e.why);
+      continue;
+    }
     const verdict = canWriteCode(e.path);
     if (!verdict.ok) {
       rejected.push(`${e.path}: ${verdict.why}`);

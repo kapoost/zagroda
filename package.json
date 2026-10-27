@@ -10,7 +10,7 @@
     "dev": "npm run dev -w game",
     "build": "npm run build -w game",
     "test": "npm run test -w game",
-    "typecheck": "tsc -p game/tsconfig.json --noEmit && tsc -p agent/tsconfig.json --noEmit",
+    "typecheck": "tsc -p game/tsconfig.json --noEmit && tsc -p agent/tsconfig.json --noEmit && tsc -p tsconfig.tools.json",
     "gate": "tsx tools/gate.ts",
     "zu": "npm run zu -w agent --",
     "sim": "tsx tools/sim.ts"

@@ -32,6 +32,12 @@ export async function apiComplete(system: string, user: string, maxTokens = 32_0
   if (msg.stop_reason === 'refusal') {
     throw new Error('API odmówiło odpowiedzi na to zapytanie');
   }
+  // Ucięta odpowiedź wygląda jak kompletna: ostatni blok patcha jest w połowie,
+  // a parser przyjmie go za dobrą monetę i zapisze połówkę pliku. Na claude-opus-5
+  // myślenie dzieli budżet max_tokens z tekstem, więc to nie jest przypadek teoretyczny.
+  if (msg.stop_reason === 'max_tokens') {
+    throw new Error(`odpowiedź API urwana na limicie ${maxTokens} tokenów — zwiększ budżet`);
+  }
   const text = msg.content
     .filter((b): b is Anthropic.TextBlock => b.type === 'text')
     .map((b) => b.text)

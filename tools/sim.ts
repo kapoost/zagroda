@@ -1,3 +1,4 @@
+import { pathToFileURL } from 'node:url';
 import { Game } from '../game/src/core/game.js';
 import { hashState } from '../game/src/core/hash.js';
 import { Bot } from '../game/src/sim/bot.js';
@@ -46,7 +47,9 @@ export function runSim(seeds = [1337, 4242]): { ok: boolean; metrics: SimMetrics
   return { ok: metrics.every((m) => m.milestones.every((x) => x.ok)), metrics };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// pathToFileURL, nie konkatenacja: ścieżka ze spacją albo polskim znakiem
+// jest w URL-u zakodowana procentowo i porównanie wprost zawsze wychodzi fałszywie.
+if (import.meta.url === pathToFileURL(process.argv[1]!).href) {
   const { ok, metrics } = runSim();
   for (const m of metrics) {
     console.log(`\nseed ${m.seed} — encji ${m.entities}, ląd ${(m.landShare * 100).toFixed(1)}%, hash ${m.hashAfter10k}`);

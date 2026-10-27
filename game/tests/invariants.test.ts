@@ -138,3 +138,48 @@ describe('doba', () => {
     expect(NIGHT_TO).toBeLessThan(0.5);
   });
 });
+
+describe('koszt czynności', () => {
+  const atTime = (g: Game, frac: number) => {
+    g.state.tick = Math.round(((frac - 0.32 + 1) % 1) * g.reg.content.config.dayTicks);
+  };
+  const hitNearestBush = (g: Game) => {
+    const t = g.state.ents.find((e) => e.kind === 'resource' && e.def === 'krzak' && e.respawnAt === 0)!;
+    g.state.player.x = t.x;
+    g.state.player.y = t.y - 1;
+    const before = g.state.player.energy;
+    g.step({ face: 's', act: true });
+    return before - g.state.player.energy;
+  };
+
+  it('zbieranie w nocy kosztuje dwa razy więcej niż w dzień', () => {
+    const day = new Game(1337);
+    atTime(day, 0.5);
+    const night = new Game(1337);
+    atTime(night, 0.0);
+    expect(hitNearestBush(night)).toBe(hitNearestBush(day) * 2);
+  });
+
+  it('nocna stawka nie dotyczy wytwarzania ani stawiania', () => {
+    // Prośba brzmiała "zbieranie w nocy", a spend() jest wspólne dla trzech czynności.
+    const g = new Game(1337);
+    atTime(g, 0.0);
+    g.state.player.inv = { wlokno: 2, pochodnia: 1 };
+    const beforeCraft = g.state.player.energy;
+    g.step({ craft: 'r_sznurek' });
+    expect(beforeCraft - g.state.player.energy).toBe(g.reg.content.config.energyPerAction);
+  });
+
+  it('koszt nigdy nie przekracza maksimum sił', () => {
+    // Schemat dopuszcza energyPerAction 12 przy energyMax 20; bez ograniczenia
+    // nocna stawka 24 zablokowałaby zbieranie na zawsze.
+    const g = new Game(1337);
+    atTime(g, 0.0);
+    (g.reg.content.config as { energyPerAction: number }).energyPerAction = 12;
+    (g.reg.content.config as { energyMax: number }).energyMax = 20;
+    g.state.player.energy = 20;
+    expect(hitNearestBush(g)).toBeLessThanOrEqual(20);
+    (g.reg.content.config as { energyPerAction: number }).energyPerAction = 1;
+    (g.reg.content.config as { energyMax: number }).energyMax = 100;
+  });
+});

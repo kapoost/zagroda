@@ -11,6 +11,8 @@ import { DIRS, MAX_LOG, type Entity, type Input, type State } from './types.js';
  */
 
 const ENERGY_REGEN_EVERY = 20;
+/** Zbieranie po ciemku kosztuje tyle razy więcej sił. Dotyczy wyłącznie zbierania. */
+const NIGHT_GATHER_MULTIPLIER = 2;
 const RESPAWN_RETRY = 600;
 const STATION_RADIUS = 2;
 
@@ -81,18 +83,21 @@ function log(state: State, msg: string): void {
   if (state.log.length > MAX_LOG) state.log.splice(0, state.log.length - MAX_LOG);
 }
 
-function spend(state: State, reg: Registry): boolean {
-  const BASE_COST = reg.content.config.energyPerAction;
-  const NIGHT_MULTIPLIER = 2;
-
-  let effectiveCost = BASE_COST * (isNight(state, reg) ? NIGHT_MULTIPLIER : 1);
-  if (effectiveCost < 1) effectiveCost = 1; // Ensure the cost is at least 1
-
-  if (state.player.energy < effectiveCost) {
+/**
+ * Pobranie sił za czynność.
+ *
+ * Mnożnik przekazuje wołający, bo to on wie, czy warunki dotyczą jego czynności.
+ * Koszt nie może przekroczyć maksimum sił: przy legalnej konfiguracji treści
+ * (energyPerAction 12 przy energyMax 20) mnożnik zrobiłby z akcji czynność
+ * niewykonalną na zawsze, bez względu na to, ile gracz je i odpoczywa.
+ */
+function spend(state: State, reg: Registry, multiplier = 1): boolean {
+  const cost = Math.min(reg.content.config.energyPerAction * multiplier, reg.content.config.energyMax);
+  if (state.player.energy < cost) {
     log(state, 'Brakuje ci sił. Zjedz coś albo odpocznij.');
     return false;
   }
-  state.player.energy -= effectiveCost;
+  state.player.energy -= cost;
   return true;
 }
 
@@ -126,7 +131,7 @@ function harvest(state: State, reg: Registry, e: Entity, rng: Rng): void {
     log(state, `Na to potrzeba czegoś mocniejszego${need ? `: ${need.name.toLowerCase()}` : ''}.`);
     return;
   }
-  if (!spend(state, reg)) return;
+  if (!spend(state, reg, isNight(state, reg) ? NIGHT_GATHER_MULTIPLIER : 1)) return;
   const power = state.player.held ? (reg.items.get(state.player.held)?.tool?.power ?? 1) : 1;
   e.hp -= power;
   wearTool(state, reg);

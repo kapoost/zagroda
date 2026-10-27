@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { rawContent } from '../game/src/content/load.js';
 import { formatIssues, validateContent } from '../game/src/content/registry.js';
 import { runSim } from './sim.js';
@@ -74,6 +74,9 @@ export function runGate(): GateResult {
     { name: 'tresc', run: stageContent },
     { name: 'typy', run: () => sh('node_modules/.bin/tsc', ['-p', 'game/tsconfig.json', '--noEmit']) },
     { name: 'typy-agent', run: () => sh('node_modules/.bin/tsc', ['-p', 'agent/tsconfig.json', '--noEmit']) },
+    // Bramka i symulator też muszą być sprawdzane typami: to pliki, które decydują
+    // o różnicy między "zmiana przeszła" a "zmiana udała, że przeszła".
+    { name: 'typy-narzedzi', run: () => sh('node_modules/.bin/tsc', ['-p', 'tsconfig.tools.json']) },
     { name: 'testy', run: () => sh('node_modules/.bin/vitest', ['run', '--root', 'game']) },
     { name: 'testy-agent', run: () => sh('node_modules/.bin/vitest', ['run', '--root', 'agent']) },
     { name: 'symulacja', run: stageSim },
@@ -91,7 +94,9 @@ export function runGate(): GateResult {
   return { ok: !failed, failed, stages, metrics };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// pathToFileURL, nie konkatenacja: ścieżka ze spacją albo polskim znakiem
+// jest w URL-u zakodowana procentowo i porównanie wprost zawsze wychodzi fałszywie.
+if (import.meta.url === pathToFileURL(process.argv[1]!).href) {
   const res = runGate();
   for (const s of res.stages) {
     console.log(`${s.ok ? '✓' : '✗'} ${s.name.padEnd(12)} ${String(s.ms).padStart(6)}ms`);

@@ -181,14 +181,26 @@ export interface OpsResult {
  * referencja — i bramka odrzuciłaby zmianę, której schemat nawet nie pozwalał naprawić.
  */
 export function widenCollections(cols: Collection[]): Collection[] {
-  const set = new Set<Collection>(cols.length ? cols : ['items']);
-  if (set.has('items') || set.has('resources') || set.has('structures')) {
-    set.add('items');
-    set.add('recipes');
-    set.add('structures');
+  const chosen = cols.length ? cols : (['items'] as Collection[]);
+  const must = new Set<Collection>();
+  if (chosen.some((c) => c === 'items' || c === 'resources' || c === 'structures')) {
+    must.add('items');
+    must.add('recipes');
+    must.add('structures');
   }
-  return [...set].slice(0, 5);
+  // Zależności idą pierwsze, bo to one decydują, czy zmiana da się w ogóle naprawić.
+  // Wcześniej limit obcinał koniec listy, czyli dokładnie to, co funkcja przed chwilą
+  // dołożyła — i pętla poprawek nie miała czym naprawić bramki.
+  const out: Collection[] = [...must];
+  for (const c of chosen) {
+    if (out.length >= MAX_COLLECTIONS) break;
+    if (!out.includes(c)) out.push(c);
+  }
+  return out.slice(0, MAX_COLLECTIONS);
 }
+
+/** Ile kolekcji maksymalnie — każda to osobne wywołanie modelu, więc limit to budżet czasu. */
+const MAX_COLLECTIONS = 5;
 
 /** Kolejność ma znaczenie: struktury przed przedmiotami, przedmioty przed recepturami. */
 const ORDER: Collection[] = ['structures', 'biomes', 'resources', 'items', 'recipes', 'npcs', 'config'];

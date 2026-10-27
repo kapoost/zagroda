@@ -90,6 +90,7 @@ export async function run(opts: RunOptions): Promise<RunResult> {
     if (!result.gate.ok) {
       say(`bramka czerwona po wszystkich próbach (etap: ${result.gate.failed}) — porzucam gałąź`);
       git.abandonBranch(branch, startedOn);
+      
       journal('abandoned', {
         kind: route.kind,
         title: route.title,
@@ -130,20 +131,23 @@ export async function run(opts: RunOptions): Promise<RunResult> {
       return { outcome: 'merged', title: route.title, branch, commit, changes: result.changes, gate: result.gate, resolvedBy };
     }
 
-    // Wracamy na gałąź startową: inaczej kolejny przebieg zaczyna na gałęzi poprzedniego
-    // i buduje na zmianie, której nikt jeszcze nie zaakceptował.
-    git.checkout(startedOn);
     let note = `gałąź ${branch} czeka na Twoją akceptację: git diff ${startedOn}..${branch}`;
     if (git.hasRemote() && git.pushBranch(branch)) {
+      // PR musi powstać PRZED powrotem na gałąź startową: `gh pr create` bierze gałąź
+      // źródłową z HEAD, a z main do main nie da się otworzyć pull requesta.
       const url = git.openPr(route.title, [route.summary_pl, '', ...result.changes.map((c) => `- ${c}`)].join('\n'));
       if (url) note = `PR otwarty: ${url}`;
       else note = `gałąź wypchnięta; PR otwórz ręcznie: gh pr create`;
     }
+    // Dopiero teraz wracamy: inaczej kolejny przebieg zaczyna na gałęzi poprzedniego
+    // i buduje na zmianie, której nikt jeszcze nie zaakceptował.
+    git.checkout(startedOn);
     say(note);
     journal('branch', { kind: route.kind, title: route.title, branch, gate: { ok: true, failed: null } });
     return { outcome: 'branch', title: route.title, branch, commit, changes: result.changes, gate: result.gate, resolvedBy, note };
   } catch (e) {
-    git.abandonBranch(branch, startedOn);
+    const { deleted } = git.abandonBranch(branch, startedOn);
+    if (!deleted) say(`gałąź ${branch} ma już commit i zostaje — obejrzyj ją zanim skasujesz`);
     journal('error', { kind: route.kind, title: route.title, branch, error: String(e).slice(0, 500) });
     throw e;
   }
