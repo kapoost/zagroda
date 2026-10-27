@@ -23,6 +23,21 @@ describe('treść gry', () => {
  */
 describe('walidator łapie psucie treści', () => {
 
+  it('strukturę, której żaden przedmiot nie stawia', () => {
+    const c = clone();
+    c.structures.push({
+      id: 'stanowisko_widmo', name: 'Stanowisko widmo', desc: 'Nikt go nie postawi.',
+      color: '#2a9130', blocks: false, storage: 5,
+    });
+    expect(codes(c)).toContain('STRUKTURA_SIEROTA');
+  });
+
+  it('strukturę dającą stanowisko "hand"', () => {
+    const c = clone();
+    c.structures[0].station = 'hand';
+    expect(codes(c)).toContain('SCHEMA');
+  });
+
   it('narzędzie droższe od poprzednika i pod każdym względem gorsze', () => {
     const c = clone();
     const kilof = c.items.find((i: any) => i.id === 'kilof_kamienny');

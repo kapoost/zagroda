@@ -277,6 +277,21 @@ export function validateContent(raw: unknown): ValidateResult {
     }
   }
 
+  // --- 5c. struktura, której nic nie stawia, jest martwa ------------------
+  // Odpowiednik kontroli BEZ_ZASTOSOWANIA, tylko dla struktur. Model dopisał kiedyś
+  // "stanowisko rybackie" przy okazji żelaznej wędki: poprawne, spójne i niewidoczne
+  // dla gracza, bo żaden przedmiot go nie stawiał.
+  const stawiane = new Set(c.items.flatMap((i) => (i.placeable ? [i.placeable.structure] : [])));
+  for (const st of c.structures) {
+    if (stawiane.has(st.id)) continue;
+    err(
+      'STRUKTURA_SIEROTA',
+      `żaden przedmiot nie stawia tej struktury, więc gracz jej nigdy nie zobaczy. ` +
+        `Dodaj przedmiot z "placeable" wskazującym na "${st.id}" albo usuń strukturę`,
+      `structures.${st.id}`,
+    );
+  }
+
   // Twarde błędy referencyjne unieważniają analizę osiągalności.
   if (issues.length) return { ok: false, issues };
 

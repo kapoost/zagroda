@@ -73,7 +73,9 @@ export const StructureSchema = z
     desc: Desc.default(''),
     color: Hex,
     blocks: z.boolean().default(true),
-    station: z.enum(STATIONS).optional(),
+    // "hand" to brak stanowiska, więc struktura nie może go dawać — tak samo jak
+    // żaden przedmiot nie jest narzędziem rodzaju "hand".
+    station: z.enum(STATIONS).refine((s) => s !== 'hand', '"hand" to brak stanowiska, nie rodzaj stanowiska').optional(),
     storage: z.number().int().min(0).max(200).default(0),
   })
   .strict();

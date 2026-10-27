@@ -74,14 +74,5 @@
     "desc": "Płótno rozpięte na gałęziach.",
     "color": "#9a8c6a",
     "blocks": true
-  },
-  {
-    "id": "stanowisko_rybackie",
-    "name": "Stanowisko rybackie",
-    "desc": "Miejsce do połowu ryb.",
-    "color": "#2a9130",
-    "blocks": false,
-    "station": "hand",
-    "storage": 5
   }
 ]
