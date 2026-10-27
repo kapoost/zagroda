@@ -13,9 +13,11 @@
     "typecheck": "tsc -p game/tsconfig.json --noEmit && tsc -p agent/tsconfig.json --noEmit && tsc -p tsconfig.tools.json",
     "gate": "tsx tools/gate.ts",
     "zu": "npm run zu -w agent --",
-    "sim": "tsx tools/sim.ts"
+    "sim": "tsx tools/sim.ts",
+    "pracownia": "concurrently -n gra,agent -c green,yellow \"npm:dev\" \"npm run serve -w agent\""
   },
   "devDependencies": {
+    "concurrently": "^10.0.6",
     "typescript": "^5.7.2"
   }
 }

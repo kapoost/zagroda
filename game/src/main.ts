@@ -2,6 +2,7 @@ import { Game } from './core/game.js';
 import type { Facing, Input } from './core/types.js';
 import { draw } from './render/canvas.js';
 import { availableRecipes, inventoryIds, renderHud, type HudRefs } from './render/hud.js';
+import { pracowniaOtwarta, przelacz, zamknij as zamknijPracownie } from './ui/pracownia.js';
 
 /** Spięcie rdzenia z przeglądarką: pętla o stałym kroku, wejście z klawiatury, rysowanie. */
 
@@ -50,6 +51,16 @@ function cycleHeld(step: number): void {
 }
 
 window.addEventListener('keydown', (e) => {
+  // Pracownia przejmuje klawiaturę w całości: gracz pisze tam zdania, a nie steruje postacią.
+  if (pracowniaOtwarta()) {
+    if (e.code === 'Escape') zamknijPracownie();
+    return;
+  }
+  if (e.code === 'KeyP') {
+    przelacz();
+    e.preventDefault();
+    return;
+  }
   if (e.repeat) {
     if (DIRS[e.code]) held.add(e.code);
     return;
