@@ -215,7 +215,16 @@ async function runDataChange(
 
     say('uruchamiam bramkę…');
     last = runGate();
-    attempts.push({ stage: 'bramka', model: '-', ok: last.ok, note: last.failed ?? undefined });
+    // Powód odrzucenia idzie i do modelu, i na ekran. Zapisany tylko w promptcie
+    // jest niewidoczny dla człowieka, który potem patrzy na trzy czerwone rundy
+    // i nie wie, czy model się mylił, czy bramka ma za ostre reguły.
+    const powody = last.ok ? [] : gateFeedback(last);
+    attempts.push({
+      stage: 'bramka',
+      model: '-',
+      ok: last.ok,
+      note: last.ok ? undefined : `${last.failed}: ${powody.join(' | ')}`.slice(0, 400),
+    });
 
     if (last.ok) {
       // Bramka dowiodła spójności. Teraz pytanie, czy to jest TA zmiana, o którą proszono.
@@ -238,7 +247,8 @@ async function runDataChange(
     }
 
     say(`bramka czerwona na etapie "${last.failed}"`);
-    feedback = gateFeedback(last);
+    for (const p of powody.slice(0, 4)) say(`   ${p}`);
+    feedback = powody;
     if (round < rounds) git.revertWorktree();
   }
   return { gate: last ?? { ok: false, failed: 'brak-propozycji', stages: [] }, changes, resolvedBy, asercji: 0 };
