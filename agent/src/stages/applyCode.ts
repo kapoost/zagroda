@@ -15,10 +15,12 @@ import { ollamaChat, unloadModel } from '../providers/ollama.js';
  */
 
 const MARK_FILE = /^<<<FILE\s+(.+?)>>>$/;
-const MARK_REPLACE = /^<<<REPLACE\s+(.+?)>>>$/;
-const MARK_OLD = /^<<<OLD>>>$/;
-const MARK_NEW = /^<<<NEW>>>$/;
 const MARK_END = /^<<<END>>>$/;
+/** Format SEARCH/REPLACE znany modelom koderskim z treningu — nie wymyślamy własnego. */
+const SEARCH_OPEN = /^<{5,9} SEARCH\s*$/;
+const SEARCH_SPLIT = /^={5,9}\s*$/;
+const SEARCH_CLOSE = /^>{5,9} REPLACE\s*$/;
+const FENCE = /^\s*```[a-zA-Z]*\s*$/;
 
 const CODE_SYSTEM = `You are a senior TypeScript engineer working on a deterministic 2D open-world
 crafting game. The game core is a pure reducer: tick(state, input, registry) -> state.
@@ -34,26 +36,32 @@ HARD CONSTRAINTS:
    explain a non-obvious constraint.
 5. Return COMPLETE file contents, never diffs or fragments.
 
-OUTPUT FORMAT — prefer REPLACE; it is cheaper and safer than rewriting a whole file:
+OUTPUT FORMAT — use SEARCH/REPLACE blocks. NEVER output a whole file.
 
-<<<REPLACE game/src/core/tick.ts>>>
-<<<OLD>>>
-the exact snippet to replace, copied verbatim from the file above
-<<<NEW>>>
-the replacement
-<<<END>>>
+Each block is the file path on its own line, then:
 
-The OLD snippet must appear EXACTLY ONCE in the file, copied character for character
-including indentation. Include enough surrounding lines to make it unique. Emit several
-REPLACE blocks if the change touches several places.
+game/src/core/tick.ts
+<<<<<<< SEARCH
+the exact lines to replace, copied character for character from the file above
+=======
+the replacement lines
+>>>>>>> REPLACE
 
-Use the whole-file form only when creating a NEW file:
+Rules for the SEARCH part:
+- Copy it verbatim from the file shown above, including indentation. Do not retype it
+  from memory and do not reformat it.
+- Keep it SHORT — just the few lines that change, plus enough context to be unique.
+- It must match exactly once in the file.
 
+Emit one block per place you change. Several blocks are fine and expected.
+Reply with nothing but these blocks: no explanation, no summary, no markdown fences.
+
+To create a NEW file (rare), use instead:
 <<<FILE game/src/core/newthing.ts>>>
 ...complete file content...
 <<<END>>>
 
-Reply with nothing but these blocks. Only these paths are writable:
+Only these paths are writable:
 ${WRITE_ALLOW.join('\n')}`;
 
 export type CodeEdit =
@@ -73,6 +81,16 @@ export function parseEdits(raw: string): CodeEdit[] {
   const out: CodeEdit[] = [];
   const lines = raw.split('\n');
   let i = 0;
+
+  /** Ostatnia linia przed blokiem, która wygląda jak ścieżka pliku. */
+  const pathBefore = (at: number): string | null => {
+    for (let k = at - 1; k >= 0 && k >= at - 4; k--) {
+      const cand = lines[k]!.trim().replace(/^[`*#\s]+|[`*:\s]+$/g, '');
+      if (/^[\w./-]+\.(ts|tsx|js|json)$/.test(cand)) return cand;
+    }
+    return null;
+  };
+
   while (i < lines.length) {
     const line = lines[i]!.trim();
 
@@ -87,20 +105,17 @@ export function parseEdits(raw: string): CodeEdit[] {
       continue;
     }
 
-    const repl = line.match(MARK_REPLACE);
-    if (repl) {
-      const path = repl[1]!.trim();
-      i++;
-      while (i < lines.length && !MARK_OLD.test(lines[i]!.trim())) i++;
+    if (SEARCH_OPEN.test(line)) {
+      const path = pathBefore(i);
       i++;
       const oldBuf: string[] = [];
-      while (i < lines.length && !MARK_NEW.test(lines[i]!.trim())) oldBuf.push(lines[i++]!);
+      while (i < lines.length && !SEARCH_SPLIT.test(lines[i]!.trim())) oldBuf.push(lines[i++]!);
       i++;
       const newBuf: string[] = [];
-      while (i < lines.length && !MARK_END.test(lines[i]!.trim())) newBuf.push(lines[i++]!);
+      while (i < lines.length && !SEARCH_CLOSE.test(lines[i]!.trim())) newBuf.push(lines[i++]!);
       i++;
-      if (oldBuf.length) {
-        out.push({ kind: 'replace', path, old: stripFence(oldBuf.join('\n')), next: stripFence(newBuf.join('\n')) });
+      if (path && oldBuf.length) {
+        out.push({ kind: 'replace', path, old: trimFences(oldBuf), next: trimFences(newBuf) });
       }
       continue;
     }
@@ -108,6 +123,14 @@ export function parseEdits(raw: string): CodeEdit[] {
     i++;
   }
   return out;
+}
+
+/** Model lubi domknąć blok ogrodzeniem markdownu — zdejmujemy je, nie treść. */
+function trimFences(buf: string[]): string {
+  const copy = [...buf];
+  while (copy.length && FENCE.test(copy[0]!)) copy.shift();
+  while (copy.length && FENCE.test(copy[copy.length - 1]!)) copy.pop();
+  return copy.join('\n');
 }
 
 const stripFence = (s: string) => s.replace(/^\s*```[a-z]*\n/, '').replace(/\n```\s*$/, '');
