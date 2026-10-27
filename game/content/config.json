@@ -1,5 +1,5 @@
 {
-  "worldSize": 256,
+  "worldSize": 512,
   "seed": 1337,
   "dayTicks": 2400,
   "energyMax": 100,

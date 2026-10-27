@@ -4,8 +4,8 @@
     "name": "Zofia",
     "color": "#d46a9f",
     "home": {
-      "x": 149,
-      "y": 155
+      "x": 298,
+      "y": 310
     },
     "likes": [
       "jagoda",
@@ -22,8 +22,8 @@
     "name": "Bartek",
     "color": "#4f9fd4",
     "home": {
-      "x": 48,
-      "y": 80
+      "x": 96,
+      "y": 160
     },
     "likes": [
       "ryba",
@@ -40,8 +40,8 @@
     "name": "Hanka",
     "color": "#c98a3a",
     "home": {
-      "x": 165,
-      "y": 139
+      "x": 330,
+      "y": 278
     },
     "likes": [
       "sztabka_zelaza",

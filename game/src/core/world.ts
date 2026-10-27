@@ -115,6 +115,50 @@ export function generate(reg: Registry, seed: number): State {
     }
   }
 
+  /**
+   * Gdzie postawić gracza na Rynku.
+   *
+   * Nie na środku: Rynek Wielki ma sto metrów boku, więc ze środka widać wyłącznie
+   * bruk i żadnej pierzei. Szukamy kafla placu, który ma kamienicę w zasięgu wzroku,
+   * a z takich bierzemy ten najbliższy środkowi — czyli wejście w plac od pierzei.
+   */
+  const rynek = (() => {
+    const nrRynku = reg.content.biomes.findIndex((b) => b.id === 'rynek');
+    const nrZabudowy = reg.content.biomes.findIndex((b) => b.id === 'kamienica');
+    if (nrRynku < 0) return null;
+    const plac: number[] = [];
+    let sx = 0, sy = 0;
+    for (let i = 0; i < biome.length; i++) {
+      if (biome[i] !== nrRynku) continue;
+      plac.push(i);
+      sx += i % size; sy += (i / size) | 0;
+    }
+    if (!plac.length) return null;
+    const srodek = { x: Math.round(sx / plac.length), y: Math.round(sy / plac.length) };
+    if (nrZabudowy < 0) return srodek;
+
+    const ZASIEG = 5;
+    let najlepszy: { x: number; y: number } | null = null;
+    let najblizej = Infinity;
+    for (const i of plac) {
+      const x = i % size, y = (i / size) | 0;
+      const d = (x - srodek.x) ** 2 + (y - srodek.y) ** 2;
+      if (d >= najblizej) continue;
+      let widacPierzeje = false;
+      for (let dy = -ZASIEG; dy <= ZASIEG && !widacPierzeje; dy++) {
+        for (let dx = -ZASIEG; dx <= ZASIEG; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+          if (biome[ny * size + nx] === nrZabudowy) { widacPierzeje = true; break; }
+        }
+      }
+      if (!widacPierzeje) continue;
+      najblizej = d;
+      najlepszy = { x, y };
+    }
+    return najlepszy ?? srodek;
+  })();
+
   const walkable = (x: number, y: number) =>
     x >= 0 && y >= 0 && x < size && y < size && reg.content.biomes[biome[y * size + x]!]!.walkable;
 
@@ -126,7 +170,9 @@ export function generate(reg: Registry, seed: number): State {
     ents.push({ kind: 'npc', def: npc.id, x: spot.x, y: spot.y, hp: 1, respawnAt: 0 });
   }
 
-  const start = nearestFree(Math.floor(size / 2), Math.floor(size / 2), size, walkable, entAt);
+  // Gra zaczyna się na Rynku, bo tak mówi dziennik i bo z Rynku wszystko jest w zasięgu.
+  // Środek mapy nim nie jest — kadr OSM obejmuje też przedmieścia i zalew.
+  const start = nearestFree(rynek?.x ?? Math.floor(size / 2), rynek?.y ?? Math.floor(size / 2), size, walkable, entAt);
   const inv: Record<string, number> = {};
   for (const s of reg.content.config.startInventory) inv[s.item] = (inv[s.item] ?? 0) + s.qty;
 

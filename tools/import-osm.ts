@@ -24,14 +24,18 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SRODEK = { lat: 50.7181, lon: 23.2519 };
 const BOK_METROW = 768;
 /**
- * 3 metry na kafel — skala starych GTA: człowiek zajmuje kafel, kamienica kilka,
- * ulica dwa do czterech. Przy 9 metrach na kafel człowiek byłby ułamkiem kafla,
- * a cała gra mapą sztabową.
+ * 1,5 metra na kafel — skala Animal Crossing: człowiek zajmuje dokładnie kafel,
+ * kamienica osiem do trzynastu, Rynek Wielki ponad sześćdziesiąt. Przejście
+ * wzdłuż jednej pierzei trwa kilkanaście kroków, a nie dwa.
+ *
+ * Metr na kafel to jedyna liczba w tym projekcie, z której wynika cała reszta:
+ * przy trzech metrach gra wyglądała jak mapa sztabowa i żadne rysowanie tego nie
+ * naprawiało.
  */
-const ROZMIAR = 256;
+const ROZMIAR = 512;
 
 /** Kolejność ma znaczenie: późniejsze nadpisuje wcześniejsze. */
-const LEGENDA = ['ziemia', 'trawa', 'las', 'bruk', 'rynek', 'kamienica', 'woda'] as const;
+const LEGENDA = ['trawa', 'ziemia', 'las', 'bruk', 'rynek', 'kamienica', 'woda'] as const;
 type Biom = (typeof LEGENDA)[number];
 const nr = (b: Biom) => LEGENDA.indexOf(b);
 
@@ -43,14 +47,61 @@ const M_NA_STOPIEN_LAT = 111_320;
 const M_NA_STOPIEN_LON = 111_320 * Math.cos((SRODEK.lat * Math.PI) / 180);
 const POL = BOK_METROW / 2;
 
-/** Współrzędne geograficzne na ułamek siatki (0..ROZMIAR). */
+/**
+ * Kąt, o jaki obrócona jest siatka miasta względem północy.
+ *
+ * Zamość nie leży równo w osi północ–południe, a kafle owszem. Bez obrotu każda
+ * ściana kamienicy wychodzi schodkami, bo prosta pod kątem kilkunastu stopni
+ * rasteryzuje się na pilę — i żadne rysowanie tego nie naprawi. Kąt nie jest
+ * zgadywany, tylko liczony z samej mapy: bierzemy wszystkie krawędzie budynków,
+ * sprowadzamy je modulo 90° (ściana i jej prostopadła to ten sam kierunek)
+ * i ważymy długością. Miasto idealne ma jeden wyraźny kierunek i to jest ten.
+ */
+function katMiasta(elementy: Element[]): number {
+  const kubelki = new Array<number>(900).fill(0); // co 0,1°
+  for (const e of elementy) {
+    if (!e.tags?.building || !e.geometry) continue;
+    const g = e.geometry;
+    for (let i = 1; i < g.length; i++) {
+      const dx = (g[i]!.lon - g[i - 1]!.lon) * M_NA_STOPIEN_LON;
+      const dy = (SRODEK.lat - g[i]!.lat - (SRODEK.lat - g[i - 1]!.lat)) * M_NA_STOPIEN_LAT;
+      const dl = Math.hypot(dx, dy);
+      if (dl < 2) continue;
+      const stopnie = (((Math.atan2(dy, dx) * 180) / Math.PI) % 90 + 90) % 90;
+      const k = Math.round(stopnie * 10) % 900;
+      kubelki[k] = kubelki[k]! + dl;
+    }
+  }
+  let szczyt = 0;
+  for (let i = 1; i < kubelki.length; i++) if (kubelki[i]! > kubelki[szczyt]!) szczyt = i;
+  // Dociągnięcie do środka ciężkości szczytu, żeby nie zostać na krawędzi kubełka.
+  let suma = 0, waga = 0;
+  for (let d = -20; d <= 20; d++) {
+    const i = (szczyt + d + 900) % 900;
+    suma += kubelki[i]! * (szczyt + d);
+    waga += kubelki[i]!;
+  }
+  return waga ? (suma / waga) / 10 : 0;
+}
+
+let OBROT = 0;
+
+/** Współrzędne geograficzne na ułamek siatki (0..ROZMIAR), już w osiach miasta. */
 function naSiatke(w: Wezel): { x: number; y: number } {
   const dx = (w.lon - SRODEK.lon) * M_NA_STOPIEN_LON;
   const dy = (SRODEK.lat - w.lat) * M_NA_STOPIEN_LAT;
-  return { x: ((dx + POL) / BOK_METROW) * ROZMIAR, y: ((dy + POL) / BOK_METROW) * ROZMIAR };
+  const c = Math.cos(-OBROT), s = Math.sin(-OBROT);
+  const rx = dx * c - dy * s;
+  const ry = dx * s + dy * c;
+  return { x: ((rx + POL) / BOK_METROW) * ROZMIAR, y: ((ry + POL) / BOK_METROW) * ROZMIAR };
 }
 
-const siatka = new Uint8Array(ROZMIAR * ROZMIAR).fill(nr('ziemia'));
+/**
+ * Tło to trawa, nie goła ziemia. Przy półtora metra na kafel widać grunt pod nogami
+ * przez cały czas gry, a wokół zamojskich wałów rosną planty, nie klepisko. Ziemia
+ * zostaje tym, czym jest naprawdę — polem i ugorem, tam gdzie OSM je oznacza.
+ */
+const siatka = new Uint8Array(ROZMIAR * ROZMIAR).fill(nr('trawa'));
 /**
  * Odcień dachu per kafel, 0 = brak budynku.
  *
@@ -61,15 +112,44 @@ const siatka = new Uint8Array(ROZMIAR * ROZMIAR).fill(nr('ziemia'));
 const odcienie = new Uint8Array(ROZMIAR * ROZMIAR);
 const ODCIENI = 8;
 let licznikBudynkow = 0;
-let biezacyOdcien = 0;
+/** Kafle budynku rysowanego właśnie teraz — odcień dostaną dopiero, gdy będzie znany cały obrys. */
+let zbierane: number[] | null = null;
 const ustaw = (x: number, y: number, b: Biom) => {
   if (x < 0 || y < 0 || x >= ROZMIAR || y >= ROZMIAR) return;
   const i = y * ROZMIAR + x;
   if (nr(b) >= siatka[i]!) {
     siatka[i] = nr(b);
-    if (b === 'kamienica') odcienie[i] = biezacyOdcien;
+    if (b === 'kamienica' && zbierane) zbierane.push(i);
   }
 };
+
+/**
+ * Zachłanne kolorowanie grafu: budynek bierze pierwszy odcień, którego nie ma żaden
+ * sąsiad — także po skosie. Dzięki temu „inny odcień" w rendererze znaczy naprawdę
+ * „inny budynek", więc krawędź da się postawić tam, gdzie kamienice dzielą ścianę.
+ * Ośmiu odcieni starcza, bo kamienica styka się najwyżej z kilkoma naraz.
+ */
+function pomaluj(kafle: number[]): void {
+  const zajete = new Set<number>();
+  for (const i of kafle) {
+    const x = i % ROZMIAR, y = (i / ROZMIAR) | 0;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= ROZMIAR || ny >= ROZMIAR) continue;
+        const o = odcienie[ny * ROZMIAR + nx]!;
+        if (o) zajete.add(o);
+      }
+    }
+  }
+  const start = licznikBudynkow++ % ODCIENI;
+  let odcien = start + 1;
+  for (let k = 0; k < ODCIENI; k++) {
+    const kandydat = ((start + k) % ODCIENI) + 1;
+    if (!zajete.has(kandydat)) { odcien = kandydat; break; }
+  }
+  for (const i of kafle) odcienie[i] = odcien;
+}
 
 function wielokat(geo: Wezel[], b: Biom): void {
   const p = geo.map(naSiatke);
@@ -116,16 +196,21 @@ const DROGI_WASKIE = new Set(['footway', 'path', 'steps', 'track', 'cycleway']);
 function klasyfikuj(t: Record<string, string>): { biom: Biom; linia?: number } | null {
   if (t.building) return { biom: 'kamienica' };
   if (t.natural === 'water' || t.waterway === 'riverbank' || t.waterway === 'moat') return { biom: 'woda' };
-  // Promienie w kaflach. Przy 8,5 m na kafel chodnik to ułamek kafla, więc wąskie drogi
-  // dostają promień poniżej 0.5 — zaznaczą tylko kafel, przez który faktycznie biegną.
-  if (t.highway === 'pedestrian' || t.place === 'square') return { biom: 'rynek', linia: 1.2 };
-  if (t.highway && DROGI_SZEROKIE.has(t.highway)) return { biom: 'bruk', linia: 0.8 };
-  if (t.highway && DROGI_WASKIE.has(t.highway)) return { biom: 'bruk', linia: 0.35 };
+  // Promienie w kaflach, przy 1,5 m na kafel: ulica mieszkalna ma około pięciu metrów
+  // szerokości, chodnik dwóch, Rynek jest placem i zajmuje wszystko dokoła osi.
+  if (t.highway === 'pedestrian' || t.place === 'square') return { biom: 'rynek', linia: 2.4 };
+  if (t.highway && DROGI_SZEROKIE.has(t.highway)) return { biom: 'bruk', linia: 1.6 };
+  if (t.highway && DROGI_WASKIE.has(t.highway)) return { biom: 'bruk', linia: 0.7 };
   if (t.natural === 'wood' || t.natural === 'tree_row' || t.landuse === 'forest') return { biom: 'las' };
   if (t.leisure === 'park' || t.leisure === 'garden' || t.leisure === 'pitch') return { biom: 'trawa' };
   if (t.historic === 'castle' || t.historic === 'citywalls' || t.barrier === 'city_wall') return { biom: 'kamienica' };
   if (t.landuse === 'grass' || t.landuse === 'meadow' || t.landuse === 'village_green') return { biom: 'trawa' };
   if (t.natural === 'scrub' || t.natural === 'grassland') return { biom: 'trawa' };
+  // Pole, ugór i piach — stąd bierze się ruda darniowa i kamień polny.
+  if (t.landuse === 'farmland' || t.landuse === 'farmyard' || t.landuse === 'allotments') return { biom: 'ziemia' };
+  if (t.landuse === 'orchard' || t.landuse === 'vineyard' || t.landuse === 'greenhouse_horticulture') return { biom: 'ziemia' };
+  if (t.landuse === 'brownfield' || t.landuse === 'landfill' || t.landuse === 'quarry') return { biom: 'ziemia' };
+  if (t.natural === 'sand' || t.natural === 'bare_rock' || t.natural === 'beach') return { biom: 'ziemia' };
   return null;
 }
 
@@ -136,6 +221,9 @@ if (!zrodlo) {
 }
 
 const dane = JSON.parse(readFileSync(zrodlo, 'utf8')) as { elements: Element[] };
+const katStopnie = katMiasta(dane.elements);
+OBROT = (katStopnie * Math.PI) / 180;
+console.log(`siatka miasta obrócona o ${katStopnie.toFixed(2)}° — kafle idą wzdłuż pierzei`);
 const zamkniety = (g: Wezel[]) =>
   g.length > 3 && Math.abs(g[0]!.lat - g[g.length - 1]!.lat) < 1e-9 && Math.abs(g[0]!.lon - g[g.length - 1]!.lon) < 1e-9;
 
@@ -166,10 +254,40 @@ for (const faza of [0, 1, 2]) {
     if (faza === 0 && (czyDroga || czyBudynek)) continue;
     if (faza === 1 && !czyDroga) continue;
     if (faza === 2 && !czyBudynek) continue;
-    if (czyBudynek) biezacyOdcien = (licznikBudynkow++ % ODCIENI) + 1;
+    zbierane = czyBudynek ? [] : null;
     for (const kontur of kontury) {
       if (czyDroga && !zamkniety(kontur)) linia(kontur, k.biom, k.linia!);
       else wielokat(kontur, k.biom);
+    }
+    if (zbierane?.length) pomaluj(zbierane);
+    zbierane = null;
+  }
+}
+
+/**
+ * Brzeg: pas podmokłej ziemi wokół wody.
+ *
+ * Bez niego ziemia znika z mapy całkowicie — Zamość jest zielony, a OSM nie oznacza
+ * tu pól. A ziemia musi być, bo z niej bierze się ruda darniowa, która z definicji
+ * leży w podmokłym gruncie. Brzeg robi więc dwie rzeczy naraz: domyka łańcuch
+ * wytwarzania i rysuje plażę tam, gdzie trawa dotykałaby wody na styk.
+ */
+const BRZEG = 4;
+{
+  const woda = nr('woda'), trawa = nr('trawa'), ziemia = nr('ziemia');
+  const kopia = siatka.slice();
+  for (let y = 0; y < ROZMIAR; y++) {
+    for (let x = 0; x < ROZMIAR; x++) {
+      if (kopia[y * ROZMIAR + x] !== woda) continue;
+      for (let dy = -BRZEG; dy <= BRZEG; dy++) {
+        for (let dx = -BRZEG; dx <= BRZEG; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= ROZMIAR || ny >= ROZMIAR) continue;
+          if (Math.hypot(dx, dy) > BRZEG) continue;
+          const i = ny * ROZMIAR + nx;
+          if (siatka[i] === trawa) siatka[i] = ziemia;
+        }
+      }
     }
   }
 }
@@ -194,6 +312,7 @@ const wynik = {
   pobrano: new Date().toISOString().slice(0, 10),
   srodek: [SRODEK.lat, SRODEK.lon],
   bokMetrow: BOK_METROW,
+  obrotStopnie: Number(katStopnie.toFixed(3)),
   rozmiar: ROZMIAR,
   legenda: [...LEGENDA],
   kafle: rle.join(' '),
