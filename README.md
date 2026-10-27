@@ -35,7 +35,10 @@ opis po polsku
                │              do modelu, kolejna runda
      ┌─────────┴─────────┐          │
   dane:              kod:      po wyczerpaniu prób
-  merge do main      PR        gałąź znika, main nietknięty
+  warunek intencji   PR        gałąź znika, main nietknięty
+  spełniony?
+   tak → main
+   nie → gałąź
 ```
 
 Orkiestracja jest deterministyczna. Model nie jest agentem — dostaje wąskie,

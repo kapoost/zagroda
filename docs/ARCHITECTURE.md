@@ -142,16 +142,52 @@ myśli, jest gorsze niż prośba o doprecyzowanie.
 
 ## Autonomia
 
-Hybrydowa:
+Hybrydowa, a od niedawna **zasłużona**:
 
-- **zmiana czysto deklaratywna + zielona bramka** → merge do `main` automatycznie
+- **zmiana deklaratywna + zielona bramka + spełniony warunek intencji** → merge do `main`
+- **zmiana deklaratywna bez warunku** → gałąź; nikt nie obiecał, czego dowodzić
+- **warunek złamany po wszystkich rundach** → gałąź z notatką wprost, że to nie jest
+  to, o co proszono
 - **każdy patch kodu rdzenia** → gałąź i PR, czeka na człowieka
 
 Agent nigdy nie pracuje na `main`. Przy porzuceniu zmiany gałąź znika razem z nią.
 
+### Warunek intencji
+
+Bramka dowodzi, że treść jest spójna. Nie dowodzi, że jest TA, o którą proszono —
+i tą dziurą wszedł kiedyś na `main` młot „dużo wytrzymalszy od kilofa"
+z wytrzymałością 30 przy kilofie 200. Każda liczba z osobna mieściła się w zakresie.
+
+Routing wypisuje więc to samo zdanie dwa razy: raz po polsku (`observable_pl`),
+raz jako porównanie, które policzy automat:
+
+```
+items.wedka_zelazna.tool.durability > items.wedka.tool.durability
+```
+
+Składnia jest celowo mała — większą model zacznie zgadywać. Ścieżka, której nie da
+się rozwiązać, jest **błędem, nie prawdą**: asercja, której nie umiemy sprawdzić,
+udaje dowód i tym jest gorsza od jej braku.
+
+Warunek trafia do promptu operacji **przed** pierwszą próbą. Zanim tak było, model
+trafiał w liczbę metodą prób — wytrzymałość 50, potem 150, potem 300 — i rundy
+kończyły się, zanim zobaczył, czego od niego chcemy.
+
 ## Czego bramka nie złapie
 
-Dwie ostatnie kontrole powstały dopiero po przeglądzie pierwszej scalonej zmiany,
+Lista kontroli rośnie wyłącznie po przebiegach na żywo i to jest w niej najważniejsze.
+Każda powstała dlatego, że coś przeszło, a nie powinno:
+
+| kontrola | co przepuściła, zanim powstała |
+| --- | --- |
+| `ROLA` | kosz, który był schowkiem, narzędziem i jedzeniem naraz |
+| `BEZ_ZASTOSOWANIA` | przedmiot, którego nie dało się do niczego użyć |
+| `DOMINACJA` | młot droższy od kilofa i od niego gorszy pod każdym względem |
+| `KOSZT_POSTEPU` | żelazną kosę lepszą od zwykłej za identyczną recepturę |
+| `STRUKTURA_SIEROTA` | stanowisko rybackie, którego żaden przedmiot nie stawia |
+| zamknięty słownik tagów | tag `narzucie` |
+
+Dwie z nich powstały po przeglądzie pierwszej scalonej zmiany,
 i to jest pouczające. Bielik dodał kosz, który przeszedł wszystkie cztery etapy
 i był jednocześnie schowkiem, narzędziem ręcznym i jedzeniem — bo spłaszczenie
 gramatyki (patrz wyżej) zamieniło pola opcjonalne w wymagane, a model zamiast
