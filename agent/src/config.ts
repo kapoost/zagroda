@@ -17,10 +17,10 @@ export const CFG = {
   attempts: { route: 2, ops: 2, code: 3, api: 2 },
   /**
    * Okno kontekstu per model. Model kodujący dostaje pliki rdzenia jako kontekst
-   * (ok. 7,5 tys. tokenów) i ma zwrócić PEŁNE treści plików — przy oknie 16 tys.
-   * zabrakłoby miejsca na odpowiedź dłuższą niż jeden plik.
+   * (ok. 7,5 tys. tokenów), ale dzięki protokołowi podmian jego odpowiedź to kilkaset
+   * tokenów — 16 tys. wystarcza z zapasem.
    */
-  numCtx: { pl: 16384, code: 32768 } as Record<'pl' | 'code', number>,
+  numCtx: { pl: 16384, code: 16384 } as Record<'pl' | 'code', number>,
   timeoutMs: { pl: 240_000, code: 900_000 } as Record<'pl' | 'code', number>,
   /** Hybrydowa autonomia: zmiany czysto danych z zieloną bramką wjeżdżają same. */
   autoMergeData: true,

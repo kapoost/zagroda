@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { CFG, ROOT, WRITE_ALLOW, canWriteCode } from '../config.js';
 import { apiComplete } from '../providers/anthropic.js';
-import { ollamaChat } from '../providers/ollama.js';
+import { ollamaChat, unloadModel } from '../providers/ollama.js';
 
 /**
  * Patche kodu.
@@ -192,6 +192,7 @@ function buildPrompt(request: string, feedback: string[]): string {
 
 /** Jedna próba modelu kodującego. */
 export async function patchWithCoder(request: string, feedback: string[]): Promise<CodeResult> {
+  await unloadModel(CFG.models.pl);
   const raw = await ollamaChat({
     model: CFG.models.code,
     system: CODE_SYSTEM,

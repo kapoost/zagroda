@@ -18,6 +18,17 @@ export interface ChatRequest {
 export let lastCallSeconds = 0;
 
 export async function ollamaChat(req: ChatRequest): Promise<string> {
+  try {
+    return await chatOnce(req);
+  } catch (e) {
+    // Przejściowy błąd połączenia zdarza się, gdy Ollama akurat przeładowuje model.
+    if (!String(e).includes('fetch failed')) throw e;
+    await new Promise((r) => setTimeout(r, 4000));
+    return chatOnce(req);
+  }
+}
+
+async function chatOnce(req: ChatRequest): Promise<string> {
   const started = Date.now();
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), CFG.timeoutMs[req.ctx ?? 'pl']);
@@ -49,6 +60,26 @@ export async function ollamaChat(req: ChatRequest): Promise<string> {
   } finally {
     clearTimeout(t);
     lastCallSeconds = Math.round((Date.now() - started) / 1000);
+  }
+}
+
+/**
+ * Zwolnienie modelu z pamięci.
+ *
+ * Na maszynie z 24 GB Bielik zajmuje 10 GB, a Qwen 11 GB. Przy przejściu z fazy
+ * polskiej do koderskiej Ollama próbuje załadować drugi, zanim pierwszy opuści pamięć,
+ * i połączenie pada z "fetch failed". Jawne zwolnienie przed przełączeniem jest tańsze
+ * niż zgadywanie, czy tym razem się zmieści.
+ */
+export async function unloadModel(model: string): Promise<void> {
+  try {
+    await fetch(`${CFG.ollamaUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model, messages: [], keep_alive: 0 }),
+    });
+  } catch {
+    /* zwolnienie jest optymalizacją, nie warunkiem powodzenia */
   }
 }
 
