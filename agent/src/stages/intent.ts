@@ -303,6 +303,13 @@ export async function proposeOps(
     const schema = tightenForGrammar(jsonSchemaOf(subSchema));
     const base =
       `${header}${alreadyProposed(ops)}\n\nTEN KROK DOTYCZY WYŁĄCZNIE: ${col}\n${FOCUS[col]}` +
+      // Warunek intencji podajemy PRZED pierwszą próbą, nie dopiero jako skargę po niej.
+      // Inaczej model trafia w liczbę metodą prób: 50, potem 150, potem 300 — i kończą
+      // mu się rundy, zanim w ogóle zobaczy, czego od niego chcieliśmy.
+      (route.checks.length
+        ? `\n\nWYNIK MUSI SPEŁNIĆ TE WARUNKI — sprawdzi je automat, nie człowiek:\n` +
+          route.checks.map((c) => `- ${c}`).join('\n')
+        : '') +
       (feedback.length ? `\n\nPOPRZEDNIA PRÓBA ZOSTAŁA ODRZUCONA. Napraw dokładnie te błędy:\n${feedback.join('\n')}` : '');
 
     let done = false;

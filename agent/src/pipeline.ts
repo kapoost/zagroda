@@ -131,9 +131,11 @@ export async function run(opts: RunOptions): Promise<RunResult> {
     // Zmiana bez ani jednego warunku intencji przeszła wyłącznie kontrolę spójności —
     // a to za mało, żeby wejść na main bez czyjegokolwiek spojrzenia. Tak właśnie wszedł
     // młot słabszy od kilofa: bramka zielona, obietnica żadna.
-    const obiecana = result.asercji > 0;
+    const obiecana = result.asercji > 0 && result.asercjeZle.length === 0;
     const autoMerge = route.kind === 'dane' && CFG.autoMergeData && !opts.noMerge && obiecana;
-    if (route.kind === 'dane' && !obiecana) {
+    if (route.kind === 'dane' && result.asercjeZle.length) {
+      say(`warunek intencji ZŁAMANY po wszystkich rundach — zmiana idzie na gałąź: ${result.asercjeZle[0]}`);
+    } else if (route.kind === 'dane' && !obiecana) {
       say('brak warunków intencji — zmiana idzie na gałąź, nie na main');
     }
     if (autoMerge) {
@@ -143,7 +145,9 @@ export async function run(opts: RunOptions): Promise<RunResult> {
       return { outcome: 'merged', title: route.title, branch, commit, changes: result.changes, gate: result.gate, resolvedBy };
     }
 
-    let note = `gałąź ${branch} czeka na Twoją akceptację: git diff ${startedOn}..${branch}`;
+    let note = result.asercjeZle.length
+      ? `gałąź ${branch} NIE robi tego, o co prosiłeś: ${result.asercjeZle[0]}`
+      : `gałąź ${branch} czeka na Twoją akceptację: git diff ${startedOn}..${branch}`;
     if (git.hasRemote() && git.pushBranch(branch)) {
       // PR musi powstać PRZED powrotem na gałąź startową: `gh pr create` bierze gałąź
       // źródłową z HEAD, a z main do main nie da się otworzyć pull requesta.
@@ -178,8 +182,14 @@ interface StepResult {
   gate: GateResult;
   changes: string[];
   resolvedBy: JournalEntry['resolvedBy'];
-  /** Ile warunków intencji udało się sprawdzić. Zero znaczy: nikt tej zmiany nie obiecał. */
+  /** Ile warunków intencji jest spełnionych. Zero znaczy: nikt tej zmiany nie obiecał. */
   asercji: number;
+  /**
+   * Warunki, które są złamane. To NIE to samo, co ich brak — brak obietnicy znaczy
+   * "nikt nie wie", a złamana obietnica znaczy "wiadomo, że to nie to". Mylenie jednego
+   * z drugim robi z gałęzi cichy śmietnik na zmiany, które udają, że czekają na przegląd.
+   */
+  asercjeZle: string[];
 }
 
 /** Ścieżka danych: spec → deterministyczny applier → bramka → feedback. */
@@ -193,6 +203,7 @@ async function runDataChange(
   let last: GateResult | null = null;
   let changes: string[] = [];
   let resolvedBy: JournalEntry['resolvedBy'] = null;
+  let asercjeZle: string[] = [];
   const rounds = 3;
 
   for (let round = 1; round <= rounds; round++) {
@@ -238,8 +249,9 @@ async function runDataChange(
       });
       if (!zle.length) {
         for (const w of wyniki) say(`   ✓ ${w.asercja}`);
-        return { gate: last, changes, resolvedBy, asercji: wyniki.length };
+        return { gate: last, changes, resolvedBy, asercji: wyniki.length, asercjeZle: [] };
       }
+      asercjeZle = zle;
       say(`warunki intencji niespełnione: ${zle.join('; ')}`);
       feedback = zle;
       if (round < rounds) git.revertWorktree();
@@ -251,7 +263,7 @@ async function runDataChange(
     feedback = powody;
     if (round < rounds) git.revertWorktree();
   }
-  return { gate: last ?? { ok: false, failed: 'brak-propozycji', stages: [] }, changes, resolvedBy, asercji: 0 };
+  return { gate: last ?? { ok: false, failed: 'brak-propozycji', stages: [] }, changes, resolvedBy, asercji: 0, asercjeZle };
 }
 
 /** Ścieżka kodu: Qwen-Coder → bramka → feedback → eskalacja do API. */
@@ -310,11 +322,11 @@ async function runCodeChange(
     last = runGate();
     attempts.push({ stage: 'bramka', model: '-', ok: last.ok, note: last.failed ?? undefined });
     // Zmiana kodu i tak idzie przez PR, więc warunków intencji tu nie liczymy.
-    if (last.ok) return { gate: last, changes, resolvedBy, asercji: 0 };
+    if (last.ok) return { gate: last, changes, resolvedBy, asercji: 0, asercjeZle: [] };
 
     say(`bramka czerwona na etapie "${last.failed}"`);
     feedback = gateFeedback(last);
     git.revertWorktree();
   }
-  return { gate: last ?? { ok: false, failed: 'brak-patcha', stages: [] }, changes, resolvedBy, asercji: 0 };
+  return { gate: last ?? { ok: false, failed: 'brak-patcha', stages: [] }, changes, resolvedBy, asercji: 0, asercjeZle: [] };
 }
