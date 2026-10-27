@@ -446,5 +446,25 @@
       "qty": 1
     },
     "ticks": 35
+  },
+  {
+    "id": "r_mlot_kamienny",
+    "name": "Kamienny młot",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "siekiera_kamienna",
+        "qty": 1
+      },
+      {
+        "item": "kamien",
+        "qty": 2
+      }
+    ],
+    "output": {
+      "item": "mlot_kamienny",
+      "qty": 1
+    },
+    "ticks": 20
   }
 ]

@@ -355,5 +355,20 @@
     "placeable": {
       "structure": "namiot_plocienny"
     }
+  },
+  {
+    "id": "mlot_kamienny",
+    "name": "Kamienny młot",
+    "desc": "Wytrzymałe narzędzie do rozbijania skał.",
+    "tags": [
+      "narzucie"
+    ],
+    "stack": 1,
+    "value": 20,
+    "tool": {
+      "kind": "pickaxe",
+      "power": 1,
+      "durability": 30
+    }
   }
 ]
