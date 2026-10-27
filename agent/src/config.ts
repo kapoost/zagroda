@@ -35,11 +35,14 @@ export const CFG = {
 export const WRITE_ALLOW = [
   'game/src/core/',
   'game/src/render/',
-  'game/src/sim/',
   'game/src/main.ts',
 ];
 
 export const WRITE_DENY = [
+  // Bot progresji jest wyrocznią grywalności, z której korzysta progression.test.ts.
+  // Zapisywalny bot to zapisywalny wynik testu — ta sama dziura co edytowalne testy,
+  // tylko o jeden plik dalej.
+  'game/src/sim/',
   'game/src/content/schema.ts',
   'game/src/content/registry.ts',
   'game/src/content/load.ts',
