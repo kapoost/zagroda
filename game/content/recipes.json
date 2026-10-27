@@ -382,5 +382,45 @@
       "qty": 1
     },
     "ticks": 20
+  },
+  {
+    "id": "r_kosz_wiklinowy",
+    "name": "Kosz wiklinowy",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "wlokno",
+        "qty": 10
+      },
+      {
+        "item": "sznurek",
+        "qty": 2
+      }
+    ],
+    "output": {
+      "item": "kosz_wiklinowy",
+      "qty": 1
+    },
+    "ticks": 20
+  },
+  {
+    "id": "r_wypelnienie_kosza",
+    "name": "Wypełnienie kosza",
+    "station": "workbench",
+    "inputs": [
+      {
+        "item": "wlokno",
+        "qty": 5
+      },
+      {
+        "item": "sznurek",
+        "qty": 1
+      }
+    ],
+    "output": {
+      "item": "wypelnienie_kosza",
+      "qty": 1
+    },
+    "ticks": 15
   }
 ]

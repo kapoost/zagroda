@@ -316,5 +316,28 @@
     "placeable": {
       "structure": "pochodnia_stojaca"
     }
+  },
+  {
+    "id": "kosz_wiklinowy",
+    "name": "Kosz wiklinowy",
+    "desc": "Pojemny schowek pleciony z trzciny.",
+    "tags": [
+      "schowek"
+    ],
+    "stack": 5,
+    "value": 10,
+    "placeable": {
+      "structure": "kosz_wiklinowy"
+    }
+  },
+  {
+    "id": "wypelnienie_kosza",
+    "name": "Wypełnienie kosza",
+    "desc": "Materiał do wyściełania kosza.",
+    "tags": [
+      "material"
+    ],
+    "stack": 10,
+    "value": 2
   }
 ]

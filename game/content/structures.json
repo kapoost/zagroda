@@ -52,5 +52,13 @@
     "desc": "Światło w nocy.",
     "color": "#ffcc55",
     "blocks": false
+  },
+  {
+    "id": "kosz_wiklinowy",
+    "name": "Kosz wiklinowy",
+    "desc": "Pojemny schowek pleciony z trzciny.",
+    "color": "#87CEEB",
+    "blocks": false,
+    "storage": 30
   }
 ]
