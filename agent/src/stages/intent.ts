@@ -3,6 +3,7 @@ import { CFG } from '../config.js';
 import { digest } from '../contentIo.js';
 import { apiComplete, apiReady } from '../providers/anthropic.js';
 import { lastCallSeconds, ollamaChat } from '../providers/ollama.js';
+import { skillMenu } from '../skills.js';
 import {
   RouteSchema,
   VOCAB,
@@ -35,6 +36,9 @@ Pola:
 - modifies_existing: true TYLKO jeśli zmiana dotyka wpisów, które już są w grze
   (np. "osłab jagody", "zmień cenę skrzyni"). Dodanie nowej rzeczy to zawsze false.
 - code_request_en: PO ANGIELSKU, techniczny opis zmiany w kodzie; puste przy "dane"
+- observable_pl: jedno zdanie po polsku — co gracz zauważy, gdy zmiana zadziała
+- skill_id: przy "kod" wybierz z listy poniżej ten rodzaj zmiany, który pasuje najlepiej;
+  wpisz "brak", jeśli żaden naprawdę nie pasuje. Przy "dane" zawsze "brak".
 
 Zasada: wybieraj "dane", kiedy tylko to możliwe. Nowa broń, surowiec, potrawa, budynek
 czy postać to zawsze "dane".`;
@@ -91,6 +95,21 @@ function vocabBlock(): string {
   return `RODZAJE NARZĘDZI: ${VOCAB.tools.join(', ')}\nSTACJE: ${VOCAB.stations.join(', ')}`;
 }
 
+function routeUser(prompt: string): string {
+  return [
+    vocabBlock(),
+    '',
+    'RODZAJE ZMIAN W KODZIE (skill_id):',
+    skillMenu(),
+    '',
+    'OBECNA TREŚĆ GRY:',
+    digest(),
+    '',
+    'OPIS ZMIANY OD GRACZA:',
+    prompt,
+  ].join('\n');
+}
+
 function extractJson(raw: string): unknown {
   const trimmed = raw.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -116,7 +135,7 @@ export interface RouteResult {
 
 export async function routeRequest(prompt: string): Promise<RouteResult> {
   const attempts: StageAttempt[] = [];
-  const user = `${vocabBlock()}\n\nOBECNA TREŚĆ GRY:\n${digest()}\n\nOPIS ZMIANY OD GRACZA:\n${prompt}`;
+  const user = routeUser(prompt);
   const schema = tightenForGrammar(jsonSchemaOf(RouteSchema));
 
   for (let i = 0; i < CFG.attempts.route; i++) {

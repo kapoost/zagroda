@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { loadSkills } from './skills.js';
 import {
   BiomeSchema,
   ConfigSchema,
@@ -29,6 +30,8 @@ import {
 export const COLLECTIONS = ['items', 'recipes', 'resources', 'structures', 'npcs', 'biomes', 'config'] as const;
 export type Collection = (typeof COLLECTIONS)[number];
 
+const SKILL_IDS: [string, ...string[]] = ['brak', ...loadSkills().map((s) => s.id)];
+
 export const RouteSchema = z
   .object({
     kind: z.enum(['dane', 'kod']),
@@ -36,6 +39,10 @@ export const RouteSchema = z
     title: z.string().min(3).max(70),
     summary_pl: z.string().min(10).max(500),
     code_request_en: z.string().max(1500),
+    /** Który skill briefowania kodera pasuje do tej zmiany; "brak" gdy żaden. */
+    skill_id: z.enum(SKILL_IDS),
+    /** Co gracz zauważy, gdy zmiana zadziała — trafia do briefu i do changeloga. */
+    observable_pl: z.string().max(300),
     /** Czy zmiana naprawdę wymaga skasowania istniejących wpisów. */
     removes_content: z.boolean(),
     /** Czy zmiana dotyka istniejących wpisów, czy tylko dodaje nowe. */

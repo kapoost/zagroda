@@ -3,10 +3,11 @@ import { record, type JournalEntry } from './journal.js';
 import { apiReady } from './providers/anthropic.js';
 import { requireModel } from './providers/ollama.js';
 import { applyOps } from './stages/applyData.js';
-import { patchWithApi, patchWithCoder } from './stages/applyCode.js';
+import { patchWithApi, patchWithCoder, type CodeTask } from './stages/applyCode.js';
 import { gateFeedback, gateSummary, runGate, type GateResult } from './stages/gate.js';
 import * as git from './stages/git.js';
 import { proposeOps, routeRequest, widenCollections, type StageAttempt } from './stages/intent.js';
+import { FALLBACK_FILES, findSkill, genericBrief, renderBrief } from './skills.js';
 
 /**
  * Pętla: opis → spec → zmiana → bramka → repozytorium.
@@ -210,7 +211,16 @@ async function runCodeChange(
   attempts: StageAttempt[],
   say: (m: string) => void,
 ): Promise<StepResult> {
-  const request = route.code_request_en || route.summary_pl;
+  const slots = { mechanizmEn: route.code_request_en || route.summary_pl, efektPl: route.observable_pl || route.summary_pl };
+  const skill = route.skill_id === 'brak' ? null : findSkill(route.skill_id);
+  const task: CodeTask = skill
+    ? { brief: renderBrief(skill, slots), files: skill.files }
+    : { brief: genericBrief(slots), files: FALLBACK_FILES };
+  say(
+    skill
+      ? `skill: ${skill.name} (${skill.files.length} plików kontekstu)`
+      : 'brak pasującego skilla — brief ogólny, pełny kontekst rdzenia',
+  );
   let feedback: string[] = [];
   let last: GateResult | null = null;
   let changes: string[] = [];
@@ -219,13 +229,13 @@ async function runCodeChange(
   const ladder: Array<{ label: string; run: () => Promise<{ written: string[]; model: string }>; who: 'coder' | 'api' }> = [
     ...Array.from({ length: CFG.attempts.code }, (_, i) => ({
       label: `coder ${i + 1}/${CFG.attempts.code}`,
-      run: () => patchWithCoder(request, feedback),
+      run: () => patchWithCoder(task, feedback),
       who: 'coder' as const,
     })),
     ...(apiReady()
       ? Array.from({ length: CFG.attempts.api }, (_, i) => ({
           label: `API ${i + 1}/${CFG.attempts.api}`,
-          run: () => patchWithApi(request, feedback),
+          run: () => patchWithApi(task, feedback),
           who: 'api' as const,
         }))
       : []),

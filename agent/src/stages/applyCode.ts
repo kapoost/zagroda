@@ -112,17 +112,14 @@ export function parseEdits(raw: string): CodeEdit[] {
 
 const stripFence = (s: string) => s.replace(/^\s*```[a-z]*\n/, '').replace(/\n```\s*$/, '');
 
-/** Pliki rdzenia podawane modelowi jako kontekst. */
-function contextFiles(): Array<{ path: string; content: string }> {
-  const wanted = [
-    'game/src/core/types.ts',
-    'game/src/core/tick.ts',
-    'game/src/core/world.ts',
-    'game/src/core/game.ts',
-    'game/src/core/rng.ts',
-    'game/src/content/schema.ts',
-  ];
-  return wanted
+/**
+ * Pliki rdzenia podawane modelowi jako kontekst.
+ *
+ * Listę wskazuje skill wybrany w fazie routingu. To nie jest tylko oszczędność tokenów:
+ * model, który widzi trzy pliki zamiast sześciu, rzadziej zmienia coś, o co nikt nie prosił.
+ */
+function contextFiles(files: string[]): Array<{ path: string; content: string }> {
+  return files
     .filter((p) => existsSync(resolve(ROOT, p)))
     .map((p) => ({ path: p, content: readFileSync(resolve(ROOT, p), 'utf8') }));
 }
@@ -180,23 +177,30 @@ function applyEdits(edits: CodeEdit[]): CodeResult {
   return { ok: written.size > 0 && rejected.length === 0, written: [...written], rejected, model: '' };
 }
 
-function buildPrompt(request: string, feedback: string[]): string {
-  const ctx = contextFiles()
+export interface CodeTask {
+  /** Gotowy brief — wyrenderowany szablon skilla albo wariant awaryjny. */
+  brief: string;
+  /** Pliki rdzenia wysyłane jako kontekst. */
+  files: string[];
+}
+
+function buildPrompt(task: CodeTask, feedback: string[]): string {
+  const ctx = contextFiles(task.files)
     .map((f) => `--- ${f.path} ---\n${f.content}`)
     .join('\n\n');
   const fb = feedback.length
     ? `\n\nYOUR PREVIOUS ATTEMPT FAILED THE QUALITY GATE. Fix exactly these problems:\n${feedback.join('\n')}`
     : '';
-  return `CURRENT CODE:\n\n${ctx}\n\nTASK:\n${request}${fb}`;
+  return `CURRENT CODE:\n\n${ctx}\n\n${task.brief}${fb}`;
 }
 
 /** Jedna próba modelu kodującego. */
-export async function patchWithCoder(request: string, feedback: string[]): Promise<CodeResult> {
+export async function patchWithCoder(task: CodeTask, feedback: string[]): Promise<CodeResult> {
   await unloadModel(CFG.models.pl);
   const raw = await ollamaChat({
     model: CFG.models.code,
     system: CODE_SYSTEM,
-    user: buildPrompt(request, feedback),
+    user: buildPrompt(task, feedback),
     temperature: feedback.length ? 0.3 : 0.1,
     numPredict: 4000,
     ctx: 'code',
@@ -212,8 +216,8 @@ export async function patchWithCoder(request: string, feedback: string[]): Promi
 }
 
 /** Eskalacja patcha kodu do API. */
-export async function patchWithApi(request: string, feedback: string[]): Promise<CodeResult> {
-  const raw = await apiComplete(CODE_SYSTEM, buildPrompt(request, feedback), 48_000);
+export async function patchWithApi(task: CodeTask, feedback: string[]): Promise<CodeResult> {
+  const raw = await apiComplete(CODE_SYSTEM, buildPrompt(task, feedback), 48_000);
   const res = applyEdits(parseEdits(raw));
   res.model = CFG.models.api;
   if (!res.ok) {
