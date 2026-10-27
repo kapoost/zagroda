@@ -12,7 +12,11 @@ export interface ChatRequest {
   numPredict?: number;
 }
 
+/** Ile sekund zajęło ostatnie wywołanie — do logów, bo przy modelu 11B to jedyna metryka, która boli. */
+export let lastCallSeconds = 0;
+
 export async function ollamaChat(req: ChatRequest): Promise<string> {
+  const started = Date.now();
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), CFG.timeoutMs);
   try {
@@ -42,6 +46,7 @@ export async function ollamaChat(req: ChatRequest): Promise<string> {
     return text;
   } finally {
     clearTimeout(t);
+    lastCallSeconds = Math.round((Date.now() - started) / 1000);
   }
 }
 

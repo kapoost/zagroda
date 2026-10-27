@@ -3,7 +3,16 @@ import { CFG } from '../config.js';
 import { digest } from '../contentIo.js';
 import { apiComplete } from '../providers/anthropic.js';
 import { ollamaChat } from '../providers/ollama.js';
-import { RouteSchema, VOCAB, buildOpsSchema, jsonSchemaOf, type Collection, type Route } from '../spec.js';
+import {
+  RouteSchema,
+  VOCAB,
+  buildOpsSchema,
+  jsonSchemaOf,
+  stripNulls,
+  tightenForGrammar,
+  type Collection,
+  type Route,
+} from '../spec.js';
 
 /** Polski opis zmiany → maszynowa specyfikacja. To jedyne miejsce, gdzie Bielik pracuje na polszczyźnie. */
 
@@ -101,12 +110,19 @@ export interface RouteResult {
 export async function routeRequest(prompt: string): Promise<RouteResult> {
   const attempts: StageAttempt[] = [];
   const user = `${vocabBlock()}\n\nOBECNA TREŚĆ GRY:\n${digest()}\n\nOPIS ZMIANY OD GRACZA:\n${prompt}`;
-  const schema = jsonSchemaOf(RouteSchema);
+  const schema = tightenForGrammar(jsonSchemaOf(RouteSchema));
 
   for (let i = 0; i < CFG.attempts.route; i++) {
     try {
-      const raw = await ollamaChat({ model: CFG.models.pl, system: ROUTE_SYSTEM, user, schema, temperature: 0.1 });
-      const route = RouteSchema.parse(extractJson(raw));
+      const raw = await ollamaChat({
+        model: CFG.models.pl,
+        system: ROUTE_SYSTEM,
+        user,
+        schema,
+        temperature: 0.1,
+        numPredict: 700,
+      });
+      const route = RouteSchema.parse(stripNulls(extractJson(raw)));
       attempts.push({ stage: 'routing', model: CFG.models.pl, ok: true });
       return { route, attempts, resolvedBy: 'bielik' };
     } catch (e) {
@@ -119,7 +135,7 @@ export async function routeRequest(prompt: string): Promise<RouteResult> {
     user,
     4000,
   );
-  const route = RouteSchema.parse(extractJson(raw));
+  const route = RouteSchema.parse(stripNulls(extractJson(raw)));
   attempts.push({ stage: 'routing', model: CFG.models.api, ok: true });
   return { route, attempts, resolvedBy: 'api' };
 }
@@ -157,7 +173,7 @@ export async function proposeOps(
 ): Promise<OpsResult> {
   const cols = widenCollections(route.collections);
   const opsSchema = buildOpsSchema(cols, route.removes_content, route.modifies_existing);
-  const schema = jsonSchemaOf(opsSchema);
+  const schema = tightenForGrammar(jsonSchemaOf(opsSchema));
   const attempts: StageAttempt[] = [];
 
   const base = [
@@ -183,8 +199,11 @@ export async function proposeOps(
         user,
         schema,
         temperature: i === 0 ? 0.2 : 0.4,
+        // Poprawna odpowiedź mieści się w kilkuset tokenach. Bez sufitu model potrafił
+        // mielić pod gramatyką kwadransami, zapełniając każdy dopuszczony slot tablicy.
+        numPredict: 1600,
       });
-      const ops = opsSchema.parse(extractJson(raw)) as Record<string, unknown>;
+      const ops = opsSchema.parse(stripNulls(extractJson(raw))) as Record<string, unknown>;
       attempts.push({ stage: 'operacje', model: CFG.models.pl, ok: true });
       return { ops, attempts, resolvedBy: 'bielik' };
     } catch (e) {
@@ -197,7 +216,7 @@ export async function proposeOps(
     feedback.length ? `${base}\n\nWcześniejsze próby odrzucono z powodu:\n${feedback.join('\n')}` : base,
     16_000,
   );
-  const ops = opsSchema.parse(extractJson(raw)) as Record<string, unknown>;
+  const ops = opsSchema.parse(stripNulls(extractJson(raw))) as Record<string, unknown>;
   attempts.push({ stage: 'operacje', model: CFG.models.api, ok: true });
   return { ops, attempts, resolvedBy: 'api' };
 }
