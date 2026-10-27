@@ -2,6 +2,29 @@ Pixel art sprite for a top-down 2D survival and crafting game in the style of
 16-bit console RPGs. Nostalgic, warm, hand-placed pixels — not a modern vector
 illustration with a pixel filter.
 
+WORLD — every sprite belongs to the same place; keep this consistent across all of them:
+A small island homestead in a cool temperate climate, late summer. Everything here is
+hand-made from what the island gives: reed from the shore, hay from the meadow, linen
+cloth, field stone, oak and birch wood, charcoal, bog iron. Technology stops at hand
+tools — no gears, no machinery, no gunpowder, no glass, no wheels. Three people live
+here: a shopkeeper, a fisherman, a smith.
+
+STYLE — cosy life-sim, the proportions and warmth of Animal Crossing:
+Everything is rounded, chunky and slightly oversized, as if it were a well-made wooden
+toy. Soft silhouettes, no sharp corners, no thin spindly shapes. Objects look inviting
+and handleable rather than realistic. Cheerful and warm, never grim, never gritty,
+never menacing. Characters are cute and squat with oversized heads.
+
+NEVER include: realistic human proportions, fantasy creatures, magic glow, runes,
+crystals, neon, chrome, plastic, modern objects, weapons of war, skulls, gore,
+horror, or tropical and East Asian flora — no bamboo, no palms, no cherry blossom,
+no pagoda shapes.
+
+CONSISTENCY — this sprite will sit next to dozens of others on the same screen:
+Same camera angle for every object: a high three-quarter view, roughly 60 degrees
+from vertical, so each object shows its front face prominently and a little of its
+top surface. Same sun angle. Same level of stylisation.
+
 SUBJECT: A patch of summer meadow grass seen from directly above. Short tufts and
 blades scattered with even density, a few slightly taller blades, no flowers, no
 path, no rocks. The tile must tile seamlessly in all four directions: the left edge

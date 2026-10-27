@@ -1,0 +1,53 @@
+Pixel art sprite for a top-down 2D survival and crafting game in the style of
+16-bit console RPGs. Nostalgic, warm, hand-placed pixels — not a modern vector
+illustration with a pixel filter.
+
+WORLD — every sprite belongs to the same place; keep this consistent across all of them:
+A small island homestead in a cool temperate climate, late summer. Everything here is
+hand-made from what the island gives: reed from the shore, hay from the meadow, linen
+cloth, field stone, oak and birch wood, charcoal, bog iron. Technology stops at hand
+tools — no gears, no machinery, no gunpowder, no glass, no wheels. Three people live
+here: a shopkeeper, a fisherman, a smith.
+
+STYLE — cosy life-sim, the proportions and warmth of Animal Crossing:
+Everything is rounded, chunky and slightly oversized, as if it were a well-made wooden
+toy. Soft silhouettes, no sharp corners, no thin spindly shapes. Objects look inviting
+and handleable rather than realistic. Cheerful and warm, never grim, never gritty,
+never menacing. Characters are cute and squat with oversized heads.
+
+NEVER include: realistic human proportions, fantasy creatures, magic glow, runes,
+crystals, neon, chrome, plastic, modern objects, weapons of war, skulls, gore,
+horror, or tropical and East Asian flora — no bamboo, no palms, no cherry blossom,
+no pagoda shapes.
+
+CONSISTENCY — this sprite will sit next to dozens of others on the same screen:
+Same camera angle for every object: a high three-quarter view, roughly 60 degrees
+from vertical, so each object shows its front face prominently and a little of its
+top surface. Same sun angle. Same level of stylisation.
+
+SUBJECT: The player character of a cosy island life-sim, standing and facing the
+viewer. Squat cute proportions: the head takes the top 10 of the 24 rows and is wider
+than the body, the torso takes the next 10 rows, short rounded legs and feet take the
+bottom 4. Two dark pixels for eyes and no mouth. Short rounded arms with no fingers.
+Simple linen work clothes in muted colours, a plain cap. Friendly and calm, not heroic,
+not armoured. A two-cell-tall elliptical shadow sits under the feet.
+
+CANVAS AND GRID — follow exactly:
+- The image is 512×768 and depicts a 16×24 pixel grid.
+- Every grid cell is one flat square of a single solid colour, with hard edges.
+- Cell boundaries align perfectly to the grid. No cell contains more than one colour.
+- Background outside the subject is fully transparent.
+
+DRAWING RULES — follow exactly:
+- Maximum 5 colours for the subject, plus a 1-pixel outline.
+- Outline is 1 cell thick, in a darker shade of the subject's own hue. Never black.
+- One light source from the upper left at 45 degrees. Highlights on upper-left
+  surfaces, shade on lower-right surfaces.
+- No anti-aliasing, no gradients, no blur, no soft or glowing edges.
+- Alpha is binary: a cell is either fully opaque or fully transparent.
+- The subject is centred horizontally and stands on the bottom edge of the canvas.
+- No text, no numbers, no logo, no frame, no border, no background scenery,
+  no drop shadow outside the subject.
+
+PALETTE — use only these colours, nothing in between:
+#e0cf9a #f2e6bd #9a8c6a #c2a06a #7a6b44 #4a3521

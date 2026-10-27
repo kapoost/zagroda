@@ -20,6 +20,36 @@ Szesnaście pikseli to rozdzielczość konsoli 16-bitowej: wystarczająco dużo,
 był rozpoznawalny, wystarczająco mało, żeby każdy piksel był decyzją. Skala musi być
 całkowita — ×1.5 rozmazuje krawędzie i niszczy cały efekt.
 
+## Proporcje — drabina skali
+
+To ta część, która niesie charakter. Gra ma proporcje **Animal Crossing**: wszystko jest
+krępe, zaokrąglone i odrobinę za duże, jak dobrze zrobiona drewniana zabawka. Jednostką
+odniesienia jest postać; każdy inny obiekt ma zapisany stosunek do niej, żeby trzydziesty
+sprite nie rozjechał się z pierwszym.
+
+| obiekt | wymiar | względem postaci |
+| --- | --- | --- |
+| **gracz, NPC** | 16 × 24 | **1,0** — jednostka odniesienia |
+| krzak, kamień polny, trzcina | 16 × 16 | 0,7 |
+| skrzynia, kosz, pochodnia, legowisko | 16 × 24 | 1,0 — meble sięgają postaci |
+| piec, warsztat, namiot | 32 × 40 | 1,6 — wyraźnie większe od człowieka |
+| drzewo | 16 × 48 | **2,0** — krępe i okrągłe, nie strzeliste |
+
+Drzewo dwa razy wyższe od postaci to proporcja z Animal Crossing i brzmi za mało, dopóki
+nie zobaczy się tego obok siebie: drzewo ma być pękate i przysadziste, a nie górować nad
+wyspą. Strzeliste drzewo natychmiast przestawia grę w inny gatunek.
+
+**Postać — podział 24 pikseli wysokości:**
+
+```
+głowa      10 px   (42% — tu siedzi cały urok)
+tułów      10 px
+stopy       4 px
+```
+
+Głowa jest szersza niż tułów. Oczy to dwa ciemne piksele, bez ust — przy szesnastu
+pikselach usta zamieniają się w plamę. Ręce krótkie, zaokrąglone, bez palców.
+
 ## Klasy sprite'ów
 
 Wszystkie wymiary są wielokrotnościami 16. Kotwica „dół-środek" oznacza, że sprite stoi na
@@ -30,7 +60,8 @@ dolnej krawędzi swojego kafla i może wystawać w górę poza niego.
 | teren | 16 × 16 | — | 4, bez obrysu | morze, łąka, las |
 | przejście terenu | 16 × 16 | — | 4, bez obrysu | brzeg, skraj lasu |
 | mały obiekt | 16 × 16 | dół-środek | 4 + obrys | krzak, kamień polny, trzcina |
-| wysoki obiekt | 16 × 32 | dół-środek | 5 + obrys | drzewo, złoże żelaza |
+| wysoki obiekt | 16 × 48 | dół-środek | 5 + obrys | drzewo |
+| średni obiekt | 16 × 32 | dół-środek | 5 + obrys | złoże żelaza, wysoka trawa |
 | struktura 1×1 | 16 × 24 | dół-środek | 5 + obrys | skrzynia, pochodnia, legowisko |
 | struktura 2×2 | 32 × 40 | dół-środek | 6 + obrys | piec, warsztat, namiot |
 | postać | 16 × 24 | dół-środek | 5 + obrys | gracz, NPC |
@@ -81,6 +112,13 @@ terenu oraz cieniach.
 **Czytelność** — sprite musi być rozpoznawalny w skali 1:1, bez powiększania. Jeśli
 przedmiot wymaga detalu, który ginie w 16 px, detal jest zły, nie rozdzielczość.
 
+**Miękkość** — żadnego ostrego narożnika w sylwetce. Każdy obiekt ma zaokrąglone rogi,
+nawet skrzynia i piec. To jedna zasada, która odróżnia świat przytulny od surowego,
+i widać ją natychmiast, gdy któryś sprite ją łamie.
+
+**Jasność** — w rampach sięgaj po dwa górne stopnie. Cień bierz ze stopnia „baza", nie
+z „cienia" — ten zostaw na obrys. Świat ma być rozświetlony, nie kontrastowy.
+
 ## Nazewnictwo — grafika wiąże się z danymi
 
 Nazwa pliku to **identyfikator z treści gry**. To nie konwencja porządkowa, tylko mechanizm:
@@ -112,14 +150,77 @@ Modele obrazkowe nie potrafią narysować dokładnie 16 × 16. Potrafią za to n
 Kroki 2 i 3 są deterministyczne i należą do skryptu, nie do oka. Bez nich paleta rozjedzie
 się po trzydziestym spricie i nic tego nie posklei.
 
+## Blok świata — obowiązkowy w każdym prompcie
+
+Metryki pilnują, żeby sprite dało się wstawić w siatkę. **Blok świata pilnuje, żeby
+należał do tej samej gry co pozostałe.** Bez niego model dostaje poprawne reguły
+techniczne i zero pojęcia, czy trzcina rośnie nad Bałtykiem czy w tropikach — a wtedy
+zgaduje, i każdy sprite zgaduje inaczej.
+
+To ta sama lekcja co z `isNight()` w rdzeniu: czego nie zapiszesz, to model wymyśli.
+
+```
+WORLD — every sprite belongs to the same place; keep this consistent across all of them:
+A small island homestead in a cool temperate climate, late summer. Everything here is
+hand-made from what the island gives: reed from the shore, hay from the meadow, linen
+cloth, field stone, oak and birch wood, charcoal, bog iron. Technology stops at hand
+tools — no gears, no machinery, no gunpowder, no glass, no wheels. Three people live
+here: a shopkeeper, a fisherman, a smith.
+
+STYLE — cosy life-sim, the proportions and warmth of Animal Crossing:
+Everything is rounded, chunky and slightly oversized, as if it were a well-made wooden
+toy. Soft silhouettes, no sharp corners, no thin spindly shapes. Objects look inviting
+and handleable rather than realistic. Cheerful and warm, never grim, never gritty,
+never menacing. Characters are cute and squat with oversized heads.
+
+NEVER include: realistic human proportions, fantasy creatures, magic glow, runes,
+crystals, neon, chrome, plastic, modern objects, weapons of war, skulls, gore,
+horror, or tropical and East Asian flora — no bamboo, no palms, no cherry blossom,
+no pagoda shapes.
+
+CONSISTENCY — this sprite will sit next to dozens of others on the same screen:
+Same camera angle for every object: a high three-quarter view, roughly 60 degrees
+from vertical, so each object shows its front face prominently and a little of its
+top surface. Same sun angle. Same level of stylisation.
+```
+
+Lista „NEVER" nie jest przesadą. Modele obrazkowe mają silne skojarzenie
+„pixel art + crafting" → japońskie RPG, i bez zakazu wstawią bambus, kwiat wiśni
+albo świecący kryształ do kosza na trzcinę. Równie silne jest skojarzenie
+„16-bit" → surowe, mroczne fantasy — a to dokładna odwrotność tego, czego chcemy.
+
 ## Prompt bazowy
 
 Sloty: `{OPIS}`, `{SZEROKOSC}`, `{WYSOKOSC}`, `{KOLORY}`, `{PALETA}`.
+Blok świata wkleja się **przed** `SUBJECT`.
 
 ```
 Pixel art sprite for a top-down 2D survival and crafting game in the style of
 16-bit console RPGs. Nostalgic, warm, hand-placed pixels — not a modern vector
 illustration with a pixel filter.
+
+WORLD — every sprite belongs to the same place; keep this consistent across all of them:
+A small island homestead in a cool temperate climate, late summer. Everything here is
+hand-made from what the island gives: reed from the shore, hay from the meadow, linen
+cloth, field stone, oak and birch wood, charcoal, bog iron. Technology stops at hand
+tools — no gears, no machinery, no gunpowder, no glass, no wheels. Three people live
+here: a shopkeeper, a fisherman, a smith.
+
+STYLE — cosy life-sim, the proportions and warmth of Animal Crossing:
+Everything is rounded, chunky and slightly oversized, as if it were a well-made wooden
+toy. Soft silhouettes, no sharp corners, no thin spindly shapes. Objects look inviting
+and handleable rather than realistic. Cheerful and warm, never grim, never gritty,
+never menacing. Characters are cute and squat with oversized heads.
+
+NEVER include: realistic human proportions, fantasy creatures, magic glow, runes,
+crystals, neon, chrome, plastic, modern objects, weapons of war, skulls, gore,
+horror, or tropical and East Asian flora — no bamboo, no palms, no cherry blossom,
+no pagoda shapes.
+
+CONSISTENCY — this sprite will sit next to dozens of others on the same screen:
+Same camera angle for every object: a high three-quarter view, roughly 60 degrees
+from vertical, so each object shows its front face prominently and a little of its
+top surface. Same sun angle. Same level of stylisation.
 
 SUBJECT: {OPIS}
 
