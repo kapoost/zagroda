@@ -154,6 +154,68 @@ export interface CodeResult {
   model: string;
 }
 
+/**
+ * Dopasowanie fragmentu do podmiany.
+ *
+ * Model odtwarza fragment z pamięci i regularnie myli wcięcie albo spację na końcu
+ * linii. Odrzucanie takiej próby jest formalnie poprawne i praktycznie bezużyteczne —
+ * zmiana jest dobra, tylko zapisana odrobinę inaczej. Dlatego: najpierw dopasowanie
+ * dosłowne, a gdy nie wyjdzie, porównanie linia po linii z pominięciem białych znaków.
+ *
+ * Tolerancja kończy się na jednoznaczności: dwa pasujące miejsca to nadal błąd, bo
+ * zgadywanie, które model miał na myśli, jest gorsze niż poproszenie go o doprecyzowanie.
+ */
+export function applyReplace(
+  current: string,
+  oldText: string,
+  newText: string,
+): { ok: true; next: string } | { ok: false; why: string } {
+  const exact = current.split(oldText).length - 1;
+  if (exact === 1) return { ok: true, next: current.replace(oldText, newText) };
+  if (exact > 1) {
+    return { ok: false, why: `fragment występuje ${exact} razy — dodaj otaczające linie, żeby był jednoznaczny` };
+  }
+
+  const fileLines = current.split('\n');
+  const needle = oldText.split('\n').map((l) => l.trim());
+  const hits: number[] = [];
+  for (let i = 0; i + needle.length <= fileLines.length; i++) {
+    let match = true;
+    for (let k = 0; k < needle.length; k++) {
+      if (fileLines[i + k]!.trim() !== needle[k]) {
+        match = false;
+        break;
+      }
+    }
+    if (match) hits.push(i);
+  }
+
+  if (hits.length === 1) {
+    const at = hits[0]!;
+    const indentOf = (l: string) => l.match(/^\s*/)![0];
+    const shift = indentOf(fileLines[at]!).length - indentOf(oldText.split('\n')[0]!).length;
+    const reindented = newText.split('\n').map((l) => {
+      if (!l.trim()) return l;
+      return shift >= 0 ? ' '.repeat(shift) + l : l.slice(Math.min(-shift, indentOf(l).length));
+    });
+    const next = [...fileLines.slice(0, at), ...reindented, ...fileLines.slice(at + needle.length)];
+    return { ok: true, next: next.join('\n') };
+  }
+  if (hits.length > 1) {
+    return { ok: false, why: `fragment pasuje w ${hits.length} miejscach — dodaj otaczające linie` };
+  }
+
+  const first = needle[0] ?? '';
+  const near = fileLines.find((l) => first.length > 8 && l.includes(first.slice(0, 12)));
+  return {
+    ok: false,
+    why:
+      `fragment nie występuje w pliku. Szukałeś linii zaczynającej się od "${first.slice(0, 60)}"` +
+      (near ? `; w pliku jest natomiast: "${near.trim().slice(0, 80)}"` : '') +
+      '. Skopiuj fragment dosłownie z kodu podanego wyżej',
+  };
+}
+
 function applyEdits(edits: CodeEdit[]): CodeResult {
   const written = new Set<string>();
   const rejected: string[] = [];
@@ -180,20 +242,12 @@ function applyEdits(edits: CodeEdit[]): CodeResult {
       rejected.push(`${e.path}: plik nie istnieje, więc nie ma czego podmieniać`);
       continue;
     }
-    const current = readFileSync(abs, 'utf8');
-    const hits = current.split(e.old).length - 1;
-    if (hits === 0) {
-      rejected.push(
-        `${e.path}: fragment do podmiany nie występuje w pliku — skopiuj go dosłownie, ` +
-          `ze spacjami wcięć. Pierwsza linia, której szukałeś: "${e.old.split('\n')[0]?.trim()}"`,
-      );
+    const res = applyReplace(readFileSync(abs, 'utf8'), e.old, e.next);
+    if (!res.ok) {
+      rejected.push(`${e.path}: ${res.why}`);
       continue;
     }
-    if (hits > 1) {
-      rejected.push(`${e.path}: fragment do podmiany występuje ${hits} razy — dodaj otaczające linie, żeby był jednoznaczny`);
-      continue;
-    }
-    writeFileSync(abs, current.replace(e.old, e.next), 'utf8');
+    writeFileSync(abs, res.next, 'utf8');
     written.add(e.path);
   }
 
