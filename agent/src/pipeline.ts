@@ -63,6 +63,8 @@ export async function run(opts: RunOptions): Promise<RunResult> {
   say(`→ ${route.kind.toUpperCase()}: ${route.title}`);
   say(`   ${route.summary_pl}`);
   if (route.kind === 'dane') say(`   kolekcje: ${route.collections.join(', ') || '(brak — przyjmuję items)'}`);
+  if (route.checks.length) say(`   warunki: ${route.checks.join(' · ')}`);
+  else if (route.kind === 'dane') say('   warunki: brak — ta zmiana nie trafi na main bez Twojego spojrzenia');
 
   if (opts.dryRun) {
     const cols = widenCollections(route.collections);
