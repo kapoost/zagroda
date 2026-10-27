@@ -14,8 +14,9 @@ HOW TO DO IT
 - Change `spend()` so the charged amount is computed, not constant. Keep its contract:
   it returns `false` and logs a message when the player cannot pay, and it must not
   charge anything in that case.
-- Conditions that depend on the clock must read `timeOfDay(state, reg)`, never a wall
-  clock. `timeOfDay` returns 0 at midnight and 0.5 at noon.
+- Conditions that depend on the clock must read the helpers exported from `tick.ts`,
+  never a wall clock. For day/night use `isNight(state, reg)` — do NOT invent your own
+  threshold on `timeOfDay`, the game already decided where night begins.
 - Multipliers belong next to `spend()` as named constants, not scattered as literals.
 
 INVARIANTS YOU MUST NOT BREAK

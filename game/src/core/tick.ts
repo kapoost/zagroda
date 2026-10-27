@@ -280,6 +280,19 @@ export function dayOf(state: State, reg: Registry): number {
 /** Gracz budzi się rano, nie o północy — stąd przesunięcie zegara względem ticku zero. */
 const DAY_OFFSET = 0.32;
 
+/**
+ * Granica nocy. Istnieje jako funkcja, a nie jako próg rozsiany po kodzie, bo „noc"
+ * to decyzja projektowa gry, a nie rzecz do odgadnięcia z wartości liczbowej.
+ * Pokrywa się z przyciemnieniem ekranu w rendererze.
+ */
+export const NIGHT_FROM = 0.78;
+export const NIGHT_TO = 0.24;
+
+export function isNight(state: State, reg: Registry): boolean {
+  const t = timeOfDay(state, reg);
+  return t >= NIGHT_FROM || t < NIGHT_TO;
+}
+
 /** 0 = północ, 0.5 = południe. */
 export function timeOfDay(state: State, reg: Registry): number {
   const d = reg.content.config.dayTicks;

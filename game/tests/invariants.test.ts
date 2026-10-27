@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../src/core/game.js';
 import { Rng } from '../src/core/rng.js';
-import { idx } from '../src/core/tick.js';
+import { NIGHT_FROM, NIGHT_TO, idx, isNight } from '../src/core/tick.js';
 import { MAX_LOG, type Facing, type Input } from '../src/core/types.js';
 
 /**
@@ -113,5 +113,28 @@ describe('inwarianty rdzenia', () => {
     const t0 = Date.now();
     g.steps(20_000, { move: 'e' });
     expect(Date.now() - t0).toBeLessThan(2000);
+  });
+});
+
+describe('doba', () => {
+  it('noc obejmuje północ i nie obejmuje południa', () => {
+    const g = new Game(1337);
+    const d = g.reg.content.config.dayTicks;
+    const at = (t: number) => {
+      g.state.tick = Math.round(((t - 0.32 + 1) % 1) * d);
+      return isNight(g.state, g.reg);
+    };
+    expect(at(0.0), 'północ').toBe(true);
+    expect(at(0.1), '02:24').toBe(true);
+    expect(at(0.5), 'południe').toBe(false);
+    expect(at(0.6), '14:24').toBe(false);
+    expect(at(0.85), '20:24').toBe(true);
+  });
+
+  it('granice nocy są spójne z tym, co widzi gracz', () => {
+    // Renderer przyciemnia ekran własną krzywą; jeśli rozjedzie się z definicją nocy,
+    // gracz zobaczy dzień i zapłaci nocną stawkę — albo odwrotnie.
+    expect(NIGHT_FROM).toBeGreaterThan(0.5);
+    expect(NIGHT_TO).toBeLessThan(0.5);
   });
 });

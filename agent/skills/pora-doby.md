@@ -14,6 +14,8 @@ TASK: {{MECHANIZM_EN}}
 HOW TO DO IT
 - Derive everything from `state.tick`. Never read a wall clock and never add a separate
   timer field when modulo on the tick counter will do.
+- For "is it night" use the exported `isNight(state, reg)`. Where night begins is a design
+  decision already made in `tick.ts`; do not re-derive it from `timeOfDay` numbers.
 - Periodic effects go at the end of `tick()`, after the respawn pass, so one tick never
   applies the same effect twice.
 - Thresholds and periods belong at the top of the file as named constants.

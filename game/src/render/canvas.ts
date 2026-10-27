@@ -1,5 +1,5 @@
 import type { Registry } from '../content/registry.js';
-import { entityAt, idx, timeOfDay } from '../core/tick.js';
+import { NIGHT_FROM, NIGHT_TO, entityAt, idx, timeOfDay } from '../core/tick.js';
 import type { State } from '../core/types.js';
 
 /** Rysowanie świata. Czysta prezentacja — nie wolno tu zmieniać stanu gry. */
@@ -8,6 +8,8 @@ export const TILE = 26;
 
 function nightAlpha(t: number): number {
   // Zmierzch i świt zamiast skokowej zmiany: 0 w południe, maksimum o północy.
+  // Krzywa jest ciągła, ale jej ciemna część pokrywa się z [NIGHT_FROM, NIGHT_TO] —
+  // gracz widzi noc wtedy, kiedy rdzeń ją nalicza.
   const night = Math.cos(t * Math.PI * 2) * 0.5 + 0.5;
   // Noc ma być nastrojowa, nie nieprzejrzysta — przy pełnej ciemności nie dałoby się grać.
   return Math.min(0.42, Math.pow(night, 1.6) * 0.48);

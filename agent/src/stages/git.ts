@@ -88,6 +88,10 @@ export function commitAll(input: CommitInput, stamp: string): string {
   return git(['rev-parse', '--short', 'HEAD']);
 }
 
+export function checkout(branch: string): void {
+  git(['checkout', '-q', branch]);
+}
+
 export function mergeToMain(branch: string, title: string): void {
   git(['checkout', '-q', 'main']);
   git(['merge', '-q', '--no-ff', branch, '-m', `merge: ${title}`]);

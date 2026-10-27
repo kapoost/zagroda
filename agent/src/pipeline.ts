@@ -130,7 +130,10 @@ export async function run(opts: RunOptions): Promise<RunResult> {
       return { outcome: 'merged', title: route.title, branch, commit, changes: result.changes, gate: result.gate, resolvedBy };
     }
 
-    let note = `gałąź ${branch} czeka na Twoją akceptację: git diff main..${branch}`;
+    // Wracamy na gałąź startową: inaczej kolejny przebieg zaczyna na gałęzi poprzedniego
+    // i buduje na zmianie, której nikt jeszcze nie zaakceptował.
+    git.checkout(startedOn);
+    let note = `gałąź ${branch} czeka na Twoją akceptację: git diff ${startedOn}..${branch}`;
     if (git.hasRemote() && git.pushBranch(branch)) {
       const url = git.openPr(route.title, [route.summary_pl, '', ...result.changes.map((c) => `- ${c}`)].join('\n'));
       if (url) note = `PR otwarty: ${url}`;
