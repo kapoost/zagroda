@@ -374,16 +374,16 @@
   {
     "id": "kosa_zelazna",
     "name": "Kosa żelazna",
-    "desc": "Narzędzie do ścinania trawy i zbóż.",
+    "desc": "Ostrze trzyma się dłużej niż u zwykłej. Idzie przez trawę bez szarpania.",
     "tags": [
       "narzedzie"
     ],
     "stack": 1,
-    "value": 40,
+    "value": 60,
     "tool": {
       "kind": "scythe",
       "power": 2,
-      "durability": 50
+      "durability": 800
     }
   }
 ]

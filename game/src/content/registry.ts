@@ -228,24 +228,52 @@ export function validateContent(raw: unknown): ValidateResult {
     }
   }
 
-  // --- 5b. granice względne: droższe narzędzie musi być w czymś lepsze ---
+  // --- 5b. granice względne: drabinka narzędzi musi iść w jedną stronę ---
+  //
   // Granice bezwzględne ze schematu (durability 10..5000) przepuszczają narzędzie,
-  // które kosztuje więcej od poprzednika i jest od niego gorsze pod każdym względem.
-  // Tak właśnie przeszedł młot "dużo wytrzymalszy od kilofa" z wytrzymałością 30
-  // przy kilofie 200: każda liczba z osobna mieściła się w zakresie.
+  // które kosztuje więcej od poprzednika i jest od niego gorsze. Tak przeszedł młot
+  // "dużo wytrzymalszy od kilofa" z wytrzymałością 30 przy kilofie 200, a potem
+  // żelazna kosa "wyraźnie mocniejsza" — mocniejsza owszem, ale ośmiokrotnie
+  // bardziej krucha od zwykłej. Każda liczba z osobna mieściła się w zakresie.
+  //
+  // Stąd reguła ostrzejsza niż "lepsze w czymkolwiek": droższe narzędzie tego samego
+  // rodzaju nie może być gorsze w ŻADNEJ osi. Ulepszenie to ulepszenie, a nie wymiana
+  // jednej cechy na drugą — na to są różne rodzaje narzędzi, nie różne poziomy.
   const narzedzia = c.items.filter((i) => i.tool);
+  const wsadRecepturyNa = new Map<string, number>();
+  for (const r of c.recipes) {
+    const wartosc = r.inputs.reduce((a, i) => a + (items.get(i.item)?.value ?? 0) * i.qty, 0);
+    const dotad = wsadRecepturyNa.get(r.output.item);
+    if (dotad === undefined || wartosc < dotad) wsadRecepturyNa.set(r.output.item, wartosc);
+  }
   for (const a of narzedzia) {
     for (const b of narzedzia) {
       if (a.id === b.id || a.tool!.kind !== b.tool!.kind) continue;
       if (a.value <= b.value) continue;
-      if (a.tool!.power > b.tool!.power || a.tool!.durability > b.tool!.durability) continue;
-      err(
-        'DOMINACJA',
-        `kosztuje więcej niż "${b.id}" (${a.value} do ${b.value}), a nie jest od niego lepsze: ` +
-          `siła ${a.tool!.power} do ${b.tool!.power}, wytrzymałość ${a.tool!.durability} do ${b.tool!.durability}. ` +
-          `Podnieś siłę albo wytrzymałość, albo zbij wartość`,
-        `items.${a.id}`,
-      );
+      const gorszaSila = a.tool!.power < b.tool!.power;
+      const gorszaWytrzymalosc = a.tool!.durability < b.tool!.durability;
+      if (gorszaSila || gorszaWytrzymalosc) {
+        err(
+          'DOMINACJA',
+          `kosztuje więcej niż "${b.id}" (${a.value} do ${b.value}), a jest od niego gorsze: ` +
+            `siła ${a.tool!.power} do ${b.tool!.power}, wytrzymałość ${a.tool!.durability} do ${b.tool!.durability}. ` +
+            `Droższe narzędzie tego samego rodzaju nie może być gorsze w żadnej z tych dwóch rzeczy`,
+          `items.${a.id}`,
+        );
+        continue;
+      }
+      // Lepsze narzędzie musi też kosztować więcej w wytwarzaniu, inaczej poprzednik
+      // przestaje mieć sens: nikt nie zrobi gorszej rzeczy za tę samą cenę.
+      const wsadA = wsadRecepturyNa.get(a.id);
+      const wsadB = wsadRecepturyNa.get(b.id);
+      if (wsadA !== undefined && wsadB !== undefined && wsadA <= wsadB) {
+        err(
+          'KOSZT_POSTEPU',
+          `jest lepsze od "${b.id}", a kosztuje tyle samo albo mniej (wsad wart ${wsadA} do ${wsadB}) — ` +
+            `po takiej zmianie nikt już nie wytworzy "${b.id}". Podnieś wsad receptury`,
+          `recipes → items.${a.id}`,
+        );
+      }
     }
   }
 

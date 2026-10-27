@@ -36,6 +36,34 @@ describe('walidator łapie psucie treści', () => {
     expect(codes(c)).toContain('DOMINACJA');
   });
 
+  it('narzędzie mocniejsze, ale kruchsze od poprzednika', () => {
+    const c = clone();
+    const kosa = c.items.find((i: any) => i.id === 'kosa');
+    c.items.push({
+      ...kosa,
+      id: 'kosa_atrapa',
+      name: 'Kosa atrapa',
+      value: kosa.value + 10,
+      tool: { kind: 'scythe', power: kosa.tool.power + 1, durability: 50 },
+    });
+    expect(codes(c)).toContain('DOMINACJA');
+  });
+
+  it('lepsze narzędzie za tę samą cenę wytworzenia', () => {
+    const c = clone();
+    const kosa = c.items.find((i: any) => i.id === 'kosa');
+    const r = c.recipes.find((x: any) => x.output.item === 'kosa');
+    c.items.push({
+      ...kosa,
+      id: 'kosa_atrapa',
+      name: 'Kosa atrapa',
+      value: kosa.value + 10,
+      tool: { kind: 'scythe', power: kosa.tool.power + 1, durability: kosa.tool.durability },
+    });
+    c.recipes.push({ ...r, id: 'r_kosa_atrapa', output: { item: 'kosa_atrapa', qty: 1 } });
+    expect(codes(c)).toContain('KOSZT_POSTEPU');
+  });
+
   it('tag spoza zamkniętego słownika', () => {
     const c = clone();
     c.items[0].tags = ['narzucie'];
