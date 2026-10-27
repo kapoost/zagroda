@@ -12,3 +12,10 @@ Gracz prosi o dodanie nowego przedmiotu - kosza wiklinowego, który będzie poje
 - + recipes: r_kosz_wiklinowy ("Kosz wiklinowy")
 - + recipes: r_wypelnienie_kosza ("Wypełnienie kosza")
 - + structures: kosz_wiklinowy ("Kosz wiklinowy")
+
+## Koszt zbierania surowców w nocy
+*2026-10-27 14:14 · kod · wykonawca: coder*
+
+Zmiana wprowadza modyfikację kosztu akcji zbierania surowców w zależności od pory dnia. Zbieranie surowców w nocy będzie kosztować gracza dwukrotnie więcej sił niż w ciągu dnia.
+
+- ~ kod: game/src/core/tick.ts

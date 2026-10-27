@@ -82,12 +82,17 @@ function log(state: State, msg: string): void {
 }
 
 function spend(state: State, reg: Registry): boolean {
-  const cost = reg.content.config.energyPerAction;
-  if (state.player.energy < cost) {
+  const BASE_COST = reg.content.config.energyPerAction;
+  const NIGHT_MULTIPLIER = 2;
+
+  let effectiveCost = BASE_COST * (isNight(state, reg) ? NIGHT_MULTIPLIER : 1);
+  if (effectiveCost < 1) effectiveCost = 1; // Ensure the cost is at least 1
+
+  if (state.player.energy < effectiveCost) {
     log(state, 'Brakuje ci sił. Zjedz coś albo odpocznij.');
     return false;
   }
-  state.player.energy -= cost;
+  state.player.energy -= effectiveCost;
   return true;
 }
 
