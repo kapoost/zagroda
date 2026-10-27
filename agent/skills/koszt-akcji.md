@@ -17,7 +17,8 @@ HOW TO DO IT
 - Conditions that depend on the clock must read the helpers exported from `tick.ts`,
   never a wall clock. For day/night use `isNight(state, reg)` — do NOT invent your own
   threshold on `timeOfDay`, the game already decided where night begins.
-- Multipliers belong next to `spend()` as named constants, not scattered as literals.
+- Multipliers belong at the TOP OF THE FILE as module-level `const` declarations,
+  next to ENERGY_REGEN_EVERY. Not inside the function, not as literals at the use site.
 
 INVARIANTS YOU MUST NOT BREAK
 - Energy never goes below zero and never exceeds `config.energyMax`.
