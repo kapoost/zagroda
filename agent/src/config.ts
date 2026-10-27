@@ -14,7 +14,7 @@ export const CFG = {
     api: process.env.ZU_MODEL_API ?? 'claude-opus-5',
   },
   /** Ile razy próbować na każdym szczeblu drabiny, licząc pierwszą próbę. */
-  attempts: { route: 2, ops: 3, code: 3, api: 2 },
+  attempts: { route: 2, ops: 2, code: 3, api: 2 },
   numCtx: 16384,
   timeoutMs: 600_000,
   /** Hybrydowa autonomia: zmiany czysto danych z zieloną bramką wjeżdżają same. */
