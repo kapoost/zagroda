@@ -19,3 +19,11 @@ Gracz prosi o dodanie nowego przedmiotu - kosza wiklinowego, który będzie poje
 Zmiana wprowadza modyfikację kosztu akcji zbierania surowców w zależności od pory dnia. Zbieranie surowców w nocy będzie kosztować gracza dwukrotnie więcej sił niż w ciągu dnia.
 
 - ~ kod: game/src/core/tick.ts
+
+## Dodanie kamiennego młota
+*2026-10-27 15:58 · dane · wykonawca: bielik*
+
+Gracz może teraz wytwarzać nowe narzędzie - kamienny młot, który jest wytrzymalszy od kilofa, ale zadaje mniejsze obrażenia. Wymaga to dodania nowego przedmiotu do listy dostępnych przedmiotów oraz aktualizacji receptur i statystyk narzędzi.
+
+- + items: mlot_kamienny ("Kamienny młot")
+- + recipes: r_mlot_kamienny ("Kamienny młot")
