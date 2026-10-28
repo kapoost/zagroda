@@ -33,6 +33,13 @@ Pola:
   Pamiętaj o zależnościach: przedmiot, który się stawia, potrzebuje też wpisu w
   "structures"; przedmiot, który się wytwarza, potrzebuje wpisu w "recipes";
   nowy surowiec do zbierania to "resources".
+  UWAGA na dwie kolekcje, które łatwo pomylić:
+  - "structures" to rzeczy, które GRACZ STAWIA w świecie — skrzynia, piec, ściana.
+  - "facades" to WYGLĄD ZABUDOWY MIASTA, której gracz nie stawia i nie posiada:
+    jak wygląda kamienica danego rodzaju — tynk, dachówka, attyka, rytm podcieni.
+    Wszystko o pierzejach, elewacjach, attykach, podcieniach i kolorach kamienic
+    to "facades". Liczbę kondygnacji i status zabytku gra bierze z mapy miasta,
+    więc nie wymyślaj, co stoi pod którym adresem.
 - title: krótki tytuł zmiany po polsku, bez kropki
 - summary_pl: 2-3 zdania, co dokładnie się zmieni i dlaczego
 - removes_content: true TYLKO jeśli gracz wprost prosi o usunięcie czegoś, co już jest w grze.
