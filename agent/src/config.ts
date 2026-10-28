@@ -43,6 +43,9 @@ export const WRITE_DENY = [
   // Zapisywalny bot to zapisywalny wynik testu — ta sama dziura co edytowalne testy,
   // tylko o jeden plik dalej.
   'game/src/sim/',
+  // Prawo wymiany z postaciami. Kurs nie jest pokretlem rozgrywki, tylko granica
+  // ekonomii — zapisywalny kurs to pompa wartosci: ryba za galaz, w kolko.
+  'game/src/core/wymiana.ts',
   'game/src/content/schema.ts',
   'game/src/content/registry.ts',
   'game/src/content/load.ts',

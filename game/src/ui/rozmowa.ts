@@ -16,17 +16,26 @@ export interface PostacDoRozmowy {
   gives: string[];
 }
 
+export interface OfertaUi {
+  daj: string;
+  za: string;
+  ile: number;
+  darNazwa: string;
+  zaNazwa: string;
+}
+
 type Zdarzenie =
   | { typ: 'czekaj'; tekst: string }
   | { typ: 'tekst'; tekst: string }
-  | { typ: 'koniec'; daj: string | null }
+  | { typ: 'koniec'; wymiana: { daj: string; za: string } | null }
   | { typ: 'blad'; tekst: string };
 
 let korzen: HTMLDivElement | null = null;
 let otwarta = false;
 let biezaca: PostacDoRozmowy | null = null;
-let naAkcje: ((npc: string, daj: string) => void) | null = null;
+let naAkcje: ((npc: string, daj: string, za: string) => void) | null = null;
 let dajStan: (() => string) | null = null;
+let dajOferty: (() => OfertaUi[]) | null = null;
 let czeka = false;
 
 export const rozmowaOtwarta = (): boolean => otwarta;
@@ -87,7 +96,14 @@ async function wyslij(tekst: string): Promise<void> {
     await fetch('/api/rozmowa', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ postac: biezaca, tekst, stan: dajStan?.() ?? 'nic' }),
+      body: JSON.stringify({
+        postac: biezaca,
+        tekst,
+        stan: dajStan?.() ?? 'nic',
+        // Cennik liczy silnik gry, a nie model: tu jedzie po to, żeby postać mówiła
+        // te same liczby, które za chwilę zastosuje rdzeń.
+        oferty: dajOferty?.() ?? [],
+      }),
     });
     if (!odp.ok || !odp.body) {
       const b = await odp.json().catch(() => ({ blad: `serwer odpowiedział ${odp.status}` }));
@@ -116,9 +132,10 @@ async function wyslij(tekst: string): Promise<void> {
         } else if (z.typ === 'blad') {
           mowi.className = 'ro-linia ro-blad';
           mowi.textContent = z.tekst;
-        } else if (z.typ === 'koniec' && z.daj && biezaca) {
-          naAkcje?.(biezaca.id, z.daj);
-          dopisz('ro-dar', `${biezaca.name} daje ci coś.`);
+        } else if (z.typ === 'koniec' && z.wymiana && biezaca) {
+          const o = (dajOferty?.() ?? []).find((x) => x.daj === z.wymiana!.daj && x.za === z.wymiana!.za);
+          naAkcje?.(biezaca.id, z.wymiana.daj, z.wymiana.za);
+          dopisz('ro-dar', o ? `Wymiana: ${o.darNazwa} za ${o.ile}× ${o.zaNazwa}.` : 'Wymiana doszła do skutku.');
         }
       }
     }
@@ -134,11 +151,13 @@ async function wyslij(tekst: string): Promise<void> {
 export function otworz(
   postac: PostacDoRozmowy,
   stan: () => string,
-  akcja: (npc: string, daj: string) => void,
+  cennik: () => OfertaUi[],
+  akcja: (npc: string, daj: string, za: string) => void,
 ): void {
   korzen ??= zbuduj();
   biezaca = postac;
   dajStan = stan;
+  dajOferty = cennik;
   naAkcje = akcja;
   otwarta = true;
   korzen.classList.add('widoczne');

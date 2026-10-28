@@ -4,6 +4,7 @@ import { Rng } from '../src/core/rng.js';
 import { NIGHT_FROM, NIGHT_TO, idx, isNight, tick } from '../src/core/tick.js';
 import { registry } from '../src/content/load.js';
 import { generate } from '../src/core/world.js';
+import { oferty } from '../src/core/wymiana.js';
 import { MAX_LOG, type Facing, type Input } from '../src/core/types.js';
 
 /**
@@ -230,5 +231,83 @@ describe('wynik rozmowy', () => {
     const przed = JSON.stringify(s.player.inv);
     tick(s, { rozmowa: { npc: 'nikt_taki', daj: 'jagoda' } }, reg);
     expect(JSON.stringify(s.player.inv)).toBe(przed);
+  });
+});
+
+/**
+ * Prawo wymiany. Te testy pilnują czegoś mocniejszego niż poprawność jednej funkcji:
+ * sprawdzają, że NIE DA SIĘ obejść kursu przez wejście — ani z modelu, ani z
+ * przeglądarki, ani z konsoli. Kurs liczy silnik i tylko silnik.
+ *
+ * Leżą tutaj, a nie obok wymiany, celowo. game/tests/ jest niezapisywalne dla agenta,
+ * więc gdyby kiedykolwiek przepisał tick.ts i rozluźnił warunek, bramka to złapie.
+ */
+describe('wymiana z postacią', () => {
+  const przyPostaci = (inv: Record<string, number> = {}) => {
+    const reg = registry();
+    const s = generate(reg, 11);
+    const npc = s.ents.find((e) => e.kind === 'npc' && reg.npcs.get(e.def)!.gives.length)!;
+    s.player.x = npc.x - 1;
+    s.player.y = npc.y;
+    s.player.inv = { ...inv };
+    return { reg, s, npc, def: reg.npcs.get(npc.def)! };
+  };
+  const wartosc = (reg: ReturnType<typeof registry>, inv: Record<string, number>) =>
+    Object.entries(inv).reduce((a, [id, n]) => a + (reg.items.get(id)?.value ?? 0) * n, 0);
+
+  it('pobiera zapłatę policzoną przez silnik, nie przysłaną z zewnątrz', () => {
+    const { reg, s, npc, def } = przyPostaci({ galaz: 20 });
+    const dar = def.gives[0]!;
+    const o = oferty(s, reg, npc.def).find((x) => x.za === 'galaz')!;
+    expect(o.ile).toBeGreaterThan(0);
+    tick(s, { rozmowa: { npc: npc.def, daj: dar, za: 'galaz' } }, reg);
+    expect(s.player.inv[dar] ?? 0).toBe(1);
+    expect(s.player.inv['galaz']).toBe(20 - o.ile);
+  });
+
+  it('nie da się zapłacić czymś, czego gracz nie ma', () => {
+    const { reg, s, npc, def } = przyPostaci({ galaz: 20 });
+    const przed = JSON.stringify(s.player.inv);
+    tick(s, { rozmowa: { npc: npc.def, daj: def.gives[0]!, za: 'sztabka_zelaza' } }, reg);
+    expect(JSON.stringify(s.player.inv)).toBe(przed);
+  });
+
+  it('nie da się zapłacić narzędziem', () => {
+    const { reg, s, npc, def } = przyPostaci({ siekiera_kamienna: 3 });
+    const przed = JSON.stringify(s.player.inv);
+    tick(s, { rozmowa: { npc: npc.def, daj: def.gives[0]!, za: 'siekiera_kamienna' } }, reg);
+    expect(JSON.stringify(s.player.inv)).toBe(przed);
+  });
+
+  it('darmowy dar tylko wtedy, gdy nie ma czym zapłacić', () => {
+    const pusty = przyPostaci({});
+    tick(pusty.s, { rozmowa: { npc: pusty.npc.def, daj: pusty.def.gives[0]! } }, pusty.reg);
+    expect(pusty.s.player.inv[pusty.def.gives[0]!] ?? 0).toBe(1);
+
+    const bogaty = przyPostaci({ galaz: 20 });
+    tick(bogaty.s, { rozmowa: { npc: bogaty.npc.def, daj: bogaty.def.gives[0]! } }, bogaty.reg);
+    expect(bogaty.s.player.inv[bogaty.def.gives[0]!] ?? 0).toBe(0);
+  });
+
+  it('żadna wymiana nie podnosi wartości plecaka', () => {
+    const { reg, s, npc, def } = przyPostaci({ galaz: 40, kamien: 40, jagoda: 10, drewno: 10 });
+    const start = wartosc(reg, s.player.inv);
+    for (let i = 0; i < 40; i++) {
+      for (const daj of def.gives) {
+        for (const za of ['galaz', 'kamien', 'jagoda', 'drewno', 'nie_ma', 'siekiera_kamienna']) {
+          tick(s, { rozmowa: { npc: npc.def, daj, za } }, reg);
+        }
+      }
+    }
+    expect(wartosc(reg, s.player.inv)).toBeLessThanOrEqual(start);
+  });
+
+  it('nie zna wymiany z postacią, która nic nie daje ani z nieistniejącą', () => {
+    const { reg, s, npc } = przyPostaci({ galaz: 20 });
+    expect(oferty(s, reg, 'nikt_taki')).toHaveLength(0);
+    const przed = JSON.stringify(s.player.inv);
+    tick(s, { rozmowa: { npc: 'nikt_taki', daj: 'jagoda', za: 'galaz' } }, reg);
+    expect(JSON.stringify(s.player.inv)).toBe(przed);
+    expect(npc).toBeTruthy();
   });
 });

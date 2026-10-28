@@ -3,6 +3,7 @@ import type { Facing, Input } from './core/types.js';
 import { draw } from './render/canvas.js';
 import { availableRecipes, inventoryIds, renderHud, type HudRefs } from './render/hud.js';
 import { pracowniaOtwarta, przelacz, zamknij as zamknijPracownie } from './ui/pracownia.js';
+import { oferty } from './core/wymiana.js';
 import { otworz as otworzRozmowe, rozmowaOtwarta, zamknij as zamknijRozmowe } from './ui/rozmowa.js';
 
 /** Spięcie rdzenia z przeglądarką: pętla o stałym kroku, wejście z klawiatury, rysowanie. */
@@ -62,6 +63,19 @@ function postacPrzedSoba() {
   return def ? { id: def.id, name: def.name, gives: def.gives } : null;
 }
 
+/**
+ * Cennik tej postaci, policzony przez rdzeń. Idzie do modelu wyłącznie po to, żeby
+ * postać mówiła te same liczby, które rdzeń zaraz zastosuje — a nie po to, żeby model
+ * miał cokolwiek do powiedzenia o cenie.
+ */
+function cennik(npcId: string) {
+  return oferty(game.state, game.reg, npcId).map((o) => ({
+    ...o,
+    darNazwa: game.reg.items.get(o.daj)?.name ?? o.daj,
+    zaNazwa: game.reg.items.get(o.za)?.name ?? o.za,
+  }));
+}
+
 /** Co postać ma wiedzieć o graczu. Krótko — to idzie do promptu przy każdej turze. */
 function stanGracza(): string {
   const inv = Object.entries(game.state.player.inv).filter(([, n]) => n > 0);
@@ -81,7 +95,14 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.code === 'KeyT') {
     const postac = postacPrzedSoba();
-    if (postac) otworzRozmowe(postac, stanGracza, (npc, daj) => { pending.rozmowa = { npc, daj }; });
+    if (postac) {
+      otworzRozmowe(
+        postac,
+        stanGracza,
+        () => cennik(postac.id),
+        (npc, daj, za) => { pending.rozmowa = { npc, daj, za }; },
+      );
+    }
     e.preventDefault();
     return;
   }

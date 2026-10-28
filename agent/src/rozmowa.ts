@@ -42,6 +42,21 @@ export interface Postac {
   gives: string[];
 }
 
+/**
+ * Oferta policzona przez silnik gry. Przychodzi z przegladarki i jest NIEZAUFANA —
+ * tu sluzy tylko do tego, zeby model mial z czego wybierac i co powiedziec. Rdzen
+ * i tak przelicza kurs od nowa przy stosowaniu wyniku.
+ */
+export interface Oferta {
+  daj: string;
+  za: string;
+  ile: number;
+  darNazwa: string;
+  zaNazwa: string;
+}
+
+const kluczOferty = (o: Oferta) => `${o.daj}|${o.za}`;
+
 export interface TuraRozmowy {
   rola: 'gracz' | 'postac';
   tekst: string;
@@ -85,15 +100,39 @@ export function modelAktualny(): { ok: true } | { ok: false; powod: string } {
  */
 export type Wiadomosc = { role: string; content: string };
 
-function wiadomosci(postac: Postac, stanGracza: string, historia: TuraRozmowy[], odGracza: string): Wiadomosc[] {
+function wiadomosci(
+  postac: Postac,
+  stanGracza: string,
+  historia: TuraRozmowy[],
+  odGracza: string,
+  oferty: Oferta[],
+): Wiadomosc[] {
   const dary = postac.gives.length
-    ? `Mozesz dac graczowi wylacznie: ${postac.gives.join(', ')}. Nic poza tym, i tylko gdy sam o to poprosi.`
+    ? `Mozesz dac graczowi wylacznie: ${postac.gives.join(', ')}. Nic poza tym.`
     : 'Nie masz nic do oddania.';
+
+  /**
+   * Cennik liczy silnik gry i podajemy go modelowi DOSLOWNIE, zeby jego zdanie
+   * zgadzalo sie z tym, co za chwile zrobi rdzen.
+   *
+   * Idzie na SAM KONIEC, tuz przed kwestia gracza, i ma to dwa powody. Pierwszy:
+   * cennik zalezy od zawartosci plecaka, wiec w staлym poczatku promptu psulby cache
+   * przy kazdej zmianie ekwipunku. Drugi: ostatnie miejsce przed generowaniem jest
+   * najmocniejsze — gdy cennik stal na poczatku, Bartek wycenial rybe na "piec galezi
+   * albo osiem kamieni", biorac piatke z cennika, a osemke ze stanu plecaka gracza.
+   */
+  const cennik = oferty.length
+    ? [
+        'CENNIK (policzony, nie do negocjacji — podawaj dokladnie te liczby):',
+        ...oferty.map((o) => `  ${o.darNazwa} = ${o.ile}x ${o.zaNazwa}`),
+      ]
+    : ['Gracz nie ma teraz czym zaplacic, wiec nic mu nie oddajesz. Powiedz to wprost.'];
+
   return [
     { role: 'user', content: `Jestes: ${postac.name}. ${dary}` },
     { role: 'assistant', content: 'Rozumiem. Jestem soba i mowie krotko.' },
     ...historia.map((t) => ({ role: t.rola === 'gracz' ? 'user' : 'assistant', content: t.tekst })),
-    { role: 'user', content: `[gracz ma: ${stanGracza}]\n${odGracza}` },
+    { role: 'user', content: [...cennik, '', `[gracz ma: ${stanGracza}]`, odGracza].join('\n') },
   ];
 }
 
@@ -162,9 +201,10 @@ export async function kwestia(
   stanGracza: string,
   historia: TuraRozmowy[],
   odGracza: string,
+  oferty: Oferta[],
   naTekst: (fragment: string) => void,
 ): Promise<{ tekst: string; watek: Wiadomosc[] }> {
-  const watek = wiadomosci(postac, stanGracza, historia, odGracza);
+  const watek = wiadomosci(postac, stanGracza, historia, odGracza, oferty);
   const tekst = await strumien(
     MODEL_NPC,
     watek,
@@ -180,53 +220,17 @@ export async function kwestia(
  * wiec model fizycznie nie wypisze nic innego. Rdzen i tak sprawdza to drugi raz.
  */
 /**
- * Zwroty, ktorymi po polsku faktycznie sie cos wreka. Lista jest WASKA celowo:
- * jej zadaniem jest nie przepuscic rozmowy, w ktorej nic sie nie dzieje, a nie
- * rozpoznac kazdy mozliwy sposob dania czegos komus.
+ * Co postac ROBI. Pytanie dwustopniowe i oba kroki maja gramatyke.
  *
- * To filtr deterministyczny przed pytaniem modelu - i jest tu z tego samego powodu,
- * co kazda inna kontrola w tym projekcie: nie pytaj modelu o to, co da sie sprawdzic.
- * Przy pytaniu "gdzie znajde zelazo" Zofia odpowiadala, ze niczego nie uczy, a model
- * i tak orzekal, ze wreczyla sznurek - bo gramatyka zawezona do listy darow kusi
- * wybraniem czegokolwiek. Bez czasownika dawania pytanie w ogole nie pada.
- *
- * Pomylka w te strone jest bezpieczna: brak daru to brak zmiany stanu.
+ * Wczesniej pytalismy, czy postac "wreczyla" przedmiot, i probowalismy to wyczytac
+ * z prozy filtrem na czasowniki. To gonienie ogona: "Wezme w zamian" przechodzilo
+ * jako dar, a "Tutaj, masz jedna" juz nie. Kategoria byla zla — model nigdy nie mowil
+ * "dalem", tylko "dam X za Y". Teraz pytamy o to, co faktycznie mowi, a kazda opcja
+ * w odpowiedzi pochodzi z silnika, wiec nie ma czego zgadywac.
  */
-const DAWANIE = [
-  'daje ci', 'daję ci', 'dam ci', 'dam go', 'dam ją', 'masz tu', 'masz go',
-  'weź', 'wez', 'trzymaj', 'podaję', 'podaje', 'oddaję', 'oddaje', 'przyjmij',
-];
+export async function akcja(postac: Postac, watek: Wiadomosc[], oferty: Oferta[]): Promise<Oferta | null> {
+  if (!oferty.length) return null;
 
-const LITERA = 'a-zA-Ząćęłńóśźżż';
-
-/**
- * Czy w tym zdaniu ktos cos wrecza.
- *
- * Dopasowanie idzie PO SLOWACH, nie po podciagach, i to nie jest pedanteria.
- * Pierwsza wersja sprawdzala zwykle `includes`, wiec "Wezme w zamian kawalek drewna"
- * — czyli propozycje wymiany — uznawala za wreczenie, bo w slowie "wezme" siedzi
- * "wez". Filtr odwrocil znaczenie zdania na przeciwne i ryba trafila do plecaka,
- * mimo ze Bartek wlasnie zazadal zaplaty.
- */
-export function czyWreczono(tekst: string): boolean {
-  const t = tekst.toLowerCase();
-  return DAWANIE.some((zwrot) =>
-    new RegExp(`(^|[^${LITERA}])${zwrot}([^${LITERA}]|$)`, 'u').test(t),
-  );
-}
-
-export async function akcja(postac: Postac, watek: Wiadomosc[]): Promise<string | null> {
-  if (!postac.gives.length) return null;
-
-  if (!czyWreczono(watek[watek.length - 1]?.content ?? '')) return null;
-
-  /**
-   * Pytanie doklejamy do TEGO SAMEGO watku, ktory przed chwila wygenerowal kwestie.
-   * Osobny, krotki prompt wygladal taniej, a byl drozszy: Ollama trzyma jeden slot
-   * cache na model, wiec przeplatanie dwoch roznych promptow kasowalo prefiks rozmowy
-   * i kazda tura liczyla od nowa dwa i pol tysiaca tokenow. Wspolny prefiks znaczy,
-   * ze do policzenia zostaje samo pytanie.
-   */
   const pytaj = async (tresc: string, mozliwosci: string[]) =>
     (
       await strumien(
@@ -240,32 +244,31 @@ export async function akcja(postac: Postac, watek: Wiadomosc[]): Promise<string 
       .trim()
       .replace(/^"|"$/g, '');
 
-  // Krok 1: pytanie rozstrzygniecia, bez zadnej nazwy przedmiotu w tresci.
-  //
-  // Jednym pytaniem "ktory przedmiot dajesz" model wybieral przedmiot nawet wtedy, gdy
-  // postac tylko o nim WSPOMNIALA - na "Masz konia na sprzedaz?" odpowiadala, ze konia
-  // nie ma, a decyzja i tak padala na sznurek. Gramatyka zawezona do listy darow kusi
-  // nazwaniem czegokolwiek z listy. Pytanie dwustanowe tej pokusy nie ma, bo w jego
-  // mozliwosciach nie ma zadnego przedmiotu.
+  // Krok 1: rozstrzygniecie, bez zadnej nazwy przedmiotu w tresci pytania.
+  // Gramatyka zawezona do listy ofert kusi wybraniem czegokolwiek z niej; pytanie
+  // dwustanowe tej pokusy nie ma, bo w jego mozliwosciach nie ma zadnego przedmiotu.
   const czy = await pytaj(
     [
       '[pytanie spoza rozmowy, odpowiadasz jako Ty sama]',
-      'Czy w swojej ostatniej wypowiedzi WRECZYLAS graczowi jakis przedmiot, tu i teraz?',
-      'Samo wspomnienie, wyliczenie, zaproponowanie albo odmowa to NIE jest wreczenie.',
+      'Czy w swojej ostatniej wypowiedzi dochodzi do wymiany TU I TERAZ:',
+      'gracz oddaje Ci zaplate, a Ty oddajesz mu przedmiot?',
+      'Sama propozycja, warunek, odmowa albo wyliczenie cen to NIE jest wymiana.',
       'Odpowiedz: tak albo nie.',
     ].join('\n'),
     ['nie', 'tak'],
   );
   if (czy !== 'tak') return null;
 
-  // Krok 2: dopiero teraz pada lista. Pytamy, gdy juz wiadomo, ze cos sie dzieje.
-  const co = await pytaj(
+  // Krok 2: dopiero teraz pada lista — i sa na niej wylacznie wymiany policzone
+  // przez silnik, wiec model nie ma jak wymyslic ani przedmiotu, ani ceny.
+  const klucze = oferty.map(kluczOferty);
+  const wybor = await pytaj(
     [
       '[pytanie spoza rozmowy]',
-      'Ktory przedmiot wreczasz? Odpowiedz samym identyfikatorem.',
-      `Mozliwosci: ${postac.gives.join(', ')}.`,
+      'Ktora dokladnie wymiana doszla do skutku? Odpowiedz samym identyfikatorem.',
+      ...oferty.map((o) => `- ${kluczOferty(o)} = ${o.darNazwa} za ${o.ile}x ${o.zaNazwa}`),
     ].join('\n'),
-    postac.gives,
+    klucze,
   );
-  return postac.gives.includes(co) ? co : null;
+  return oferty.find((o) => kluczOferty(o) === wybor) ?? null;
 }

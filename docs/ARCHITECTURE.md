@@ -209,9 +209,39 @@ Dwa filtry przed modelem, bo nie pyta sie modelu o to, co da sie sprawdzic:
 **pytanie dwustanowe** przed pytaniem o przedmiot — gramatyka zawezona do listy darow
 kusi wybraniem czegokolwiek, pytanie `tak`/`nie` tej pokusy nie ma.
 
+#### Wymiana: model wybiera co za co, silnik liczy ile
+
+Postacie zaczely handlowac same z siebie, bo lore mowi, ze wymiana odbywa sie rzeczami
+i przysluga. Model robil rzecz sluszna, tylko mechaniki pod to nie bylo — a proba
+klasyfikowania jego zdan na „dal / nie dal" gonila ogon: *„Wezme w zamian"* przechodzilo
+jako dar, a *„Tutaj, masz jedna"* juz nie. **Kategoria byla zla**: model nigdy nie mowil
+„dalem", tylko „dam X za Y".
+
+Kurs mieszka w `game/src/core/wymiana.ts`, **niezapisywalnym dla agenta** razem z botem
+progresji. Cena to nie pokretlo rozgrywki, tylko granica ekonomii — zapisywalny kurs to
+pompa wartosci: ryba warta piec za galaz warta jeden, w kolko.
+
+```
+oferty(state, reg, npc)  →  lista wymian, policzona z wartosci przedmiotow
+        │                        │
+   do promptu modelu        do walidacji w tick()
+   (zeby mowil te same      (bo to samo liczymy drugi raz,
+    liczby, co gra)          wiec rozjazd nie ma gdzie powstac)
+```
+
+Do rdzenia przychodzi wylacznie `{ npc, daj, za }` — **bez ilosci**. Ilosc jest
+przeliczana od nowa, wiec podrobiony kurs po prostu nie istnieje: ani z modelu, ani
+z przegladarki, ani z konsoli. Pilnuja tego testy w `game/tests/`, w tym fuzz na to,
+ze zadna sekwencja wymian nie podnosi wartosci plecaka.
+
+Cennik idzie do promptu na SAM KONIEC, tuz przed kwestia gracza. Dwa powody: zalezy od
+zawartosci plecaka, wiec w stalym poczatku psulby cache, a ostatnie miejsce przed
+generowaniem jest najmocniejsze. Gdy stal na poczatku, Bartek wycenial rybe na „piec
+galezi albo osiem kamieni" — piatke bral z cennika, osemke ze stanu plecaka gracza.
+
 Czego tu nie ma i nie bedzie: wyroczni jakosci. Nikt automatycznie nie sprawdzi, czy
 postac nie wyszla z roli albo nie nazwala Bartka kowalem, gdy kowalka jest Hanka —
-a nazwala. Mechanicznie da sie sprawdzic tylko to, czy wybrana akcja jest na liscie.
+a nazwala. Mechanicznie da sie sprawdzic tylko to, czy wybrana wymiana jest na liscie.
 
 **Rozmowy wykluczaja agenta.** Ollama traktuje `zagroda-npc` i model bazowy jako dwa
 osobne modele po 8,5 GB, wiec na 24 GB bija sie o miejsce: pierwszy token spadl z

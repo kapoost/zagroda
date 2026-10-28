@@ -1,6 +1,7 @@
 import type { Registry } from '../content/registry.js';
 import { Rng } from './rng.js';
 import { DIRS, MAX_LOG, type Entity, type Input, type State } from './types.js';
+import { dozwolona, oferty } from './wymiana.js';
 
 /**
  * Jedyne miejsce, w którym zmienia się stan gry.
@@ -169,11 +170,29 @@ function doRozmowa(state: State, reg: Registry, r: NonNullable<Input['rozmowa']>
     return;
   }
   if (!r.daj) return;
-  if (!npc.gives.includes(r.daj)) return;
-  const it = reg.items.get(r.daj);
-  if (!it) return;
+
+  const dar = reg.items.get(r.daj);
+  if (!dar || !npc.gives.includes(r.daj)) return;
+
+  // Dar bez zapłaty istnieje tylko wtedy, gdy gracz nie ma czym zapłacić — inaczej
+  // wymiana jest obowiązkowa. Bez tego warunku rozmowa byłaby darmową kopalnią.
+  if (!r.za) {
+    if (oferty(state, reg, r.npc).length > 0) return;
+    give(state, r.daj, 1);
+    log(state, `${npc.name} daje ci: ${dar.name}.`);
+    return;
+  }
+
+  // Kurs liczy silnik, nie model i nie przeglądarka. Przychodzi samo "co za co",
+  // a "ile" jest przeliczane tu od nowa — więc podrobiony kurs po prostu nie istnieje.
+  const oferta = dozwolona(state, reg, r.npc, r.daj, r.za);
+  if (!oferta) return;
+  const zaplata = reg.items.get(oferta.za)!;
+  if ((state.player.inv[oferta.za] ?? 0) < oferta.ile) return;
+
+  give(state, oferta.za, -oferta.ile);
   give(state, r.daj, 1);
-  log(state, `${npc.name} daje ci: ${it.name}.`);
+  log(state, `${npc.name}: ${dar.name} za ${oferta.ile}× ${zaplata.name}.`);
 }
 
 function doCraft(state: State, reg: Registry, recipeId: string): void {

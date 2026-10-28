@@ -75,7 +75,7 @@ export interface Input {
    * człowiek. Test determinizmu odtwarza ustaloną sekwencję wejść, więc dopóki akcja
    * przychodzi TĄ drogą, a nie bokiem, hash stanu dalej zgadza się co do bitu.
    */
-  rozmowa?: { npc: string; daj?: string };
+  rozmowa?: { npc: string; daj?: string; za?: string };
 }
 
 export const MAX_LOG = 64;

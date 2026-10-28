@@ -15,7 +15,8 @@ czy archetyp fasady to wpis w `game/content/*.json`. Jeśli łapiesz się na pis
 w rdzeniu — prawdopodobnie brakuje pola w schemacie, a nie gałęzi w kodzie.
 
 **Bramka jest poza zasięgiem agenta.** `game/src/content/schema.ts`,
-`game/src/content/registry.ts`, `game/tests/` i `tools/` są na liście zakazu zapisu
+`game/src/content/registry.ts`, `game/src/core/wymiana.ts`, `game/tests/` i `tools/`
+są na liście zakazu zapisu
 (`agent/src/config.ts` → `WRITE_DENY`). Zmieniaj je ręcznie i świadomie — to one
 odróżniają „zmiana przeszła" od „zmiana udała, że przeszła".
 
@@ -31,6 +32,7 @@ game/tests/         testy (NIEZAPISYWALNE dla agenta)
 tools/gate.ts       bramka jakości (NIEZAPISYWALNA dla agenta)
 agent/src/          pętla: routing → spec → applier/patch → bramka → git
 agent/src/rozmowa.ts żywy dialog NPC (tekst = prezentacja, akcja = wejście do rdzenia)
+game/src/core/wymiana.ts prawo wymiany — kurs liczy silnik (NIEZAPISYWALNE dla agenta)
 tools/npc-model.ts  build modelu rozmów — URUCHOM PO KAŻDEJ ZMIANIE TREŚCI
 ```
 
