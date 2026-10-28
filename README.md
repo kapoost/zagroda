@@ -11,10 +11,16 @@ Opisujesz zmianę po polsku. Model ją klasyfikuje, proponuje, system ją stosuj
 i testuje. Jeśli coś się psuje, zmiana nie wchodzi.
 
 ```bash
-npm install
+npm run instalacja          # sprawdza, czego brakuje, i dopina to z Tobą
 npm start                   # gra + pętla agenta + kontrola wstępna
 npm run zu -- "dodaj drewnianą fujarkę, NPC lubią gdy im zagrasz"
 ```
+
+Instalator nie pobiera niczego bez pytania — modele to razem siedemnaście gigabajtów,
+a **model kodujący jest opcjonalny**: do grania i do zmian w treści wystarczy Bielik.
+Można go uruchamiać wielokrotnie; każdy krok sprawdza, czy nie jest już zrobiony.
+
+Chcesz tylko pograć? `npm install && npm run dev` — i tyle.
 
 ## Jak to działa
 
@@ -174,6 +180,7 @@ z „trzy rundy, ten sam błąd" do „druga runda, zielono".
 
 | Komenda | Działanie |
 | --- | --- |
+| `npm run instalacja` | sprawdza środowisko i dopina braki — nic nie pobiera bez pytania |
 | `npm start` | **wszystko naraz**: gra, pętla agenta i kontrola wstępna |
 | `npm run dev` | sama gra w przeglądarce |
 | `npm run npc-model` | przebuduj model rozmów — po każdej zmianie treści |

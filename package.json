@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w game",
+    "instalacja": "tsx tools/instalator.ts",
     "build": "tsx tools/dowody.ts && npm run build -w game",
     "test": "npm run test -w game",
     "typecheck": "tsc -p game/tsconfig.json --noEmit && tsc -p agent/tsconfig.json --noEmit && tsc -p tsconfig.tools.json",
@@ -21,5 +22,8 @@
   "devDependencies": {
     "concurrently": "^10.0.6",
     "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
