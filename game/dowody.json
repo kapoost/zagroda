@@ -146,32 +146,32 @@
       {
         "name": "typy",
         "ok": true,
-        "ms": 688
+        "ms": 679
       },
       {
         "name": "typy-agent",
         "ok": true,
-        "ms": 648
+        "ms": 595
       },
       {
         "name": "typy-narzedzi",
         "ok": true,
-        "ms": 629
+        "ms": 640
       },
       {
         "name": "testy",
         "ok": true,
-        "ms": 3068
+        "ms": 2990
       },
       {
         "name": "testy-agent",
         "ok": true,
-        "ms": 533
+        "ms": 572
       },
       {
         "name": "symulacja",
         "ok": true,
-        "ms": 821
+        "ms": 781
       }
     ]
   }

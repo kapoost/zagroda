@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Zagroda — jak grać</title>
+<style>
+  :root {
+    --bg: #11170f;
+    --panel: #1b2217;
+    --ink: #e7e2cf;
+    --dim: #8f9583;
+    --accent: #c9a227;
+    --kreska: #2c3626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.7 ui-sans-serif, system-ui, sans-serif;
+    padding: 3rem 1.25rem 5rem;
+  }
+  main { max-width: 42rem; margin: 0 auto; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 0.4rem; }
+  h2 {
+    font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--dim); margin: 3rem 0 0.9rem; font-weight: 600;
+  }
+  h2:first-of-type { margin-top: 2.5rem; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--accent); }
+  .wstep { color: var(--dim); margin-bottom: 2rem; }
+  .graj {
+    display: inline-block; margin: 0.4rem 0 0;
+    background: var(--accent); color: #1a1a12; font-weight: 700;
+    padding: 0.65rem 1.4rem; border-radius: 5px; text-decoration: none;
+  }
+  .graj:hover { filter: brightness(1.1); }
+
+  table { width: 100%; border-collapse: collapse; margin: 0 0 1rem; }
+  td, th { text-align: left; padding: 0.45rem 0.6rem 0.45rem 0; border-bottom: 1px solid var(--kreska); vertical-align: top; }
+  th { color: var(--dim); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; }
+  kbd {
+    font: 600 12px ui-monospace, monospace; background: var(--panel);
+    border: 1px solid var(--kreska); border-bottom-width: 2px; border-radius: 4px;
+    padding: 0.1rem 0.45rem; color: var(--ink); white-space: nowrap;
+  }
+  code { font: 13px ui-monospace, monospace; color: var(--accent); }
+  pre {
+    background: var(--panel); border: 1px solid var(--kreska); border-radius: 5px;
+    padding: 0.9rem 1rem; overflow-x: auto; font: 12.5px/1.65 ui-monospace, monospace;
+    color: var(--ink); margin: 0 0 1rem;
+  }
+  ul { margin: 0 0 1rem; padding-left: 1.2rem; }
+  li { margin-bottom: 0.35rem; }
+  .uwaga {
+    border-left: 2px solid var(--accent); padding: 0.1rem 0 0.1rem 1rem;
+    color: var(--dim); margin: 0 0 1rem;
+  }
+  footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--kreska); color: var(--dim); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Zagroda</h1>
+<p class="wstep">
+  Otwarty świat w przeglądarce, osadzony na Starym Mieście w Zamościu — plan ulic
+  i kamienice pochodzą z OpenStreetMap, nie z wyobraźni. Grę rozwija <strong>Bielik</strong>,
+  polski model językowy działający lokalnie: opisujesz zmianę po polsku, a bramka jakości
+  pilnuje, żeby gra się nie zepsuła.
+</p>
+<a class="graj" href="./">Zagraj</a>
+
+<h2>Pierwsze pięć minut</h2>
+<p>
+  Budzisz się na rogu Rynku Wielkiego, z pustymi rękami. Nic cię nie prowadzi za rękę —
+  wszystko zaczyna się od zbierania.
+</p>
+<ul>
+  <li>Podejdź do krzaka albo kamienia i naciśnij <kbd>Spacja</kbd>. Zbierasz z <strong>każdego pola dokoła</strong>, także po skosie.</li>
+  <li>Gdy masz 2× włókno, wciśnij <kbd>1</kbd> — skręcisz sznurek. Lista po prawej pokazuje tylko to, co da się zrobić tu i teraz.</li>
+  <li>Gałąź, kamień i sznurek dają siekierę. Siekiera daje drewno, drewno daje deski, deski dają warsztat — i tak dalej.</li>
+  <li>Zagadaj kogoś <kbd>Spacja</kbd>. Postacie dają zlecenia; postęp widać w panelu <em>Zadania</em>.</li>
+</ul>
+
+<h2>Klawisze</h2>
+<table>
+  <tr><td><kbd>W</kbd> <kbd>S</kbd> <kbd>A</kbd> <kbd>D</kbd> / strzałki</td><td>ruch</td></tr>
+  <tr><td><kbd>Spacja</kbd></td><td>użyj tego, co w ręce — zbierz, zagadaj, otwórz skrzynię</td></tr>
+  <tr><td><kbd>Q</kbd> <kbd>E</kbd></td><td>zmień przedmiot w ręce</td></tr>
+  <tr><td><kbd>G</kbd> / <kbd>F</kbd></td><td>postaw / zjedz</td></tr>
+  <tr><td><kbd>1</kbd>–<kbd>9</kbd></td><td>wytwórz z listy</td></tr>
+  <tr><td><kbd>T</kbd></td><td>porozmawiaj z postacią obok — i wymień się z nią</td></tr>
+  <tr><td><kbd>P</kbd></td><td>pracownia: zgłoś zmianę w grze</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>zamknij okno</td></tr>
+</table>
+
+<h2>Czego tu nie ma</h2>
+<p>
+  Nie ma magii, potworów, pieniędzy ani zwierząt gospodarskich. Technika kończy się na
+  narzędziu ręcznym: jest ogień, kowadło, krosno i wiklina. Wymiana odbywa się rzeczami
+  i przysługą — i to postać mówi, czego chce w zamian.
+</p>
+
+<h2>Trzy poziomy</h2>
+<table>
+  <tr><th>co</th><th>czego wymaga</th><th>co działa</th></tr>
+  <tr>
+    <td><strong>tutaj</strong></td>
+    <td>nic</td>
+    <td>cała rozgrywka: zbieranie, wytwarzanie, zadania, wymiana, kwestie postaci</td>
+  </tr>
+  <tr>
+    <td><strong>z własnym modelem</strong></td>
+    <td>Ollama i Bielik u siebie</td>
+    <td>dodatkowo <strong>żywe rozmowy po polsku</strong></td>
+  </tr>
+  <tr>
+    <td><strong>cała pętla</strong></td>
+    <td><code>npm run instalacja</code></td>
+    <td>dodatkowo <strong>pracownia</strong>: model wprowadza Twoje zmiany do gry</td>
+  </tr>
+</table>
+
+<h2>Rozmowy z własnym modelem</h2>
+<p>
+  Ta strona rozmów nie obsłuży i nie jest to kwestia ustawień. Zmierzyłem: strona
+  z internetu dostaje przy próbie sięgnięcia do modelu na Twoim komputerze
+  <strong>timeout po 6 sekundach</strong>, ta sama strona postawiona lokalnie dostaje
+  odpowiedź <strong>w 23 ms</strong>. Przeglądarki blokują zapytania ze stron publicznych
+  do sieci lokalnej i nie pomaga nawet serwer zgadzający się na wszystko.
+</p>
+<p>Jeśli masz Ollamę, wystarczy postawić grę u siebie:</p>
+<pre>ollama pull hf.co/speakleash/Bielik-11B-v3.0-Instruct-GGUF:Q5_K_M
+git clone https://github.com/kapoost/zagroda &amp;&amp; cd zagroda
+npm run instalacja
+npm start</pre>
+<p class="uwaga">
+  Instalator nic nie pobiera bez pytania, a model kodujący (kolejne 9 GB) jest
+  opcjonalny — do grania i do zmian w treści wystarczy sam Bielik.
+</p>
+
+<h2>Pracownia</h2>
+<p>
+  Klawisz <kbd>P</kbd>. Na tej stronie jest <strong>eksponatem</strong>: pokazuje prompt,
+  który dostawał model, dziennik prawdziwych przebiegów i stan bramki jakości. Zobaczysz
+  tam zmiany oznaczone jako <em>odrzucone przez bramkę</em> — i to jest najciekawsza część
+  tego projektu.
+</p>
+<p>
+  Bo rzecz nie polega na tym, że model jest dobry. Polega na tym, że <strong>zepsucie gry
+  nie przechodzi</strong>. Model raz dodał kamienny młot „dużo wytrzymalszy od kilofa”
+  z wytrzymałością 30 przy kilofie 200. Dziś bramka zatrzymuje to w trzy milisekundy,
+  z komunikatem, który tłumaczy, co jest nie tak.
+</p>
+<p>
+  Uruchomiona lokalnie pracownia przyjmuje zdania po polsku i naprawdę wprowadza zmiany:
+  model je klasyfikuje, proponuje wpisy w treści albo poprawkę w kodzie, a siedem etapów
+  bramki sprawdza, czy gra dalej się składa.
+</p>
+
+<h2>Zgłoszenia</h2>
+<p>
+  Pomysły i błędy — przez
+  <a href="https://github.com/kapoost/zagroda/issues">zgłoszenia na GitHubie</a>.
+  Szablon jest zbudowany na tym samym polu, co pracownia: opisujesz pełnym zdaniem po
+  polsku, co ma się zmienić. Takie zgłoszenie jest gotowym wejściem do pętli.
+</p>
+
+<footer>
+  <p>
+    <a href="https://github.com/kapoost/zagroda">Kod na GitHubie</a> · MIT.
+    Mapa: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, ODbL.
+  </p>
+</footer>
+
+</main>
+</body>
+</html>

@@ -57,6 +57,7 @@ rozwijać grę i jej nie zepsuć.
 ## Zagraj teraz
 
 **<https://kapoost.github.io/zagroda/>** — nic nie trzeba instalować.
+Instrukcja: **<https://kapoost.github.io/zagroda/instrukcja.html>**
 
 To wersja bez modelu: gra działa w całości (ruch, zbieranie, wytwarzanie, zadania,
 wymiana z postaciami), a **P** otwiera pracownię zamienioną w eksponat — prompt, który
