@@ -3,6 +3,10 @@
 Otwarty świat w przeglądarce — zbieranie, wytwarzanie, budowanie — który rozwija
 **Bielik**, polski model językowy działający lokalnie.
 
+Świat nie jest wymyślony: to Stare Miasto w Zamościu, wczytane z OpenStreetMap.
+Siatka kafli jest obrócona o zmierzone 13,93°, więc ulice biegną prosto, a kamienice
+stoją równo w pierzejach.
+
 Opisujesz zmianę po polsku. Model ją klasyfikuje, proponuje, system ją stosuje
 i testuje. Jeśli coś się psuje, zmiana nie wchodzi.
 
@@ -172,3 +176,13 @@ jest niezawodna. Faza generowania wpisów bywa loteryjna — bramka to wyłapuje
 jest bezpieczna, ale część zmian kończy się porzuceniem gałęzi. Każda próba trafia do
 `.agent/journal.jsonl` razem z powodem porażki; to materiał na przyszłe dostrojenie
 modelu albo na lepsze przykłady w prompcie.
+
+## Licencja
+
+Kod: **MIT** (plik `LICENSE`).
+
+Dane mapy to osobna sprawa. `game/content/mapa.json` jest bazą pochodną z
+OpenStreetMap i podlega **ODbL 1.0** — razem ze wszystkim, co z niej powstaje.
+Jeśli bierzesz stąd mapę, bierzesz też ten obowiązek.
+
+> © OpenStreetMap contributors · [openstreetmap.org/copyright](https://www.openstreetmap.org/copyright)
