@@ -1,6 +1,7 @@
 import type { Game } from '../core/game.js';
 import { count, entityAt, idx, stationAvailable, walkable } from '../core/tick.js';
 import { DIRS, type Facing } from '../core/types.js';
+import { oferty, type Oferta } from '../core/wymiana.js';
 
 /**
  * Bot progresji: zachłanny gracz, który potrafi zdobyć dowolny item.
@@ -8,6 +9,11 @@ import { DIRS, type Facing } from '../core/types.js';
  * Po co to istnieje: to jest wyrocznia grywalności. Testy schematów mówią, czy treść
  * jest spójna; ten bot mówi, czy gra da się *przejść*. Jeśli agent doda recepturę,
  * której w praktyce nie da się wykonać, bot utknie i bramka zapali się na czerwono.
+ *
+ * Bot umie też handlować z postaciami — i to nie dlatego, że tak gra się lepiej.
+ * Dopóki nie umiał, cała ekonomia dialogu była dla symulacji niewidzialna i przeżyła
+ * w niej pompa wartości: gracz z jedną gałęzią dostawał nieskończenie wiele ryb,
+ * przy siedmiu zielonych etapach bramki. Bot handluje po to, żeby mieć czym zepsuć.
  */
 
 export interface BotResult {
@@ -79,6 +85,10 @@ export class Bot {
     try {
       if (this.craftUpTo(item, qty)) return count(s, item) >= qty;
       if (this.harvestUpTo(item, qty)) return count(s, item) >= qty;
+      // Handel na końcu, a nie na początku: progresja ma dalej mierzyć zdobywanie
+      // własnymi rękami. Wymiana wchodzi tylko dla rzeczy, których nie da się ani
+      // wytworzyć, ani zebrać — i wtedy jest jedyną drogą, więc musi tu być.
+      if (this.tradeUpTo(item, qty)) return count(s, item) >= qty;
       return false;
     } finally {
       this.resolving.delete(key);
@@ -163,6 +173,133 @@ export class Bot {
       if (!moved) return false;
     }
     return false;
+  }
+
+  // --- wymiana -----------------------------------------------------------
+
+  /** Wartość całego plecaka. Miara, po której poznaje się pompę. */
+  wartoscPlecaka(): number {
+    const reg = this.game.reg;
+    return Object.entries(this.game.state.player.inv).reduce(
+      (a, [id, n]) => a + (reg.items.get(id)?.value ?? 0) * n,
+      0,
+    );
+  }
+
+  /** Stań obok postaci. Wymiana, tak jak rozmowa, wymaga sąsiedztwa. */
+  private goToNpc(npcId: string): boolean {
+    const s = this.game.state;
+    const cel = new Uint8Array(s.size * s.size);
+    let jest = false;
+    for (const e of s.ents) {
+      if (e.kind !== 'npc' || e.def !== npcId) continue;
+      cel[e.y * s.size + e.x] = 1;
+      jest = true;
+    }
+    if (!jest) return false;
+    if (this.obokPostaci(npcId)) return true;
+    const droga = this.pathToTargets(cel);
+    if (!droga) return false;
+    for (const f of droga.path) if (!this.step({ move: f })) return false;
+    return this.obokPostaci(npcId);
+  }
+
+  private obokPostaci(npcId: string): boolean {
+    const s = this.game.state;
+    return (['n', 'e', 's', 'w'] as Facing[]).some((f) => {
+      const d = DIRS[f]!;
+      const e = entityAt(s, s.player.x + d.dx, s.player.y + d.dy);
+      return e?.kind === 'npc' && e.def === npcId;
+    });
+  }
+
+  /** Ile kosztuje nas dana oferta, liczone wartością oddawanych przedmiotów. */
+  private koszt(o: Oferta): number {
+    return o.ile * (this.game.reg.items.get(o.za)?.value ?? 0);
+  }
+
+  /** Najtańsza dostępna oferta, ewentualnie zawężona do jednego przedmiotu. */
+  private najlepszaOferta(npcId: string, item?: string): Oferta | null {
+    const lista = oferty(this.game.state, this.game.reg, npcId).filter((o) => !item || o.daj === item);
+    if (!lista.length) return null;
+    return lista.reduce((a, b) => (this.koszt(a) <= this.koszt(b) ? a : b));
+  }
+
+  /**
+   * Czym da się zapłacić, gdy w plecaku nie ma nic na wymianę.
+   *
+   * Bierzemy najtańszy przedmiot, który leży w świecie i da się go zebrać gołą ręką —
+   * bo tylko taki bot zdobędzie bez narzędzia, a narzędziem i tak nie wolno płacić.
+   */
+  private najtanszaZaplata(): string | null {
+    const reg = this.game.reg;
+    const reka = new Set(
+      reg.content.resources.filter((r) => r.tool === 'hand').flatMap((r) => r.drops.map((d) => d.item)),
+    );
+    const kandydaci = reg.content.items
+      .filter((i) => reka.has(i.id) && !i.tool && !i.placeable)
+      .sort((a, b) => a.value - b.value || a.id.localeCompare(b.id));
+    return kandydaci[0]?.id ?? null;
+  }
+
+  /** Kup `qty` sztuk `item` od postaci, która go oddaje. */
+  private tradeUpTo(item: string, qty: number): boolean {
+    const reg = this.game.reg;
+    const handlarze = reg.content.npcs.filter((n) => n.gives.includes(item));
+    if (!handlarze.length) return false;
+
+    for (const npc of handlarze) {
+      let guard = 0;
+      while (count(this.game.state, item) < qty && guard++ < 40) {
+        let o = this.najlepszaOferta(npc.id, item);
+        if (!o) {
+          // Nie stać — zdobądź zapłatę i spróbuj jeszcze raz. Cennik liczy silnik,
+          // więc wiemy dokładnie, ile sztuk trzeba uzbierać.
+          const zaplata = this.najtanszaZaplata();
+          const wartoscDaru = reg.items.get(item)?.value ?? 0;
+          const wartoscZaplaty = zaplata ? (reg.items.get(zaplata)?.value ?? 0) : 0;
+          if (!zaplata || wartoscZaplaty <= 0) break;
+          if (!this.ensureItem(zaplata, Math.ceil(wartoscDaru / wartoscZaplaty))) break;
+          o = this.najlepszaOferta(npc.id, item);
+          if (!o) break;
+        }
+        if (!this.goToNpc(npc.id)) break;
+        const przed = count(this.game.state, item);
+        if (!this.step({ rozmowa: { npc: npc.id, daj: o.daj, za: o.za } })) return false;
+        if (count(this.game.state, item) === przed) break; // rdzeń odrzucił — nie kręć się w kółko
+        this.trace.push(`handel ${npc.id}: ${o.daj} za ${o.ile}× ${o.za}`);
+      }
+      if (count(this.game.state, item) >= qty) return true;
+    }
+    return count(this.game.state, item) >= qty;
+  }
+
+  /**
+   * Wyzysk: bierz każdą wymianę, jaka jest dostępna, dopóki jakakolwiek jest.
+   *
+   * To nie jest strategia gry, tylko próba złamania ekonomii — i po to bot to umie.
+   * Jeśli jakakolwiek sekwencja wymian podnosi wartość plecaka, znaczy, że gdzieś
+   * powstała pompa i trzeba ją znaleźć, zanim znajdzie ją gracz.
+   */
+  wyzyskuj(rund = 30): { wymian: number; przed: number; po: number } {
+    const przed = this.wartoscPlecaka();
+    let wymian = 0;
+    for (let r = 0; r < rund; r++) {
+      let cokolwiek = false;
+      for (const npc of this.game.reg.content.npcs) {
+        if (!npc.gives.length) continue;
+        const o = this.najlepszaOferta(npc.id);
+        if (!o) continue;
+        if (!this.goToNpc(npc.id)) continue;
+        const stan = this.wartoscPlecaka();
+        if (!this.step({ rozmowa: { npc: npc.id, daj: o.daj, za: o.za } })) break;
+        if (this.wartoscPlecaka() === stan && count(this.game.state, o.daj) === 0) continue;
+        wymian++;
+        cokolwiek = true;
+      }
+      if (!cokolwiek) break;
+    }
+    return { wymian, przed, po: this.wartoscPlecaka() };
   }
 
   // --- zbieranie ---------------------------------------------------------

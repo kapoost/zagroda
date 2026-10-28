@@ -61,7 +61,9 @@ function stageSim(): { ok: boolean; output: string; metrics: unknown } {
   const lines = metrics.map(
     (m) =>
       `seed ${m.seed}: ` +
-      m.milestones.map((x) => `${x.goal}=${x.ok ? x.ticks + 't' : 'BLOKADA(' + x.reason + ')'}`).join(', '),
+      m.milestones.map((x) => `${x.goal}=${x.ok ? x.ticks + 't' : 'BLOKADA(' + x.reason + ')'}`).join(', ') +
+      ` | handel ${m.handel.wymian}× ${m.handel.przed}→${m.handel.po}` +
+      (m.handel.po > m.handel.przed ? ' POMPA WARTOŚCI' : ''),
   );
   return { ok, output: lines.join('\n'), metrics };
 }

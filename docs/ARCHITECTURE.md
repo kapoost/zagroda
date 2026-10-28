@@ -231,8 +231,26 @@ oferty(state, reg, npc)  →  lista wymian, policzona z wartosci przedmiotow
 
 Do rdzenia przychodzi wylacznie `{ npc, daj, za }` — **bez ilosci**. Ilosc jest
 przeliczana od nowa, wiec podrobiony kurs po prostu nie istnieje: ani z modelu, ani
-z przegladarki, ani z konsoli. Pilnuja tego testy w `game/tests/`, w tym fuzz na to,
-ze zadna sekwencja wymian nie podnosi wartosci plecaka.
+z przegladarki, ani z konsoli.
+
+#### Bot handluje, zeby miec czym zepsuc
+
+Dopoki bot progresji nie umial rozmawiac, cala ekonomia dialogu byla dla symulacji
+niewidzialna — i przezyla w niej pompa wartosci: gracz z jedna galezia dostawal
+nieskonczenie wiele ryb przy siedmiu zielonych etapach bramki.
+
+`Bot.wyzyskuj()` nie jest strategia gry. Bot zbiera troche towaru, a potem bierze
+KAZDA dostepna wymiane, ile sie da, i raportuje wartosc plecaka przed i po. Symulacja
+przestala byc samym raportem: `po > przed` to **blokada**, nie metryka.
+
+```
+seed 1337  ✓ handel  53 wymian  wartość 84 → 29
+```
+
+Oracle sprawdzony mutacja: zamiana `Math.ceil` na `Math.floor` w cenie — czyli
+zaokraglenie na korzysc gracza — daje `84 → 190` i bramka staje na czerwono. Drugi
+test pilnuje, ze bot naprawde handluje: wyrocznia, ktora nic nie robi, przechodzi
+zawsze, wiec „brak pompy" przy zerowej liczbie wymian byloby prawda pusta.
 
 Cennik idzie do promptu na SAM KONIEC, tuz przed kwestia gracza. Dwa powody: zalezy od
 zawartosci plecaka, wiec w stalym poczatku psulby cache, a ostatnie miejsce przed

@@ -15,6 +15,8 @@ export interface SimMetrics {
   entities: number;
   landShare: number;
   milestones: Array<{ goal: string; ok: boolean; ticks: number; reason?: string }>;
+  /** Próba złamania ekonomii wymiany. `po > przed` znaczy, że gdzieś powstała pompa. */
+  handel: { wymian: number; przed: number; po: number };
   hashAfter10k: string;
 }
 
@@ -31,6 +33,16 @@ export function simulate(seed: number, budget = 150_000): SimMetrics {
     const r = new Bot(g, budget).ensure(goal, 1);
     return r.ok ? { goal, ok: true, ticks: r.ticks } : { goal, ok: false, ticks: r.ticks, reason: r.reason };
   });
+  // Ekonomia wymiany. Bot zbiera trochę towaru, a potem bierze KAŻDĄ dostępną wymianę,
+  // ile się da — nie po to, żeby grać, tylko żeby sprawdzić, czy handel nie tworzy
+  // wartości z niczego. Ta kolumna raportu powstała po tym, jak taka pompa przeżyła
+  // siedem zielonych etapów bramki, bo symulacja w ogóle nie umiała rozmawiać.
+  const rynek = new Game(seed);
+  const kupiec = new Bot(rynek, budget);
+  kupiec.ensure('galaz', 30);
+  kupiec.ensure('kamien', 20);
+  const handel = kupiec.wyzyskuj(40);
+
   const drift = new Game(seed);
   drift.steps(10_000, { move: 'e' });
   return {
@@ -38,13 +50,16 @@ export function simulate(seed: number, budget = 150_000): SimMetrics {
     entities: base.state.ents.length,
     landShare: Number((land / base.state.biome.length).toFixed(3)),
     milestones,
+    handel,
     hashAfter10k: hashState(drift.state),
   };
 }
 
 export function runSim(seeds = [1337, 4242]): { ok: boolean; metrics: SimMetrics[] } {
   const metrics = seeds.map((s) => simulate(s));
-  return { ok: metrics.every((m) => m.milestones.every((x) => x.ok)), metrics };
+  // Symulacja przestała być samym raportem: pompa wartości to blokada, nie metryka.
+  const ok = metrics.every((m) => m.milestones.every((x) => x.ok) && m.handel.po <= m.handel.przed);
+  return { ok, metrics };
 }
 
 // pathToFileURL, nie konkatenacja: ścieżka ze spacją albo polskim znakiem
@@ -56,6 +71,11 @@ if (import.meta.url === pathToFileURL(process.argv[1]!).href) {
     for (const x of m.milestones) {
       console.log(`  ${x.ok ? '✓' : '✗'} ${x.goal.padEnd(20)} ${String(x.ticks).padStart(7)} ticków${x.reason ? '  ← ' + x.reason : ''}`);
     }
+    const h = m.handel;
+    console.log(
+      `  ${h.po <= h.przed ? '✓' : '✗'} ${'handel'.padEnd(20)} ${String(h.wymian).padStart(7)} wymian` +
+        `  wartość ${h.przed} → ${h.po}${h.po > h.przed ? '  ← POMPA WARTOŚCI' : ''}`,
+    );
   }
   console.log(ok ? '\nprogresja przechodzi' : '\nPROGRESJA ZABLOKOWANA');
   process.exit(ok ? 0 : 1);

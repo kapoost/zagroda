@@ -59,3 +59,36 @@ describe('progresja', () => {
     expect(def.dialogues.some((d) => last.endsWith(d))).toBe(true);
   });
 });
+
+/**
+ * Ekonomia wymiany.
+ *
+ * Bot handluje nie po to, żeby grać lepiej, tylko żeby mieć czym zepsuć. Dopóki nie
+ * umiał rozmawiać, cała ekonomia dialogu była dla symulacji niewidzialna — i przeżyła
+ * w niej pompa wartości: gracz z jedną gałęzią dostawał nieskończenie wiele ryb przy
+ * siedmiu zielonych etapach bramki.
+ *
+ * Drugi test jest równie ważny jak pierwszy: wyrocznia, która nic nie robi, przechodzi
+ * zawsze. Gdyby ktoś odebrał postaciom listy darów, „brak pompy" byłoby prawdą pustą.
+ */
+describe('ekonomia wymiany', () => {
+  const nahandluj = (seed: number) => {
+    const g = new Game(seed);
+    const bot = new Bot(g, BUDGET);
+    bot.ensure('galaz', 30);
+    bot.ensure('kamien', 20);
+    return bot.wyzyskuj(40);
+  };
+
+  it.each(SEEDS)('seed %i: żaden ciąg wymian nie tworzy wartości', (seed) => {
+    const w = nahandluj(seed);
+    expect(w.po, `wartość plecaka urosła z ${w.przed} do ${w.po} po ${w.wymian} wymianach`).toBeLessThanOrEqual(
+      w.przed,
+    );
+  });
+
+  it('bot naprawdę handluje, więc test powyżej nie przechodzi pusty', () => {
+    const w = nahandluj(SEEDS[0]!);
+    expect(w.wymian, 'bot nie zawarł ani jednej wymiany — wyrocznia ekonomii jest martwa').toBeGreaterThan(5);
+  });
+});
