@@ -48,6 +48,27 @@ Orkiestracja jest deterministyczna. Model nie jest agentem — dostaje wąskie,
 walidowalne zadania. To jedyny sposób, w jaki model ogólnego przeznaczenia może
 rozwijać grę i jej nie zepsuć.
 
+## Zagraj teraz
+
+**<https://kapoost.github.io/zagroda/>** — nic nie trzeba instalować.
+
+To wersja bez modelu: gra działa w całości (ruch, zbieranie, wytwarzanie, zadania,
+wymiana z postaciami), a **P** otwiera pracownię zamienioną w eksponat — prompt, który
+model dostawał, dziennik przebiegów z prawdziwymi wynikami i stan bramki.
+
+Żywe rozmowy po polsku i zgłaszanie zmian wymagają `npm start` u siebie. **I nie da się
+tego obejść przez stronę** — sprawdziłem:
+
+| strona | → Ollama na `127.0.0.1:11434` |
+| --- | --- |
+| `https://kapoost.github.io` | timeout, 6 s, żadnej odpowiedzi |
+| `http://127.0.0.1:5190` | **HTTP 200 w 23 ms** |
+
+Ta sama przeglądarka, ten sam Ollama, ta sama chwila. Przeglądarki blokują zapytania ze
+stron publicznych do sieci lokalnej (Private Network Access) i nie pomaga nawet serwer
+odpowiadający najbardziej liberalnym CORS-em, jaki da się ustawić. Model lokalny działa
+więc tylko wtedy, gdy strona też stoi lokalnie.
+
 ## Jak to pokazać
 
 Trzy poziomy, każdy pokazuje co innego:
@@ -176,6 +197,18 @@ jest niezawodna. Faza generowania wpisów bywa loteryjna — bramka to wyłapuje
 jest bezpieczna, ale część zmian kończy się porzuceniem gałęzi. Każda próba trafia do
 `.agent/journal.jsonl` razem z powodem porażki; to materiał na przyszłe dostrojenie
 modelu albo na lepsze przykłady w prompcie.
+
+## Współudział
+
+Zgłoszenia są mile widziane i mają własny szablon: opisujesz **pełnym zdaniem po
+polsku**, co ma się zmienić — dokładnie tak, jak w pracowni w grze. Takie zgłoszenie
+jest gotowym wejściem do pętli.
+
+Pull requesty też. Bramka uruchamia się na każdym z nich i sprawdza to samo, co
+lokalnie: siedem etapów, bez modelu, kilkanaście sekund. Sprawdzone na żywo —
+PR z celowo zepsutym młotem (wytrzymałość 30 przy kilofie 200) został zatrzymany
+w 13 sekund komunikatem `[DOMINACJA] kosztuje więcej niż "kilof_kamienny", a jest od
+niego gorsze`.
 
 ## Licencja
 
