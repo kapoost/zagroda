@@ -112,6 +112,9 @@
   }
   .pr-pole:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+  #zadania li { line-height: 1.5; }
+  #zadania .zrobione { color: var(--dim); text-decoration: line-through; }
+  #zadania .postep { color: var(--accent); }
   .pr-podglad { border-top: 1px solid #2c3626; padding-top: 0.7rem; }
   .pr-podglad > summary {
     cursor: pointer; color: var(--dim); font-size: 12px; list-style: none;
@@ -207,6 +210,8 @@
   <ul id="inventory"></ul>
   <h2>Wytwarzanie</h2>
   <ul id="recipes"></ul>
+  <h2>Zadania</h2>
+  <ul id="zadania"></ul>
   <h2>Dziennik</h2>
   <ul id="log"></ul>
   <h2>Klawisze</h2>

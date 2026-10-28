@@ -27,6 +27,10 @@ import {
 const VALUE_MULT = 4;
 /** Najwyższa wartość przedmiotu, jaki postać może dać graczowi w rozmowie. */
 const DAR_MAX = 5;
+/** Ile razy nagroda za zadanie może przewyższyć to, co gracz w nie włożył. */
+const NAGRODA_MNOZNIK = 2;
+/** Umowna wartość samego przejścia na drugi koniec miasta. */
+const NAGRODA_ZA_DROGE = 6;
 
 export interface Issue {
   code: string;
@@ -335,6 +339,44 @@ export function validateContent(raw: unknown): ValidateResult {
           `recipes → items.${a.id}`,
         );
       }
+    }
+  }
+
+  // --- 5bis. zadania: warunek musi dać się sprawdzić, nagroda musi mieć granicę ---
+  //
+  // Zadanie jest jednorazowe, więc nie tworzy pompy — ale bez granicy nagrody dałoby
+  // się jednym wpisem rozdać żelazo za trzy gałęzie i cała drabinka narzędzi
+  // przestałaby cokolwiek znaczyć.
+  for (const z of c.zadania) {
+    if (!npcs.has(z.dawca)) {
+      err('REF_NPC', `nie ma postaci "${z.dawca}", która miałaby zlecić to zadanie`, `zadania.${z.id}`);
+    }
+    needItem(z.nagroda.item, `zadania.${z.id}.nagroda`);
+    const nagroda = (items.get(z.nagroda.item)?.value ?? 0) * z.nagroda.qty;
+
+    let wklad = 0;
+    if (z.typ === 'miec') {
+      needItem(z.cel, `zadania.${z.id}.cel`);
+      wklad = (items.get(z.cel)?.value ?? 0) * z.ile;
+    } else if (z.typ === 'postawic') {
+      if (!structures.has(z.cel)) {
+        err('REF_STRUCTURE', `"${z.cel}" nie jest strukturą, więc nie da się jej postawić`, `zadania.${z.id}.cel`);
+      }
+      // Postawiona rzecz zostaje u gracza, więc wkładem jest to, co musiał wytworzyć.
+      const stawia = c.items.find((i) => i.placeable?.structure === z.cel);
+      wklad = stawia?.value ?? 0;
+    } else {
+      // Droga nic nie kosztuje poza czasem, więc nagroda za nią musi być symboliczna.
+      wklad = NAGRODA_ZA_DROGE;
+    }
+
+    if (nagroda > wklad * NAGRODA_MNOZNIK) {
+      err(
+        'NAGRODA',
+        `nagroda warta ${nagroda} przekracza ${NAGRODA_MNOZNIK}× wkładu (${wklad}). ` +
+          `Zadanie ma się opłacać, ale nie ma rozdawać drabinki narzędzi`,
+        `zadania.${z.id}`,
+      );
     }
   }
 

@@ -1,5 +1,5 @@
 import type { Registry } from '../content/registry.js';
-import { count, dayOf, stationAvailable, timeOfDay } from '../core/tick.js';
+import { count, dayOf, stationAvailable, timeOfDay, warunekSpelniony } from '../core/tick.js';
 import type { State } from '../core/types.js';
 
 /** Panel boczny w DOM — tekst czytelniejszy niż rysowany na canvasie, a HUD nie potrzebuje 60 fps. */
@@ -10,6 +10,7 @@ export interface HudRefs {
   held: HTMLElement;
   inventory: HTMLElement;
   recipes: HTMLElement;
+  zadania: HTMLElement;
   log: HTMLElement;
 }
 
@@ -64,6 +65,28 @@ export function renderHud(refs: HudRefs, state: State, reg: Registry): void {
         })
         .join('')
     : '<li class="dim">brak receptur w zasięgu</li>';
+
+  /**
+   * Zadania wzięte i jeszcze nieoddane, z postępem policzonym z tego samego warunku,
+   * który sprawdza rdzeń. Gdyby panel liczył po swojemu, prędzej czy później pokazałby
+   * co innego, niż gra uznaje za spełnione.
+   */
+  const wziete = reg.content.zadania.filter((z) => state.zadania[z.id] === 'wziete');
+  refs.zadania.innerHTML = wziete.length
+    ? wziete
+        .map((z) => {
+          const gotowe = warunekSpelniony(state, reg, z);
+          const postep =
+            z.typ === 'miec'
+              ? `${Math.min(count(state, z.cel), z.ile)}/${z.ile} ${reg.items.get(z.cel)?.name ?? z.cel}`
+              : z.typ === 'postawic'
+                ? `postaw: ${reg.structures.get(z.cel)?.name ?? z.cel}`
+                : `dojdź: ${z.cel}`;
+          const kto = reg.npcs.get(z.dawca)?.name ?? z.dawca;
+          return `<li><b>${z.name}</b> <small>od ${kto}</small><br><small class="${gotowe ? 'postep' : 'dim'}">${gotowe ? 'gotowe — wróć z tym' : postep}</small></li>`;
+        })
+        .join('')
+    : '<li class="dim">zagadaj kogoś — zadania biorą się z rozmowy</li>';
 
   refs.log.innerHTML = state.log
     .slice(-9)

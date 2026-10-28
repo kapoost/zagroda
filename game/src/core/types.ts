@@ -52,6 +52,18 @@ export interface State {
   fasady: Uint8Array;
   /** Nazwane zabytki z OSM. Fakty o okolicy, nie treść do wymyślania. */
   miejsca: ReadonlyArray<{ nazwa: string; x: number; y: number }>;
+  /**
+   * Kafel → indeks miejsca + 1, dla kafli leżących pod samym zabytkiem.
+   *
+   * Policzone raz przy generowaniu świata, bo inaczej każdy tick musiałby mierzyć
+   * odległość do pięćdziesięciu ośmiu obiektów — przy stu pięćdziesięciu tysiącach
+   * ticków symulacji to osiem milionów pierwiastków na nic.
+   */
+  bliskoMiejsca: Uint8Array;
+  /** Nazwy zabytków, pod którymi gracz już był. Warunek zadań typu "dojsc". */
+  odwiedzone: string[];
+  /** Stan zadań. Brak klucza = jeszcze nie zlecone. */
+  zadania: Record<string, 'wziete' | 'zrobione'>;
   ents: Entity[];
   player: Player;
   craft: CraftJob | null;

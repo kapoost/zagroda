@@ -227,6 +227,52 @@ export const ConfigSchema = z
   })
   .strict();
 
+/**
+ * Rodzaje warunków zadania. Zamknięta lista i to jest cały pomysł.
+ *
+ * Każdy z nich da się sprawdzić deterministycznie w jednym tiku, bez pytania kogokolwiek
+ * o zdanie — i tylko dlatego wolno modelowi je układać. Warunek typu „pomóż Hance"
+ * albo „zrób coś miłego" nie wchodzi, bo nikt nie umie orzec, kiedy jest spełniony,
+ * a zadanie bez wyroczni to kolejne pole, które udaje, że działa.
+ */
+export const WARUNKI = ['miec', 'postawic', 'dojsc'] as const;
+export type RodzajWarunku = (typeof WARUNKI)[number];
+
+/**
+ * Zadanie: dawca, warunek, nagroda.
+ *
+ * Kształt jest PŁASKI, a nie unią wariantów, i to decyzja wydajnościowa, nie
+ * estetyczna. Koszt gramatyki dekodowania rośnie szybciej niż liniowo z jej wielkością
+ * — schemat operacji na trzech kolekcjach liczył się u nas ponad piętnaście minut.
+ * Jedno pole "cel" o trzech znaczeniach jest dla modelu 11B tańsze niż unia trzech
+ * obiektów, a sens pilnuje walidator, nie typ.
+ *
+ * Zadanie jest JEDNORAZOWE. Powtarzalne zadanie z nagrodą wartościowszą niż wkład to
+ * pompa wartości, czyli ten sam błąd, który przeżył w wymianie siedem zielonych bramek.
+ */
+export const ZadanieSchema = z
+  .object({
+    id: Id,
+    name: PlName,
+    desc: Desc.default(''),
+    /** Która postać je zleca. */
+    dawca: Id,
+    typ: z.enum(WARUNKI),
+    /**
+     * Co trzeba zdobyć, postawić albo odwiedzić — zależnie od "typ".
+     * Dla "miec" to id przedmiotu, dla "postawic" id struktury, dla "dojsc" nazwa
+     * miejsca z mapy. Walidator sprawdza, czy pasuje do rodzaju.
+     */
+    cel: z.string().min(2).max(90),
+    /** Ile sztuk; ma sens wyłącznie przy "miec". */
+    ile: z.number().int().min(1).max(30).default(1),
+    nagroda: z.object({ item: Id, qty: z.number().int().min(1).max(10) }).strict(),
+    /** Co postać mówi, zlecając, i co mówi, odbierając. */
+    zlecenie: z.string().min(10).max(220),
+    podziekowanie: z.string().min(10).max(220),
+  })
+  .strict();
+
 export const ContentSchema = z
   .object({
     config: ConfigSchema,
@@ -237,6 +283,7 @@ export const ContentSchema = z
     biomes: z.array(BiomeSchema).min(2),
     facades: z.array(FacadeSchema).min(1),
     npcs: z.array(NpcSchema),
+    zadania: z.array(ZadanieSchema),
   })
   .strict();
 
@@ -246,6 +293,7 @@ export type Resource = z.infer<typeof ResourceSchema>;
 export type Recipe = z.infer<typeof RecipeSchema>;
 export type Biome = z.infer<typeof BiomeSchema>;
 export type Facade = z.infer<typeof FacadeSchema>;
+export type Zadanie = z.infer<typeof ZadanieSchema>;
 export type Npc = z.infer<typeof NpcSchema>;
 export type Config = z.infer<typeof ConfigSchema>;
 export type Content = z.infer<typeof ContentSchema>;

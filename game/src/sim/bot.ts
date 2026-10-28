@@ -175,6 +175,129 @@ export class Bot {
     return false;
   }
 
+  // --- zadania -----------------------------------------------------------
+
+  /**
+   * Wykonaj zadanie od początku do końca: weź je, spełnij warunek, oddaj.
+   *
+   * To jest powód, dla którego kolekcja zadań w ogóle mogła powstać. Nowe pole w treści
+   * wolno dodać tylko wtedy, gdy bramka potrafi o nim COKOLWIEK udowodnić — inaczej
+   * powstaje kolejne `storage`: schemat przyjmuje, walidator przepuszcza, gra ignoruje.
+   * Bot umie zdobyć dowolny przedmiot, więc umie też sprawdzić, czy zadanie da się
+   * wykonać — tak samo, jak sprawdza wykonalność receptury.
+   */
+  wykonajZadanie(id: string): BotResult {
+    this.trace = [];
+    const z = this.game.reg.content.zadania.find((x) => x.id === id);
+    if (!z) return { ok: false, ticks: this.spent, reason: `nie ma zadania "${id}"`, trace: this.trace };
+    // Zadanie jednorazowe: drugie podejście nie ma czego spełniać i nie ma po co zbierać.
+    if (this.game.state.zadania[id] === 'zrobione') {
+      return { ok: true, ticks: this.spent, reason: 'zadanie było już wykonane', trace: this.trace };
+    }
+
+    if (!this.wezZadanie(z.dawca, id)) {
+      return { ok: false, ticks: this.spent, reason: `nie udało się wziąć zadania od "${z.dawca}"`, trace: this.trace };
+    }
+    if (!this.spelnijWarunek(z)) {
+      return { ok: false, ticks: this.spent, reason: `nie udało się spełnić warunku (${z.typ}: ${z.cel})`, trace: this.trace };
+    }
+    if (!this.oddajZadanie(z.dawca, id)) {
+      return { ok: false, ticks: this.spent, reason: `warunek spełniony, ale oddanie nie doszło do skutku`, trace: this.trace };
+    }
+    return { ok: true, ticks: this.spent, reason: 'zadanie wykonane', trace: this.trace };
+  }
+
+  /** Zagaduj dawcę, aż to konkretne zadanie będzie wzięte — wcześniejsze lecą po drodze. */
+  private wezZadanie(dawca: string, id: string): boolean {
+    for (let i = 0; i < 12; i++) {
+      if (this.game.state.zadania[id]) return true;
+      if (!this.goToNpc(dawca)) return false;
+      if (!this.zagadaj(dawca)) return false;
+    }
+    return Boolean(this.game.state.zadania[id]);
+  }
+
+  private oddajZadanie(dawca: string, id: string): boolean {
+    for (let i = 0; i < 12; i++) {
+      if (this.game.state.zadania[id] === 'zrobione') return true;
+      if (!this.goToNpc(dawca)) return false;
+      if (!this.zagadaj(dawca)) return false;
+    }
+    return this.game.state.zadania[id] === 'zrobione';
+  }
+
+  /** Obróć się do postaci i użyj. Bez obrotu spacja trafiłaby w kafel obok. */
+  private zagadaj(npcId: string): boolean {
+    const s = this.game.state;
+    const f = (['n', 'e', 's', 'w'] as Facing[]).find((k) => {
+      const d = DIRS[k]!;
+      const e = entityAt(s, s.player.x + d.dx, s.player.y + d.dy);
+      return e?.kind === 'npc' && e.def === npcId;
+    });
+    if (!f) return false;
+    if (!this.step({ face: f })) return false;
+    return this.step({ act: true });
+  }
+
+  private spelnijWarunek(z: { typ: string; cel: string; ile: number }): boolean {
+    if (z.typ === 'miec') return this.ensureItem(z.cel, z.ile);
+    if (z.typ === 'postawic') {
+      const stawia = this.game.reg.content.items.find((i) => i.placeable?.structure === z.cel);
+      if (!stawia) return false;
+      if (this.game.state.ents.some((e) => e.kind === 'placed' && e.def === z.cel && e.respawnAt === 0)) return true;
+      if (!this.ensureItem(stawia.id, 1)) return false;
+      return this.postaw(stawia.id);
+    }
+    return this.dojdzDoMiejsca(z.cel);
+  }
+
+  /** Postaw trzymaną rzecz na pierwszym wolnym kaflu obok, nie zamurowując się. */
+  private postaw(itemId: string): boolean {
+    const s = this.game.state;
+    if (!this.step({ hold: itemId })) return false;
+    for (const f of ['n', 'e', 's', 'w'] as Facing[]) {
+      const d = DIRS[f]!;
+      const x = s.player.x + d.dx;
+      const y = s.player.y + d.dy;
+      if (!walkable(s, this.game.reg, x, y)) continue;
+      if (entityAt(s, x, y)) continue;
+      if (!this.maWyjscie(x, y)) continue;
+      if (!this.step({ face: f })) return false;
+      if (!this.step({ place: itemId })) return false;
+      this.trace.push(`postaw ${itemId}`);
+      return Boolean(entityAt(s, x, y));
+    }
+    return false;
+  }
+
+  /** Dojdź pod nazwany zabytek. Zasięg „bycia pod" liczy już świat, nie bot. */
+  private dojdzDoMiejsca(nazwa: string): boolean {
+    const s = this.game.state;
+    if (s.odwiedzone.includes(nazwa)) return true;
+    const nr = s.miejsca.findIndex((m) => m.nazwa === nazwa);
+    if (nr < 0) return false;
+    const cel = new Uint8Array(s.size * s.size);
+    let jest = false;
+    for (let i = 0; i < s.bliskoMiejsca.length; i++) {
+      if (s.bliskoMiejsca[i] !== nr + 1) continue;
+      // Celem jest kafel, NA którym da się stanąć — stąd przechodniość, a nie sam obrys.
+      const x = i % s.size;
+      const y = (i / s.size) | 0;
+      if (!walkable(s, this.game.reg, x, y)) continue;
+      cel[i] = 1;
+      jest = true;
+    }
+    if (!jest) return false;
+    // pathToTargets prowadzi OBOK celu, więc po dojściu trzeba jeszcze na niego wejść.
+    const droga = this.pathToTargets(cel);
+    if (!droga) return false;
+    for (const f of droga.path) if (!this.step({ move: f })) return false;
+    const f = this.faceFrom(s.player.x, s.player.y, droga.tx, droga.ty);
+    if (f && !this.step({ move: f })) return false;
+    this.trace.push(`dojdz ${nazwa}`);
+    return s.odwiedzone.includes(nazwa);
+  }
+
   // --- wymiana -----------------------------------------------------------
 
   /** Wartość całego plecaka. Miara, po której poznaje się pompę. */

@@ -1,4 +1,5 @@
 import type { Registry } from '../content/registry.js';
+import type { Zadanie } from '../content/schema.js';
 import { Rng } from './rng.js';
 import { DIRS, MAX_LOG, type Entity, type Input, type State } from './types.js';
 import { dozwolona } from './wymiana.js';
@@ -42,6 +43,14 @@ export function walkable(state: State, reg: Registry, x: number, y: number): boo
   if (!reg.content.biomes[state.biome[idx(state, x, y)]!]!.walkable) return false;
   const e = entityAt(state, x, y);
   return !e || !blocks(reg, e);
+}
+
+/** Zapisz, że gracz stanął pod zabytkiem. Jedno spojrzenie w siatkę, bez liczenia odległości. */
+function odnotujMiejsce(state: State): void {
+  const nr = state.bliskoMiejsca[idx(state, state.player.x, state.player.y)];
+  if (!nr) return;
+  const nazwa = state.miejsca[nr - 1]?.nazwa;
+  if (nazwa && !state.odwiedzone.includes(nazwa)) state.odwiedzone.push(nazwa);
 }
 
 export function facingTile(state: State): { x: number; y: number } {
@@ -204,8 +213,46 @@ function harvest(state: State, reg: Registry, e: Entity, rng: Rng): void {
   e.respawnAt = def.regrow > 0 ? state.tick + def.regrow : -1;
 }
 
+/** Czy warunek zadania jest już spełniony. Każdy rodzaj da się sprawdzić w jednym tiku. */
+export function warunekSpelniony(state: State, reg: Registry, z: Zadanie): boolean {
+  if (z.typ === 'miec') return count(state, z.cel) >= z.ile;
+  if (z.typ === 'postawic') {
+    return state.ents.some((e) => e.kind === 'placed' && e.def === z.cel && e.respawnAt === 0);
+  }
+  return state.odwiedzone.includes(z.cel);
+}
+
+/**
+ * Rozmowa z postacią: najpierw sprawy, potem pogawędka.
+ *
+ * Zadania nie dostały ani własnego klawisza, ani własnego okna — wchodzą tą samą
+ * spacją, co wszystko inne. Postać oddaje to, co ma do oddania, bierze to, co ma wziąć,
+ * a gdy nic z tego, mówi swoje. Mniej ruchomych części znaczy mniej miejsc, w których
+ * stan gry może się rozjechać z tym, co widać na ekranie.
+ */
 function talk(state: State, reg: Registry, e: Entity, rng: Rng): void {
   const npc = reg.npcs.get(e.def)!;
+  // Kolejność po id, bo ta sama rozmowa ma dawać ten sam wynik w każdym przebiegu.
+  const moje = reg.content.zadania.filter((z) => z.dawca === npc.id).sort((a, b) => a.id.localeCompare(b.id));
+
+  const doOddania = moje.find((z) => state.zadania[z.id] === 'wziete' && warunekSpelniony(state, reg, z));
+  if (doOddania) {
+    if (doOddania.typ === 'miec') give(state, reg, doOddania.cel, -doOddania.ile);
+    const weszlo = give(state, reg, doOddania.nagroda.item, doOddania.nagroda.qty);
+    state.zadania[doOddania.id] = 'zrobione';
+    log(state, `${npc.name}: ${doOddania.podziekowanie}`);
+    const nagroda = reg.items.get(doOddania.nagroda.item)?.name ?? doOddania.nagroda.item;
+    log(state, weszlo > 0 ? `Nagroda: ${weszlo}× ${nagroda}.` : `Nagroda przepadła — nie masz miejsca na ${nagroda}.`);
+    return;
+  }
+
+  const doWziecia = moje.find((z) => !state.zadania[z.id]);
+  if (doWziecia) {
+    state.zadania[doWziecia.id] = 'wziete';
+    log(state, `${npc.name}: ${doWziecia.zlecenie}`);
+    return;
+  }
+
   const line = npc.dialogues[rng.int(0, npc.dialogues.length - 1)]!;
   log(state, `${npc.name}: ${line}`);
 }
@@ -396,6 +443,7 @@ export function tick(state: State, input: Input, reg: Registry): State {
     if (walkable(state, reg, nx, ny)) {
       state.player.x = nx;
       state.player.y = ny;
+      odnotujMiejsce(state);
     }
   }
 

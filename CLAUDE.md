@@ -10,8 +10,13 @@ Monorepo npm workspaces: `game/` (gra), `agent/` (pętla modelu), `tools/` (bram
 Losowość bierze się wyłącznie z klasy `Rng` zasilanej `state.rng`. Test determinizmu
 porównuje hash stanu po tysiącach ticków — złamanie tej zasady widać natychmiast.
 
-**Treść to dane, nie kod.** Nowy przedmiot, receptura, surowiec, budynek, NPC
-czy archetyp fasady to wpis w `game/content/*.json`. Jeśli łapiesz się na pisaniu `if (itemId === '...')`
+**Treść to dane, nie kod.** Nowy przedmiot, receptura, surowiec, budynek, NPC,
+archetyp fasady czy zadanie to wpis w `game/content/*.json`.
+
+**Pole schematu albo coś robi, albo go nie ma.** Martwe pole jest gorsze od braku pola:
+model je wypełnia, walidator przyjmuje, bramka świeci na zielono, a gracz dostaje
+obietnicę bez pokrycia. Nową kolekcję wolno dodać dopiero wtedy, gdy bramka potrafi
+o niej coś udowodnić — zadania weszły z wyrocznią (bot je wykonuje), nie z nadzieją. Jeśli łapiesz się na pisaniu `if (itemId === '...')`
 w rdzeniu — prawdopodobnie brakuje pola w schemacie, a nie gałęzi w kodzie.
 
 **Bramka jest poza zasięgiem agenta.** `game/src/content/schema.ts`,

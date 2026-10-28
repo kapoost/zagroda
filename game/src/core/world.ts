@@ -126,6 +126,75 @@ export function generate(reg: Registry, seed: number): State {
     }
   }
 
+  /**
+   * Zabytki i siatka „jestem pod nim".
+   *
+   * Promień jest w kaflach, a kafel ma trzy metry — pięć kafli to piętnaście metrów,
+   * czyli mniej więcej tyle, ile trzeba podejść, żeby uczciwie powiedzieć, że się
+   * pod czymś stało.
+   */
+  const ZASIEG_ODWIEDZIN = 5;
+  const miejsca = zMapyOsm ? mapa.miejsca : [];
+  const bliskoMiejsca = new Uint8Array(size * size);
+  for (let i = 0; i < miejsca.length && i < 255; i++) {
+    const m = miejsca[i]!;
+    for (let dy = -ZASIEG_ODWIEDZIN; dy <= ZASIEG_ODWIEDZIN; dy++) {
+      for (let dx = -ZASIEG_ODWIEDZIN; dx <= ZASIEG_ODWIEDZIN; dx++) {
+        const x = m.x + dx;
+        const y = m.y + dy;
+        if (x < 0 || y < 0 || x >= size || y >= size) continue;
+        if (dx * dx + dy * dy > ZASIEG_ODWIEDZIN * ZASIEG_ODWIEDZIN) continue;
+        // Pierwszy wygrywa: miejsca są posortowane po nazwie, więc wynik jest stały.
+        if (!bliskoMiejsca[y * size + x]) bliskoMiejsca[y * size + x] = i + 1;
+      }
+    }
+  }
+
+  /**
+   * Największy spójny obszar przechodni — i tylko tam wolno cokolwiek postawić.
+   *
+   * Dotąd wystarczyło, że kafel jest przechodni. To za mało: zamknięte podwórze
+   * między kamienicami jest przechodnie w środku i nie ma wejścia. Na seedzie 1337
+   * stała w takim podwórzu Hanka — kowalka, od której zależy cały łańcuch żelaza.
+   * Bot progresji tego nie zauważył, bo żelazo zdobywa bez niej; zauważyła dopiero
+   * wyrocznia zadań, gdy po raz pierwszy ktoś musiał do niej DOJŚĆ.
+   *
+   * Reguła dotyczy wszystkiego: surowiec w zamurowanym podwórzu wygląda w grze jak
+   * treść, a zachowuje się jak jej brak.
+   */
+  const osiagalne = (() => {
+    const widziane = new Uint8Array(size * size);
+    const skladowa = new Uint8Array(size * size);
+    let najlepsza = 0;
+    for (let startI = 0; startI < widziane.length; startI++) {
+      if (widziane[startI] || !reg.content.biomes[gotowy[startI]!]!.walkable) continue;
+      const kolejka = [startI];
+      widziane[startI] = 1;
+      for (let qi = 0; qi < kolejka.length; qi++) {
+        const c = kolejka[qi]!;
+        const cx = c % size;
+        const cy = (c - cx) / size;
+        for (const [dx, dy] of [[0, -1], [0, 1], [1, 0], [-1, 0]] as const) {
+          const nx = cx + dx;
+          const ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+          const n = ny * size + nx;
+          if (widziane[n] || !reg.content.biomes[gotowy[n]!]!.walkable) continue;
+          widziane[n] = 1;
+          kolejka.push(n);
+        }
+      }
+      if (kolejka.length > najlepsza) {
+        najlepsza = kolejka.length;
+        skladowa.fill(0);
+        for (const i of kolejka) skladowa[i] = 1;
+      }
+    }
+    return skladowa;
+  })();
+  const wZasiegu = (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < size && y < size && osiagalne[y * size + x] === 1;
+
   const ents: Entity[] = [];
   const entAt = new Int32Array(size * size);
   const resources = reg.content.resources;
@@ -139,7 +208,7 @@ export function generate(reg: Registry, seed: number): State {
    * a zachowuje się jak jej brak. Reguła dotyczy wszystkich biomów, nie tylko wody.
    */
   const dostepny = (x: number, y: number) =>
-    przechodni(x - 1, y) || przechodni(x + 1, y) || przechodni(x, y - 1) || przechodni(x, y + 1);
+    wZasiegu(x - 1, y) || wZasiegu(x + 1, y) || wZasiegu(x, y - 1) || wZasiegu(x, y + 1);
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -204,10 +273,11 @@ export function generate(reg: Registry, seed: number): State {
     return najlepszy ?? srodek;
   })();
 
-  const walkable = (x: number, y: number) =>
-    x >= 0 && y >= 0 && x < size && y < size && reg.content.biomes[biome[y * size + x]!]!.walkable;
+  // Przechodni TO ZA MAŁO — kafel musi jeszcze należeć do obszaru, z którego da się
+  // dojść wszędzie indziej. Inaczej postać ląduje w zamkniętym podwórzu.
+  const walkable = wZasiegu;
 
-  // NPC lądują na najbliższym przechodnim i wolnym kaflu względem swojego "domu".
+  // NPC lądują na najbliższym osiągalnym i wolnym kaflu względem swojego "domu".
   for (const npc of reg.content.npcs) {
     const spot = nearestFree(npc.home.x, npc.home.y, size, walkable, entAt);
     if (!spot) continue;
@@ -231,7 +301,10 @@ export function generate(reg: Registry, seed: number): State {
     fasady,
     // Zabytki trafiają do stanu tylko wtedy, gdy świat naprawdę pochodzi z mapy —
     // w świecie z szumu nie ma Ratusza i nie wolno udawać, że jest.
-    miejsca: zMapyOsm ? mapa.miejsca : [],
+    miejsca,
+    bliskoMiejsca,
+    odwiedzone: [],
+    zadania: {},
     ents,
     player: {
       x: start?.x ?? 1,

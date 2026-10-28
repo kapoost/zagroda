@@ -1,0 +1,62 @@
+[
+  {
+    "id": "z_trzcina_dla_zofii",
+    "name": "Trzcina dla Zofii",
+    "desc": "Zofia potrzebuje włókna, żeby mieć co skręcać.",
+    "dawca": "zofia",
+    "typ": "miec",
+    "cel": "wlokno",
+    "ile": 6,
+    "nagroda": { "item": "sznurek", "qty": 3 },
+    "zlecenie": "Przynieś mi sześć włókien znad wody. Sama nie zdążę, a sznurka brakuje wszystkim.",
+    "podziekowanie": "Jest. Weź trzy sznurki — i tak byś po nie wrócił."
+  },
+  {
+    "id": "z_wegiel_dla_hanki",
+    "name": "Węgiel dla Hanki",
+    "desc": "Bez węgla piec stoi zimny.",
+    "dawca": "hanka",
+    "typ": "miec",
+    "cel": "wegiel_drzewny",
+    "ile": 3,
+    "nagroda": { "item": "sztabka_zelaza", "qty": 1 },
+    "zlecenie": "Trzy węgle drzewne i piec znowu chodzi. Przyniesiesz — dostaniesz sztabkę.",
+    "podziekowanie": "Dobra robota. Sztabka twoja, zrób z niej coś porządnego."
+  },
+  {
+    "id": "z_stol_dla_moranda",
+    "name": "Stół dla Moranda",
+    "desc": "Morando chce zobaczyć, czy potrafisz postawić coś prostego.",
+    "dawca": "morando",
+    "typ": "postawic",
+    "cel": "warsztat",
+    "ile": 1,
+    "nagroda": { "item": "deska", "qty": 4 },
+    "zlecenie": "Postaw stół warsztatowy, gdzie uważasz. Chcę zobaczyć, czy trzymasz pion.",
+    "podziekowanie": "Stoi prosto. Weź deski, przydadzą ci się na następny."
+  },
+  {
+    "id": "z_ratusz_dla_rudomicza",
+    "name": "Obejrzyj Ratusz",
+    "desc": "Rudomicz notuje, kto gdzie był.",
+    "dawca": "rudomicz",
+    "typ": "dojsc",
+    "cel": "Ratusz",
+    "ile": 1,
+    "nagroda": { "item": "jagoda", "qty": 4 },
+    "zlecenie": "Podejdź pod Ratusz i wróć. Zapiszę, że byłeś — potem się to komuś przyda.",
+    "podziekowanie": "Zapisane. Masz jagody na drogę powrotną."
+  },
+  {
+    "id": "z_brama_dla_szymona",
+    "name": "Stara Brama Lubelska",
+    "desc": "Szymon chce wiedzieć, czy brama jeszcze stoi.",
+    "dawca": "szymon",
+    "typ": "dojsc",
+    "cel": "Stara Brama Lubelska",
+    "ile": 1,
+    "nagroda": { "item": "tkanina", "qty": 1 },
+    "zlecenie": "Zajrzyj pod Starą Bramę Lubelską. Zamurowali ją, ale sama brama została.",
+    "podziekowanie": "Stoi, mówisz. To dobrze. Weź tkaninę, wieczory są chłodne."
+  }
+]

@@ -37,6 +37,7 @@ export function digest(): string {
   const recipes = readList('recipes');
   const biomes = readList('biomes');
   const facades = readList('facades');
+  const zadania = readList('zadania');
   const npcs = readList('npcs');
 
   const itemLine = (i: any) => {
@@ -73,5 +74,11 @@ export function digest(): string {
         `${f.arcades ? 'arkada co ' + f.arcades + ' kafle' : 'bez podcieni'}`,
     ),
     `NPC (${npcs.length}): ${npcs.map((n: any) => n.id).join(', ')}`,
+    `ZADANIA — zlecenia postaci (${zadania.length}):`,
+    ...zadania.map(
+      (z: any) =>
+        `  ${z.id} od ${z.dawca}: ${z.typ} ${z.cel}${z.typ === 'miec' ? ' ×' + z.ile : ''}` +
+        ` → ${z.nagroda.qty}× ${z.nagroda.item}`,
+    ),
   ].join('\n');
 }

@@ -209,6 +209,46 @@ Dwa filtry przed modelem, bo nie pyta sie modelu o to, co da sie sprawdzic:
 **pytanie dwustanowe** przed pytaniem o przedmiot — gramatyka zawezona do listy darow
 kusi wybraniem czegokolwiek, pytanie `tak`/`nie` tej pokusy nie ma.
 
+#### Zadania: kolekcja, ktora miala wyrocznie od pierwszej chwili
+
+Pytanie „czy to moment na presety" mialo zla przeslanke. Dziennik pokazal **24 przebiegi
+i tylko 8 roznych promptow**, wszystkie tego samego ksztaltu: „dodaj narzedzie lepsze od
+istniejacego". Sufitu nie dotknelismy — nie testowalismy go.
+
+Za to **piec pol schematu nie robilo nic**: `storage`, `stack`, `likes`, `seasons`,
+`tags`. To gorsze od sufitu. Sufit mowi „nie"; martwe pole mowi „tak" i klamie —
+agent zbudowal kosz ze schowkiem na 30 rzeczy, a skrzynie nie przechowywaly NICZEGO.
+Dlatego przed kazda rozbudowa idzie porzadek: **pole albo cos robi, albo go nie ma**.
+
+Dopiero potem kolekcja `zadania` — i nie dlatego, ze „brakowalo zadan", tylko dlatego,
+ze to jedyna nowa kolekcja, ktora **sklada rzeczowniki, ktore juz sa** (przedmiot,
+postac, struktura, miejsce z mapy) i ma wyrocznie: bot potrafi zdobyc dowolny przedmiot,
+wiec potrafi tez wziac zadanie, spelnic warunek i oddac. Bramka dowodzi wykonalnosci
+zadania tak samo, jak dowodzi wykonalnosci receptury.
+
+Waski kontrakt od pierwszej wersji:
+
+| | |
+| --- | --- |
+| rodzaje warunku | `miec`, `postawic`, `dojsc` — i nic wiecej |
+| ksztalt | **plaski**, nie unia: koszt gramatyki rosnie szybciej niz liniowo |
+| nagroda | najwyzej 2× tego, co gracz wlozyl (`NAGRODA`) |
+| powtarzalnosc | **jednorazowe** — powtarzalne z zyskiem to pompa wartosci |
+| interfejs | zaden: zadania wchodza ta sama spacja, co reszta |
+
+Warunek typu „pomoz Hance" nie wchodzi, bo nikt nie umie orzec, kiedy jest spelniony.
+Zadanie bez wyroczni byloby kolejnym `storage`.
+
+**Co ta wyrocznia znalazla od razu:** na seedzie 1337 **Hanka byla odcieta od swiata** —
+stala w zamknietym podworzu miedzy kamienicami, przechodnim w srodku i bez wejscia.
+Kowalka, od ktorej zalezy caly lancuch zelaza. Bot progresji tego nie widzial przez cale
+zycie projektu, bo zelazo zdobywa sie bez rozmowy z nia. Zobaczyl dopiero wtedy, gdy po
+raz pierwszy musial do niej DOJSC.
+
+Poprawka dotyczy reguly, nie Hanki: swiat rozstawia encje wylacznie w **najwiekszym
+spojnym obszarze przechodnim**, a nie na „dowolnym kaflu, po ktorym da sie chodzic".
+Surowiec w zamurowanym podworzu wyglada w grze jak tresc, a zachowuje sie jak jej brak.
+
 #### Postacie historyczne: nazwy z mapy, glos od modelu
 
 Trzy osoby opowiadaja o okolicy: **Morando** (budowniczy, ktory rysowal plan miasta),

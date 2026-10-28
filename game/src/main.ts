@@ -19,6 +19,7 @@ const refs: HudRefs = {
   held: document.getElementById('held')!,
   inventory: document.getElementById('inventory')!,
   recipes: document.getElementById('recipes')!,
+  zadania: document.getElementById('zadania')!,
   log: document.getElementById('log')!,
 };
 

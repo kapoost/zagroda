@@ -17,6 +17,8 @@ export interface SimMetrics {
   milestones: Array<{ goal: string; ok: boolean; ticks: number; reason?: string }>;
   /** Próba złamania ekonomii wymiany. `po > przed` znaczy, że gdzieś powstała pompa. */
   handel: { wymian: number; przed: number; po: number };
+  /** Czy każde zadanie z treści da się w praktyce wykonać. */
+  zadania: Array<{ id: string; ok: boolean; ticks: number; reason?: string }>;
   hashAfter10k: string;
 }
 
@@ -33,6 +35,14 @@ export function simulate(seed: number, budget = 150_000): SimMetrics {
     const r = new Bot(g, budget).ensure(goal, 1);
     return r.ok ? { goal, ok: true, ticks: r.ticks } : { goal, ok: false, ticks: r.ticks, reason: r.reason };
   });
+  // Zadania: bot bierze, spełnia i oddaje. Bez tego kolekcja byłaby kolejnym polem,
+  // które schemat przyjmuje, a gra ignoruje.
+  const zadania = base.reg.content.zadania.map((z) => {
+    const g = new Game(seed);
+    const r = new Bot(g, budget).wykonajZadanie(z.id);
+    return r.ok ? { id: z.id, ok: true, ticks: r.ticks } : { id: z.id, ok: false, ticks: r.ticks, reason: r.reason };
+  });
+
   // Ekonomia wymiany. Bot zbiera trochę towaru, a potem bierze KAŻDĄ dostępną wymianę,
   // ile się da — nie po to, żeby grać, tylko żeby sprawdzić, czy handel nie tworzy
   // wartości z niczego. Ta kolumna raportu powstała po tym, jak taka pompa przeżyła
@@ -51,6 +61,7 @@ export function simulate(seed: number, budget = 150_000): SimMetrics {
     landShare: Number((land / base.state.biome.length).toFixed(3)),
     milestones,
     handel,
+    zadania,
     hashAfter10k: hashState(drift.state),
   };
 }
@@ -58,7 +69,9 @@ export function simulate(seed: number, budget = 150_000): SimMetrics {
 export function runSim(seeds = [1337, 4242]): { ok: boolean; metrics: SimMetrics[] } {
   const metrics = seeds.map((s) => simulate(s));
   // Symulacja przestała być samym raportem: pompa wartości to blokada, nie metryka.
-  const ok = metrics.every((m) => m.milestones.every((x) => x.ok) && m.handel.po <= m.handel.przed);
+  const ok = metrics.every(
+    (m) => m.milestones.every((x) => x.ok) && m.handel.po <= m.handel.przed && m.zadania.every((z) => z.ok),
+  );
   return { ok, metrics };
 }
 
@@ -70,6 +83,9 @@ if (import.meta.url === pathToFileURL(process.argv[1]!).href) {
     console.log(`\nseed ${m.seed} — encji ${m.entities}, ląd ${(m.landShare * 100).toFixed(1)}%, hash ${m.hashAfter10k}`);
     for (const x of m.milestones) {
       console.log(`  ${x.ok ? '✓' : '✗'} ${x.goal.padEnd(20)} ${String(x.ticks).padStart(7)} ticków${x.reason ? '  ← ' + x.reason : ''}`);
+    }
+    for (const z of m.zadania) {
+      console.log(`  ${z.ok ? '✓' : '✗'} ${('zadanie ' + z.id).padEnd(28)} ${String(z.ticks).padStart(7)} ticków${z.reason ? '  ← ' + z.reason : ''}`);
     }
     const h = m.handel;
     console.log(

@@ -62,6 +62,8 @@ function stageSim(): { ok: boolean; output: string; metrics: unknown } {
     (m) =>
       `seed ${m.seed}: ` +
       m.milestones.map((x) => `${x.goal}=${x.ok ? x.ticks + 't' : 'BLOKADA(' + x.reason + ')'}`).join(', ') +
+      ` | zadania ${m.zadania.filter((z) => z.ok).length}/${m.zadania.length}` +
+      (m.zadania.some((z) => !z.ok) ? ' NIEWYKONALNE' : '') +
       ` | handel ${m.handel.wymian}× ${m.handel.przed}→${m.handel.po}` +
       (m.handel.po > m.handel.przed ? ' POMPA WARTOŚCI' : ''),
   );

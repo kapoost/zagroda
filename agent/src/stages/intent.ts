@@ -33,6 +33,7 @@ Pola:
   Pamiętaj o zależnościach: przedmiot, który się stawia, potrzebuje też wpisu w
   "structures"; przedmiot, który się wytwarza, potrzebuje wpisu w "recipes";
   nowy surowiec do zbierania to "resources".
+  Zlecenie, prośba, "przynieś mi", "idź zobacz", "postaw" — to kolekcja "zadania".
   UWAGA na dwie kolekcje, które łatwo pomylić:
   - "structures" to rzeczy, które GRACZ STAWIA w świecie — skrzynia, piec, ściana.
   - "facades" to WYGLĄD ZABUDOWY MIASTA, której gracz nie stawia i nie posiada:
@@ -245,7 +246,7 @@ export function widenCollections(cols: Collection[]): Collection[] {
 const MAX_COLLECTIONS = 5;
 
 /** Kolejność ma znaczenie: struktury przed przedmiotami, przedmioty przed recepturami. */
-const ORDER: Collection[] = ['structures', 'biomes', 'facades', 'resources', 'items', 'recipes', 'npcs', 'config'];
+const ORDER: Collection[] = ['structures', 'biomes', 'facades', 'resources', 'items', 'recipes', 'npcs', 'zadania', 'config'];
 
 function alreadyProposed(ops: Record<string, unknown>): string {
   const lines: string[] = [];
@@ -262,6 +263,7 @@ function alreadyProposed(ops: Record<string, unknown>): string {
 const FOCUS: Record<Collection, string> = {
   structures: 'Dodaj budynki/stanowiska, jeśli zmiana ich wymaga (np. coś, co gracz stawia w świecie). Jeśli nie — zwróć pustą tablicę.',
   biomes: 'Dodaj biomy, jeśli zmiana ich wymaga. Zwykle nie wymaga — zwróć wtedy pustą tablicę.',
+  zadania: 'Dodaj zadania. Zadanie to DAWCA (id postaci), WARUNEK i NAGRODA. Warunek ma jeden z trzech rodzajów i nic poza tym: "miec" (id przedmiotu + ile sztuk), "postawic" (id struktury) albo "dojsc" (nazwa zabytku z mapy, dokładnie tak jak brzmi). Nagroda nie może być warta więcej niż dwa razy to, co gracz w zadanie wkłada — inaczej jednym wpisem rozdasz drabinkę narzędzi. Zadanie jest jednorazowe. Jeśli zmiana nie dotyczy zleceń — pusta tablica.',
   facades: 'Dodaj archetypy fasad: JAK wygląda kamienica danego rodzaju. To typologia, nie konkretne budynki — nie wymyślaj, co stoi pod którym adresem, bo liczbę kondygnacji i status zabytku gra bierze z mapy. Pole "storeys" to zakres kondygnacji, do którego archetyp pasuje; zero znaczy "mapa nie podaje". Jeśli zmiana nie dotyczy wyglądu zabudowy — pusta tablica.',
   resources: 'Dodaj surowce do zbierania w świecie, jeśli zmiana ich wymaga. Jeśli nie — pusta tablica.',
   items: 'Dodaj przedmioty. Przedmiot stawiany w świecie wskazuje polem "placeable" na id struktury.',

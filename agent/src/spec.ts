@@ -13,6 +13,7 @@ import {
   STATIONS,
   StructureSchema,
   TOOL_KINDS,
+  ZadanieSchema,
 } from '../../game/src/content/schema.js';
 
 /**
@@ -28,7 +29,7 @@ import {
  * z gramatyką na trzy pola; z unią trzynastu operacji już nie.
  */
 
-export const COLLECTIONS = ['items', 'recipes', 'resources', 'structures', 'npcs', 'biomes', 'facades', 'config'] as const;
+export const COLLECTIONS = ['items', 'recipes', 'resources', 'structures', 'npcs', 'biomes', 'facades', 'zadania', 'config'] as const;
 export type Collection = (typeof COLLECTIONS)[number];
 
 const SKILL_IDS: [string, ...string[]] = ['brak', ...loadSkills().map((s) => s.id)];
@@ -66,6 +67,7 @@ const DEFS = {
   npcs: NpcSchema,
   biomes: BiomeSchema,
   facades: FacadeSchema,
+  zadania: ZadanieSchema,
 } satisfies Record<Exclude<Collection, 'config'>, z.ZodObject<z.ZodRawShape>>;
 
 export type OpsSpec = {
