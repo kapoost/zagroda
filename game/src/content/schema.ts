@@ -33,11 +33,9 @@ export const TAGS = [
   'surowiec', 'polprodukt', 'narzedzie', 'jedzenie', 'paliwo', 'budynek', 'schowek', 'swiatlo',
 ] as const;
 export const STATIONS = ['hand', 'workbench', 'furnace', 'kitchen', 'loom'] as const;
-export const SEASONS = ['wiosna', 'lato', 'jesien', 'zima'] as const;
 
 export type ToolKind = (typeof TOOL_KINDS)[number];
 export type Station = (typeof STATIONS)[number];
-export type Season = (typeof SEASONS)[number];
 export type Tag = (typeof TAGS)[number];
 
 export const ItemSchema = z
@@ -152,7 +150,6 @@ export const ResourceSchema = z
     drops: z.array(DropSchema).min(1).max(4),
     /** 0 = nie odrasta. */
     regrow: z.number().int().min(0).max(20000).default(0),
-    seasons: z.array(z.enum(SEASONS)).min(1).max(4).default([...SEASONS]),
   })
   .strict();
 

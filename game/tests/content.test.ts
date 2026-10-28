@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { rawContent } from '../src/content/load.js';
 import { validateContent } from '../src/content/registry.js';
@@ -239,4 +241,32 @@ describe('walidator łapie psucie treści', () => {
     const got = codes(c);
     expect(got.some((x) => x === 'UNREACHABLE_RESOURCE' || x === 'UNREACHABLE_ITEM')).toBe(true);
   });
+});
+
+/**
+ * Kontrakt treści: pole, które nic nie robi, jest gorsze od braku pola. Model je
+ * wypełnia, walidator przyjmuje, bramka świeci na zielono — a gracz dostaje obietnicę
+ * bez pokrycia. Ten test pilnuje, żeby lista pól schematu nie rozjechała się znowu
+ * z tym, co gra naprawdę czyta.
+ */
+describe('każde pole schematu coś robi', () => {
+  const czytane = (pole: string): boolean => {
+    const src = ['core/tick.ts', 'core/world.ts', 'core/wymiana.ts', 'render/canvas.ts', 'render/hud.ts', 'sim/bot.ts']
+      .map((p) => {
+        try {
+          return readFileSync(resolve(import.meta.dirname, '..', 'src', p), 'utf8');
+        } catch {
+          return '';
+        }
+      })
+      .join('\n');
+    return src.includes(`.${pole}`);
+  };
+
+  it.each(['stack', 'storage', 'likes', 'power', 'durability', 'blocks', 'regrow', 'edible'])(
+    'pole "%s" jest czytane przez kod gry, a nie tylko przez walidator',
+    (pole) => {
+      expect(czytane(pole), `pole "${pole}" istnieje w schemacie, ale nikt go nie czyta`).toBe(true);
+    },
+  );
 });

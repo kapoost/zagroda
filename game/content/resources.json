@@ -186,12 +186,6 @@
         "max": 2
       }
     ],
-    "regrow": 1500,
-    "seasons": [
-      "wiosna",
-      "lato",
-      "jesien",
-      "zima"
-    ]
+    "regrow": 1500
   }
 ]

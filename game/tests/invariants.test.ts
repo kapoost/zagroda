@@ -386,3 +386,57 @@ describe('zasięg akcji', () => {
     expect(s.log.slice(przed).join(' ')).toContain('Nic tu nie ma');
   });
 });
+
+/**
+ * Schowki. Pojemność stała w treści od pierwszego dnia i nie robiła nic — skrzynia
+ * użyta meldowała, że „stoi na swoim miejscu". Pole, które niczego nie zmienia, jest
+ * gorsze od braku pola: model je wypełnia, walidator przyjmuje, bramka świeci na
+ * zielono, a gracz dostaje obietnicę bez pokrycia.
+ */
+describe('schowek', () => {
+  const zeSkrzynia = (ile: number) => {
+    const reg = registry();
+    const s = generate(reg, 13);
+    const x = s.player.x;
+    const y = s.player.y - 1;
+    const stary = entityAt(s, x, y);
+    if (stary) s.entAt[idx(s, x, y)] = 0;
+    s.ents.push({ kind: 'placed', def: 'skrzynia_drewniana', x, y, hp: 1, respawnAt: 0, storage: {} });
+    s.entAt[idx(s, x, y)] = s.ents.length;
+    s.player.facing = 'n';
+    s.player.inv = { galaz: ile };
+    s.player.held = 'galaz';
+    return { reg, s, skrzynia: s.ents[s.ents.length - 1]! };
+  };
+
+  it('wkłada to, co w ręce, i oddaje z powrotem', () => {
+    const { reg, s, skrzynia } = zeSkrzynia(7);
+    tick(s, { act: true }, reg);
+    expect(skrzynia.storage).toEqual({ galaz: 7 });
+    expect(s.player.inv['galaz'] ?? 0).toBe(0);
+
+    tick(s, { act: true }, reg);
+    expect(s.player.inv['galaz']).toBe(1);
+    expect(skrzynia.storage).toEqual({ galaz: 6 });
+  });
+
+  it('nie przyjmuje ponad pojemność z treści', () => {
+    const { reg, s, skrzynia } = zeSkrzynia(50);
+    const pojemnosc = reg.structures.get('skrzynia_drewniana')!.storage;
+    tick(s, { act: true }, reg);
+    expect(Object.values(skrzynia.storage!).reduce((a, n) => a + n, 0)).toBe(pojemnosc);
+    expect(s.player.inv['galaz']).toBe(50 - pojemnosc);
+  });
+
+  it('nic nie ginie ani nie powstaje przy przekładaniu', () => {
+    const { reg, s, skrzynia } = zeSkrzynia(9);
+    const razem = () =>
+      (s.player.inv['galaz'] ?? 0) + (skrzynia.storage?.['galaz'] ?? 0);
+    expect(razem()).toBe(9);
+    for (let i = 0; i < 30; i++) {
+      tick(s, { act: true }, reg);
+      tick(s, { hold: s.player.held ? null : 'galaz' }, reg);
+      expect(razem()).toBe(9);
+    }
+  });
+});

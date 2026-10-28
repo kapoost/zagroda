@@ -77,7 +77,14 @@ export function oferty(state: State, reg: Registry, npcId: string): Oferta[] {
       wynik.push({ daj: idDaru, za: idZaplaty, ile });
     }
   }
-  return wynik;
+  /**
+   * Na początek to, co ta osoba lubi. Kolejność jest jedynym wpływem, jaki „likes" ma
+   * na wymianę, i to celowo: pierwsza oferta z listy jest tą, którą postać proponuje,
+   * a bot bierze najtańszą. Gdyby ulubione rzeczy były TAŃSZE, gracz płaciłby mniej,
+   * niż dostaje — czyli dokładnie pompa wartości, której pilnuje bramka.
+   */
+  const lubi = new Set(npc.likes);
+  return wynik.sort((a, b) => Number(lubi.has(b.za)) - Number(lubi.has(a.za)));
 }
 
 /** Czy dokladnie ta wymiana jest teraz dozwolona. Rdzen pyta o to przed kazda zmiana stanu. */

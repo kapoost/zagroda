@@ -105,10 +105,33 @@ export function count(state: State, item: string): number {
   return state.player.inv[item] ?? 0;
 }
 
-export function give(state: State, item: string, qty: number): void {
-  const n = (state.player.inv[item] ?? 0) + qty;
-  if (n <= 0) delete state.player.inv[item];
-  else state.player.inv[item] = n;
+/**
+ * Dołóż do plecaka i powiedz, ile faktycznie weszło.
+ *
+ * Limit `stack` stał w treści od pierwszego dnia i nie znaczył nic — można było nosić
+ * dziewięćdziesiąt siekier, mimo że schemat mówi „jedna". Teraz znaczy, ale zwracamy
+ * liczbę zamiast po cichu obcinać: przedmiot, który przepadł bez słowa, jest gorszy
+ * niż odmowa, bo gracz dowiaduje się o nim dopiero przy recepturze, która nie wychodzi.
+ *
+ * Ujemne qty to zabieranie i limitu nie dotyczy.
+ */
+export function give(state: State, reg: Registry, item: string, qty: number): number {
+  if (qty < 0) {
+    const n = (state.player.inv[item] ?? 0) + qty;
+    if (n <= 0) delete state.player.inv[item];
+    else state.player.inv[item] = n;
+    return qty;
+  }
+  const ile = Math.min(qty, miejsceNa(state, reg, item));
+  if (ile <= 0) return 0;
+  state.player.inv[item] = (state.player.inv[item] ?? 0) + ile;
+  return ile;
+}
+
+/** Ile jeszcze sztuk tego przedmiotu zmieści się w plecaku. */
+export function miejsceNa(state: State, reg: Registry, item: string): number {
+  const limit = reg.items.get(item)?.stack ?? Infinity;
+  return Math.max(0, limit - (state.player.inv[item] ?? 0));
 }
 
 function log(state: State, msg: string): void {
@@ -145,7 +168,7 @@ function wearTool(state: State, reg: Registry): boolean {
   const w = (state.player.wear[held] ?? 0) + 1;
   if (w >= tool.durability) {
     delete state.player.wear[held];
-    give(state, held, -1);
+    give(state, reg, held, -1);
     log(state, `${reg.items.get(held)!.name} rozpada się w rękach.`);
     return true;
   }
@@ -174,7 +197,7 @@ function harvest(state: State, reg: Registry, e: Entity, rng: Rng): void {
   for (const d of def.drops) {
     if (!rng.chance(d.chance)) continue;
     const qty = rng.int(d.min, d.max);
-    give(state, d.item, qty);
+    give(state, reg, d.item, qty);
     log(state, `+${qty} ${reg.items.get(d.item)!.name}`);
   }
   removeEntity(state, e);
@@ -215,9 +238,56 @@ function doRozmowa(state: State, reg: Registry, r: NonNullable<Input['rozmowa']>
   const zaplata = reg.items.get(oferta.za)!;
   if ((state.player.inv[oferta.za] ?? 0) < oferta.ile) return;
 
-  give(state, oferta.za, -oferta.ile);
-  give(state, r.daj, 1);
+  give(state, reg, oferta.za, -oferta.ile);
+  give(state, reg, r.daj, 1);
   log(state, `${npc.name}: ${dar.name} za ${oferta.ile}× ${zaplata.name}.`);
+}
+
+/** Ile rzeczy leży w schowku. Pojemność liczy się w sztukach, nie w rodzajach. */
+export function wSchowku(e: Entity): number {
+  return Object.values(e.storage ?? {}).reduce((a, n) => a + n, 0);
+}
+
+/**
+ * Użycie schowka.
+ *
+ * Skrzynia miała pojemność w treści od pierwszego dnia i nie robiła z nią NIC — użyta
+ * meldowała tylko, że „stoi na swoim miejscu". Pole w schemacie, które niczego nie
+ * zmienia, jest gorsze od braku pola: model je wypełnia, walidator przyjmuje, bramka
+ * świeci na zielono, a gracz dostaje obietnicę bez pokrycia.
+ *
+ * Reguła jest jedna i bez interfejsu: trzymasz coś w ręce — wkładasz, ile się zmieści.
+ * Masz wolne ręce — wyjmujesz jedną rzecz, zawsze pierwszą po identyfikatorze, bo
+ * kolejność musi być ta sama w każdym przebiegu.
+ */
+function doSchowek(state: State, reg: Registry, e: Entity): void {
+  const def = reg.structures.get(e.def)!;
+  e.storage ??= {};
+  const trzymane = state.player.held;
+
+  if (trzymane) {
+    const mam = count(state, trzymane);
+    const miejsce = def.storage - wSchowku(e);
+    const ile = Math.min(mam, miejsce);
+    if (ile <= 0) {
+      log(state, `${def.name} jest pełna.`);
+      return;
+    }
+    give(state, reg, trzymane, -ile);
+    e.storage[trzymane] = (e.storage[trzymane] ?? 0) + ile;
+    log(state, `Do ${def.name.toLowerCase()}: ${ile}× ${reg.items.get(trzymane)?.name ?? trzymane}.`);
+    return;
+  }
+
+  const co = Object.keys(e.storage).filter((k) => (e.storage![k] ?? 0) > 0).sort()[0];
+  if (!co) {
+    log(state, `${def.name} jest pusta.`);
+    return;
+  }
+  e.storage[co] = (e.storage[co] ?? 0) - 1;
+  if (e.storage[co]! <= 0) delete e.storage[co];
+  give(state, reg, co, 1);
+  log(state, `Z ${def.name.toLowerCase()}: 1× ${reg.items.get(co)?.name ?? co}.`);
 }
 
 function doCraft(state: State, reg: Registry, recipeId: string): void {
@@ -238,7 +308,7 @@ function doCraft(state: State, reg: Registry, recipeId: string): void {
     }
   }
   if (!spend(state, reg)) return;
-  for (const i of r.inputs) give(state, i.item, -i.qty);
+  for (const i of r.inputs) give(state, reg, i.item, -i.qty);
   state.craft = { recipe: r.id, left: r.ticks };
 }
 
@@ -257,11 +327,15 @@ function doPlace(state: State, reg: Registry, itemId: string): void {
     return;
   }
   if (!spend(state, reg)) return;
-  give(state, itemId, -1);
+  give(state, reg, itemId, -1);
   state.entAt[idx(state, t.x, t.y)] = state.ents.length + 1;
+  const def = reg.structures.get(item.placeable.structure);
   state.ents.push({
     kind: 'placed',
     def: item.placeable.structure,
+    // Pusty schowek od razu przy stawianiu: struktura albo coś mieści, albo nie,
+    // i widać to po stanie, a nie po zaglądaniu do treści przy każdym użyciu.
+    ...(def?.storage ? { storage: {} as Record<string, number> } : {}),
     x: t.x,
     y: t.y,
     hp: 1,
@@ -274,7 +348,7 @@ function doPlace(state: State, reg: Registry, itemId: string): void {
 function doEat(state: State, reg: Registry, itemId: string): void {
   const item = reg.items.get(itemId);
   if (!item?.edible || count(state, itemId) < 1) return;
-  give(state, itemId, -1);
+  give(state, reg, itemId, -1);
   const max = reg.content.config.energyMax;
   state.player.energy = Math.min(max, state.player.energy + item.edible.energy);
   log(state, `Zjadasz: ${item.name}.`);
@@ -306,7 +380,7 @@ export function tick(state: State, input: Input, reg: Registry): State {
     state.craft.left--;
     if (state.craft.left <= 0) {
       const r = reg.recipes.get(state.craft.recipe)!;
-      give(state, r.output.item, r.output.qty);
+      give(state, reg, r.output.item, r.output.qty);
       log(state, `Gotowe: ${r.name} (+${r.output.qty} ${reg.items.get(r.output.item)!.name})`);
       state.craft = null;
     }
@@ -331,6 +405,7 @@ export function tick(state: State, input: Input, reg: Registry): State {
     if (!e) log(state, 'Nic tu nie ma.');
     else if (e.kind === 'resource') harvest(state, reg, e, rng);
     else if (e.kind === 'npc') talk(state, reg, e, rng);
+    else if (reg.structures.get(e.def)?.storage) doSchowek(state, reg, e);
     else log(state, `${reg.structures.get(e.def)?.name ?? e.def} stoi na swoim miejscu.`);
   }
 
