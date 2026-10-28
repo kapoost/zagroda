@@ -113,6 +113,14 @@ function dziennik(limit = 8): unknown[] {
  */
 const watki = new Map<string, TuraRozmowy[]>();
 
+/**
+ * Jedna tura rozmowy naraz. Ollama trzyma jeden slot cache na model, wiec dwa
+ * rownolegle wywolania nie tylko czekaja na siebie, ale kasuja sobie nawzajem prefiks
+ * i obie trwaja kilka razy dluzej. Panel blokuje pole na czas tury, ale serwer nie ma
+ * prawa na to liczyc: po drugiej stronie jest przegladarka, nie zaufany klient.
+ */
+let turaWToku = false;
+
 async function obsluzRozmowe(res: ServerResponse, body: Record<string, unknown>): Promise<void> {
   const swiezy = modelAktualny();
   if (!swiezy.ok) {
@@ -129,6 +137,12 @@ async function obsluzRozmowe(res: ServerResponse, body: Record<string, unknown>)
     json(res, 400, { blad: 'Potrzebuję postaci i tego, co gracz powiedział.' });
     return;
   }
+
+  if (turaWToku) {
+    json(res, 409, { blad: 'Jedna rozmowa naraz — poczekaj na odpowiedź.' });
+    return;
+  }
+  turaWToku = true;
 
   res.writeHead(200, {
     'content-type': 'text/event-stream; charset=utf-8',
@@ -153,7 +167,10 @@ async function obsluzRozmowe(res: ServerResponse, body: Record<string, unknown>)
     watki.set(postac.id, historia.slice(-8));
     slij({ typ: 'koniec', wymiana: wymiana ? { daj: wymiana.daj, za: wymiana.za } : null });
   } catch (e) {
-    slij({ typ: 'blad', tekst: e instanceof Error ? e.message : String(e) });
+    const czas = e instanceof Error && e.name === 'TimeoutError';
+    slij({ typ: 'blad', tekst: czas ? 'model nie odpowiedział na czas' : e instanceof Error ? e.message : String(e) });
+  } finally {
+    turaWToku = false;
   }
   res.end();
 }
@@ -198,6 +215,13 @@ const serwer = createServer((req, res) => {
       }
       const kroki = [podgladRoutingu(opis)];
       if ((body as { pelny?: unknown })?.pelny) {
+        // Pełny podgląd woła Bielika, a rozmowa trzyma zagroda-npc. Dwa modele po 8,5 GB
+        // na 24 GB biją się o pamięć i oba zwalniają kilkunastokrotnie, więc tu przepuszczamy
+        // tylko wtedy, gdy nikt akurat nie rozmawia.
+        if (turaWToku) {
+          json(res, 409, { kroki, blad: 'trwa rozmowa z postacią — pełny podgląd wołałby drugi model naraz' });
+          return;
+        }
         try {
           const { route } = await routeRequest(opis);
           kroki.push(...podgladOps(route, opis));

@@ -202,34 +202,37 @@ describe('wynik rozmowy', () => {
     return { reg, s, npc };
   };
 
-  it('daje przedmiot z listy, gdy postać stoi obok', () => {
+  it('oddaje przedmiot za zapłatę, gdy postać stoi obok', () => {
     const { reg, s, npc } = przyPostaci();
+    s.player.inv = { galaz: 20 };
     const dar = reg.npcs.get(npc.def)!.gives[0]!;
-    const przed = s.player.inv[dar] ?? 0;
-    tick(s, { rozmowa: { npc: npc.def, daj: dar } }, reg);
-    expect(s.player.inv[dar] ?? 0).toBe(przed + 1);
+    tick(s, { rozmowa: { npc: npc.def, daj: dar, za: 'galaz' } }, reg);
+    expect(s.player.inv[dar] ?? 0).toBe(1);
+    expect(s.player.inv['galaz']).toBeLessThan(20);
   });
 
-  it('nie daje nic, gdy postać jest daleko', () => {
+  it('nie oddaje nic, gdy postać jest daleko', () => {
     const { reg, s, npc } = przyPostaci();
+    s.player.inv = { galaz: 20 };
     const dar = reg.npcs.get(npc.def)!.gives[0]!;
     s.player.x = npc.x + 9;
-    const przed = s.player.inv[dar] ?? 0;
-    tick(s, { rozmowa: { npc: npc.def, daj: dar } }, reg);
-    expect(s.player.inv[dar] ?? 0).toBe(przed);
+    tick(s, { rozmowa: { npc: npc.def, daj: dar, za: 'galaz' } }, reg);
+    expect(s.player.inv[dar] ?? 0).toBe(0);
+    expect(s.player.inv['galaz']).toBe(20);
   });
 
-  it('nie daje przedmiotu spoza listy tej postaci', () => {
+  it('nie oddaje przedmiotu spoza listy tej postaci', () => {
     const { reg, s, npc } = przyPostaci();
-    const przed = s.player.inv['sztabka_zelaza'] ?? 0;
-    tick(s, { rozmowa: { npc: npc.def, daj: 'sztabka_zelaza' } }, reg);
-    expect(s.player.inv['sztabka_zelaza'] ?? 0).toBe(przed);
+    s.player.inv = { galaz: 20 };
+    tick(s, { rozmowa: { npc: npc.def, daj: 'sztabka_zelaza', za: 'galaz' } }, reg);
+    expect(s.player.inv['sztabka_zelaza'] ?? 0).toBe(0);
+    expect(s.player.inv['galaz']).toBe(20);
   });
 
   it('nie zna postaci, której nie ma w treści', () => {
     const { reg, s } = przyPostaci();
     const przed = JSON.stringify(s.player.inv);
-    tick(s, { rozmowa: { npc: 'nikt_taki', daj: 'jagoda' } }, reg);
+    tick(s, { rozmowa: { npc: 'nikt_taki', daj: 'jagoda', za: 'galaz' } }, reg);
     expect(JSON.stringify(s.player.inv)).toBe(przed);
   });
 });
@@ -279,22 +282,34 @@ describe('wymiana z postacią', () => {
     expect(JSON.stringify(s.player.inv)).toBe(przed);
   });
 
-  it('darmowy dar tylko wtedy, gdy nie ma czym zapłacić', () => {
-    const pusty = przyPostaci({});
-    tick(pusty.s, { rozmowa: { npc: pusty.npc.def, daj: pusty.def.gives[0]! } }, pusty.reg);
-    expect(pusty.s.player.inv[pusty.def.gives[0]!] ?? 0).toBe(1);
-
-    const bogaty = przyPostaci({ galaz: 20 });
-    tick(bogaty.s, { rozmowa: { npc: bogaty.npc.def, daj: bogaty.def.gives[0]! } }, bogaty.reg);
-    expect(bogaty.s.player.inv[bogaty.def.gives[0]!] ?? 0).toBe(0);
+  /**
+   * Regresja. Pierwsza wersja dawała przedmiot za darmo, gdy nie było ANI JEDNEJ
+   * wykonalnej oferty — a to jest prawda na stałe dla gracza z jedną gałęzią w ręku,
+   * bo na rybę za pięć gałęzi go nie stać, a rybą za rybę się nie płaci. Wychodziły
+   * z tego nieskończone ryby: wartość plecaka 1 → 26 w pięciu tickach.
+   *
+   * Darmowego daru nie ma już wcale. Zbieranie jest darmowe i to ono jest początkiem
+   * gry, więc nikt bez niczego nie utknie.
+   */
+  it('bez zapłaty nie ma daru, nawet gdy nie stać na żadną ofertę', () => {
+    const przypadki: Array<Record<string, number>> = [{}, { galaz: 1 }, { galaz: 1, ryba: 3 }];
+    for (const inv of przypadki) {
+      const { reg, s, npc, def } = przyPostaci(inv);
+      const przed = JSON.stringify(s.player.inv);
+      for (let i = 0; i < 5; i++) tick(s, { rozmowa: { npc: npc.def, daj: def.gives[0]! } }, reg);
+      expect(JSON.stringify(s.player.inv)).toBe(przed);
+    }
   });
 
   it('żadna wymiana nie podnosi wartości plecaka', () => {
     const { reg, s, npc, def } = przyPostaci({ galaz: 40, kamien: 40, jagoda: 10, drewno: 10 });
     const start = wartosc(reg, s.player.inv);
+    // Brak "za" też jest wejściem, które ktoś może przysłać — i to właśnie tą ścieżką
+    // przeciekały nieskończone ryby, bo fuzz zawsze podawał zapłatę.
+    const zaplaty = ['galaz', 'kamien', 'jagoda', 'drewno', 'nie_ma', 'siekiera_kamienna', undefined];
     for (let i = 0; i < 40; i++) {
-      for (const daj of def.gives) {
-        for (const za of ['galaz', 'kamien', 'jagoda', 'drewno', 'nie_ma', 'siekiera_kamienna']) {
+      for (const daj of [...def.gives, 'sztabka_zelaza', 'nie_ma_takiego']) {
+        for (const za of zaplaty) {
           tick(s, { rozmowa: { npc: npc.def, daj, za } }, reg);
         }
       }

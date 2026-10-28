@@ -76,35 +76,7 @@ export function generate(reg: Registry, seed: number): State {
   const size = reg.content.config.worldSize;
   let biome = zMapy(reg, size);
   const dachy = (biome && rozpakuj(mapa.dachy, size * size)) || new Uint8Array(size * size);
-  /**
-   * Złączenie faktu z typologią.
-   *
-   * Mapa mówi, ile dany budynek ma kondygnacji i czy jest zabytkiem — to są fakty
-   * z OSM. Treść gry mówi, jak wygląda budynek takiego rodzaju. Tutaj jedno spotyka
-   * drugie, deterministycznie: gdy pasuje kilka archetypów, wybiera je odcień budynku,
-   * czyli liczba, która i tak już odróżnia sąsiadów. Żadnego losowania.
-   */
-  const fasady = new Uint8Array(size * size);
-  if (biome) {
-    const pieter = rozpakuj(mapa.kondygnacje, size * size);
-    const zabytki = rozpakuj(mapa.zabytki, size * size);
-    const nrZabudowy = reg.content.biomes.findIndex((b) => b.id === 'kamienica');
-    if (pieter && zabytki && nrZabudowy >= 0) {
-      const pamiec = new Map<string, number>();
-      for (let i = 0; i < fasady.length; i++) {
-        if (biome[i] !== nrZabudowy) continue;
-        const klucz = `${pieter[i]}:${zabytki[i]}:${dachy[i]}`;
-        let wybrana = pamiec.get(klucz);
-        if (wybrana === undefined) {
-          const pasujace = reg.facadesFor(pieter[i]!, zabytki[i] === 1);
-          const f = pasujace[(Math.max(1, dachy[i]!) - 1) % Math.max(1, pasujace.length)];
-          wybrana = f ? reg.content.facades.indexOf(f) + 1 : 0;
-          pamiec.set(klucz, wybrana);
-        }
-        fasady[i] = wybrana;
-      }
-    }
-  }
+  const zMapyOsm = biome !== null;
   if (!biome) {
     biome = new Uint8Array(size * size);
     for (let y = 0; y < size; y++) {
@@ -113,13 +85,53 @@ export function generate(reg: Registry, seed: number): State {
       }
     }
   }
+  /** Od tego miejsca mapa biomów jest kompletna — z OSM albo z szumu. */
+  const gotowy = biome;
+
+  /**
+   * Złączenie faktu z typologią.
+   *
+   * Mapa mówi, ile dany budynek ma kondygnacji i czy jest zabytkiem — to są fakty
+   * z OSM. Treść gry mówi, jak wygląda budynek takiego rodzaju. Tutaj jedno spotyka
+   * drugie, deterministycznie: gdy pasuje kilka archetypów, rozstrzyga odcień budynku,
+   * czyli liczba, która i tak już odróżnia sąsiadów. Żadnego losowania.
+   *
+   * Świat zapasowy z szumu też stawia kamienice (wysokość 0.88 w górę), tylko nie wie
+   * o nich nic poza tym, że stoją. Dostają archetyp „bez metryki", a wariant rozstrzyga
+   * pozycja — bez tego wszystkie wyszłyby jednym, najbogatszym wpisem z listy.
+   */
+  const fasady = new Uint8Array(size * size);
+  const nrZabudowy = reg.content.biomes.findIndex((b) => b.id === 'kamienica');
+  if (nrZabudowy >= 0) {
+    const pieter = zMapyOsm ? rozpakuj(mapa.kondygnacje, size * size) : null;
+    const zabytki = zMapyOsm ? rozpakuj(mapa.zabytki, size * size) : null;
+    const pamiec = new Map<string, number>();
+    for (let i = 0; i < fasady.length; i++) {
+      if (gotowy[i] !== nrZabudowy) continue;
+      const kondygnacji = pieter?.[i] ?? 0;
+      const zabytek = zabytki?.[i] === 1;
+      // hash2 zwraca ułamek z [0,1), nie liczbę całkowitą — bez floora indeks wypadał
+      // ułamkowy i tablica archetypów oddawała undefined. Widać to wyłącznie w świecie
+      // z szumu, którego bramka nie dotyka, więc objaw był: wszystkie kamienice bez fasady.
+      const wariant = dachy[i] || Math.floor(hash2(i % size, (i / size) | 0, seed) * 8) + 1;
+      const klucz = `${kondygnacji}:${zabytek}:${wariant}`;
+      let wybrana = pamiec.get(klucz);
+      if (wybrana === undefined) {
+        const pasujace = reg.facadesFor(kondygnacji, zabytek);
+        const f = pasujace[(wariant - 1) % Math.max(1, pasujace.length)];
+        wybrana = f ? reg.content.facades.indexOf(f) + 1 : 0;
+        pamiec.set(klucz, wybrana);
+      }
+      fasady[i] = wybrana;
+    }
+  }
 
   const ents: Entity[] = [];
   const entAt = new Int32Array(size * size);
   const resources = reg.content.resources;
 
   const przechodni = (x: number, y: number) =>
-    x >= 0 && y >= 0 && x < size && y < size && reg.content.biomes[biome![y * size + x]!]!.walkable;
+    x >= 0 && y >= 0 && x < size && y < size && reg.content.biomes[gotowy[y * size + x]!]!.walkable;
 
   /**
    * Czy da się stanąć obok. Surowiec bez przechodniego sąsiada jest nieosiągalny —

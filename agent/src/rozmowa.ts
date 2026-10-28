@@ -34,6 +34,14 @@ import { MODEL_NPC, odciskTresci } from '../../tools/npc-model.js';
  */
 
 const ROOT = resolve(new URL('../..', import.meta.url).pathname);
+
+/**
+ * Limity czasu. Rozmowa idzie do przegladarki strumieniem SSE, wiec zawieszone
+ * wywolanie nie konczy sie bledem — konczy sie oknem dialogowym, ktore w nieskonczonosc
+ * pokazuje trzy kropki. Osobne progi, bo kwestia moze byc dluga, a decyzja to jeden token.
+ */
+const LIMIT_KWESTII_MS = 90_000;
+const LIMIT_DECYZJI_MS = 30_000;
 const BRAK = 'brak';
 
 export interface Postac {
@@ -142,6 +150,7 @@ async function strumien(
   opcje: Record<string, unknown>,
   format: unknown | null,
   naTekst?: (fragment: string) => void,
+  limitMs = LIMIT_KWESTII_MS,
 ): Promise<string> {
   const body: Record<string, unknown> = {
     model,
@@ -156,6 +165,7 @@ async function strumien(
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(limitMs),
   });
   if (!odp.ok || !odp.body) throw new Error(`Ollama odpowiedziala ${odp.status}`);
 
@@ -239,6 +249,7 @@ export async function akcja(postac: Postac, watek: Wiadomosc[], oferty: Oferta[]
         { temperature: 0, num_ctx: 4096, num_predict: 12 },
         { type: 'string', enum: mozliwosci },
         undefined,
+        LIMIT_DECYZJI_MS,
       )
     )
       .trim()
