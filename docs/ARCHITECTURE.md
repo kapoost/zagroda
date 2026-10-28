@@ -174,6 +174,53 @@ Kontrola `FASADA_DZIURA` jest odpowiednikiem `BIOME_HOLE`: każda kombinacja
 liczby kondygnacji i statusu zabytku musi mieć archetyp, bo inaczej kamienica
 wyrenderuje się jako dziura w pierzei.
 
+### Zywa rozmowa z postaciami
+
+Postacie odpowiadaja graczowi tekstem z Bielika, ale rdzen o tym nie wie i wiedziec
+nie moze. `tick(state, input, registry)` jest czysta funkcja, a test determinizmu
+porownuje hash po tysiacach tickow — wywolanie modelu jest asynchroniczne i
+nieprzewidywalne, wiec w rdzeniu nie ma dla niego miejsca.
+
+Rozwiazanie jest takie samo jak przy operacjach na tresci: **wybor modelu traktujemy
+jak wejscie gracza, a nie jak logike gry.**
+
+```
+model mowi   →  tekst leci strumieniem do okna      (prezentacja, nie dotyka stanu)
+model wybiera → Input.rozmowa = { npc, daj }        (wejscie, jak nacisniecie klawisza)
+rdzen         →  sprawdza sasiedztwo i liste darow  (nie wierzy na slowo)
+```
+
+Wejscie juz jest niedeterministyczne, bo po drugiej stronie siedzi czlowiek. Test
+determinizmu odtwarza ustalona sekwencje wejsc, wiec dopoki akcja przychodzi TA droga,
+a nie bokiem, hash stanu dalej zgadza sie co do bitu. Gotowe kwestie z `dialogues`
+zostaja jako deterministyczny wariant offline — gra dziala bez Ollamy.
+
+Cztery rozstrzygniecia, kazde z pomiaru:
+
+| co | dlaczego tak | liczba |
+| --- | --- | --- |
+| proza bez gramatyki | z gramatyka JSON model musi najpierw wypisac `{"reply": "` | 330 ms wobec 870 ms do pierwszej litery |
+| decyzja osobnym wywolaniem | wspolne wywolanie odpowiadalo `brak` 4 razy na 4 | rozdzielone wybiera poprawnie |
+| blok staly wpieczony w model | zamrozony prefiks trafia w cache KV | 80 ms wobec 25 s na przetworzenie promptu |
+| wspolny watek dla obu wywolan | osobny prompt kasowal cache rozmowy | akcja 1,8 s zamiast 4,2 s |
+
+Dwa filtry przed modelem, bo nie pyta sie modelu o to, co da sie sprawdzic:
+**czasownik dawania** w kwestii (bez niego pytanie o dar w ogole nie pada) i
+**pytanie dwustanowe** przed pytaniem o przedmiot — gramatyka zawezona do listy darow
+kusi wybraniem czegokolwiek, pytanie `tak`/`nie` tej pokusy nie ma.
+
+Czego tu nie ma i nie bedzie: wyroczni jakosci. Nikt automatycznie nie sprawdzi, czy
+postac nie wyszla z roli albo nie nazwala Bartka kowalem, gdy kowalka jest Hanka —
+a nazwala. Mechanicznie da sie sprawdzic tylko to, czy wybrana akcja jest na liscie.
+
+**Rozmowy wykluczaja agenta.** Ollama traktuje `zagroda-npc` i model bazowy jako dwa
+osobne modele po 8,5 GB, wiec na 24 GB bija sie o miejsce: pierwszy token spadl z
+330 ms do 34 sekund. Rozmowa zwalnia modele agenta, zanim zacznie.
+
+**Po kazdej zmianie tresci: `npm run npc-model`.** Model trzyma receptury wpieczone
+w blok systemowy, wiec zbudowany na starszej tresci opowiada o grze, ktorej juz nie ma.
+Pilnuje tego odcisk tresci — rozmowa odmawia pracy, gdy sie nie zgadza.
+
 ### Warunek intencji
 
 Bramka dowodzi, że treść jest spójna. Nie dowodzi, że jest TA, o którą proszono —

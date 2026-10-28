@@ -190,6 +190,15 @@ export const NpcSchema = z
     name: PlName,
     color: Hex,
     home: z.object({ x: z.number().int().min(0), y: z.number().int().min(0) }).strict(),
+    /**
+     * Co ta postać może komuś dać podczas rozmowy — i NIC poza tym.
+     *
+     * Ta lista jest całym słownikiem akcji dla żywego dialogu: gramatyka dekodowania
+     * powstaje z niej, więc model fizycznie nie wypisze daru spoza niej, a rdzeń i tak
+     * sprawdza ją drugi raz. Drobiazgi, nie wyprawka: kontrola NPC_DAR pilnuje, żeby
+     * nie dało się obejść progresji przez rozdawanie narzędzi.
+     */
+    gives: z.array(Id).max(4).default([]),
     likes: z.array(Id).max(5).default([]),
     dialogues: z.array(z.string().min(3).max(200)).min(1).max(12),
   })

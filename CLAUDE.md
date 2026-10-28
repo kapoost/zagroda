@@ -30,6 +30,8 @@ game/content/*.json treść gry
 game/tests/         testy (NIEZAPISYWALNE dla agenta)
 tools/gate.ts       bramka jakości (NIEZAPISYWALNA dla agenta)
 agent/src/          pętla: routing → spec → applier/patch → bramka → git
+agent/src/rozmowa.ts żywy dialog NPC (tekst = prezentacja, akcja = wejście do rdzenia)
+tools/npc-model.ts  build modelu rozmów — URUCHOM PO KAŻDEJ ZMIANIE TREŚCI
 ```
 
 ## Bramka

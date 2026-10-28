@@ -3,6 +3,7 @@ import type { Facing, Input } from './core/types.js';
 import { draw } from './render/canvas.js';
 import { availableRecipes, inventoryIds, renderHud, type HudRefs } from './render/hud.js';
 import { pracowniaOtwarta, przelacz, zamknij as zamknijPracownie } from './ui/pracownia.js';
+import { otworz as otworzRozmowe, rozmowaOtwarta, zamknij as zamknijRozmowe } from './ui/rozmowa.js';
 
 /** Spięcie rdzenia z przeglądarką: pętla o stałym kroku, wejście z klawiatury, rysowanie. */
 
@@ -50,10 +51,38 @@ function cycleHeld(step: number): void {
   pending.hold = i === -1 && step < 0 ? ids[ids.length - 1]! : next;
 }
 
+/** Postać, z którą gracz stoi twarzą w twarz. Rozmowa wymaga sąsiedztwa, tak jak rdzeń. */
+function postacPrzedSoba() {
+  const d = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }[game.state.player.facing]!;
+  const x = game.state.player.x + d[0]!;
+  const y = game.state.player.y + d[1]!;
+  const e = game.state.ents.find((en) => en.kind === 'npc' && en.x === x && en.y === y);
+  if (!e) return null;
+  const def = game.reg.npcs.get(e.def);
+  return def ? { id: def.id, name: def.name, gives: def.gives } : null;
+}
+
+/** Co postać ma wiedzieć o graczu. Krótko — to idzie do promptu przy każdej turze. */
+function stanGracza(): string {
+  const inv = Object.entries(game.state.player.inv).filter(([, n]) => n > 0);
+  const rzeczy = inv.map(([id, n]) => `${n}x ${game.reg.items.get(id)?.name ?? id}`).join(', ');
+  return rzeczy || 'pusty plecak';
+}
+
 window.addEventListener('keydown', (e) => {
-  // Pracownia przejmuje klawiaturę w całości: gracz pisze tam zdania, a nie steruje postacią.
+  // Rozmowa i pracownia przejmują klawiaturę w całości: gracz pisze, a nie steruje.
+  if (rozmowaOtwarta()) {
+    if (e.code === 'Escape') zamknijRozmowe();
+    return;
+  }
   if (pracowniaOtwarta()) {
     if (e.code === 'Escape') zamknijPracownie();
+    return;
+  }
+  if (e.code === 'KeyT') {
+    const postac = postacPrzedSoba();
+    if (postac) otworzRozmowe(postac, stanGracza, (npc, daj) => { pending.rozmowa = { npc, daj }; });
+    e.preventDefault();
     return;
   }
   if (e.code === 'KeyP') {

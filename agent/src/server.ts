@@ -12,6 +12,8 @@ import { run, type RunResult } from './pipeline.js';
  * a nie usługa — każda dołożona warstwa byłaby tu kosztem bez pokrycia.
  */
 
+import { akcja, kwestia, modelAktualny, przygotuj, type Postac, type TuraRozmowy } from './rozmowa.js';
+
 const PORT = Number(process.env.ZU_PORT ?? 5182);
 
 type Event =
@@ -99,6 +101,59 @@ function dziennik(limit = 8): unknown[] {
   }
 }
 
+/**
+ * Zywa rozmowa z postacia.
+ *
+ * Strumien SSE, bo liczy sie pierwszy token, nie calosc: gracz czyta w trakcie.
+ * Historia watku siedzi po stronie serwera, a nie przegladarki - dzieki temu kolejna
+ * tura doklada sie do tego samego, rosnacego prefiksu i trafia w cache modelu.
+ *
+ * Do gry wraca wylacznie wybrana akcja. Tekst jest prezentacja i nigdy nie dotyka stanu.
+ */
+const watki = new Map<string, TuraRozmowy[]>();
+
+async function obsluzRozmowe(res: ServerResponse, body: Record<string, unknown>): Promise<void> {
+  const swiezy = modelAktualny();
+  if (!swiezy.ok) {
+    json(res, 503, { blad: swiezy.powod });
+    return;
+  }
+  const postac = body.postac as Postac | undefined;
+  const odGracza = String(body.tekst ?? '').trim();
+  const stanGracza = String(body.stan ?? 'nic');
+  if (!postac?.id || !odGracza) {
+    json(res, 400, { blad: 'Potrzebuję postaci i tego, co gracz powiedział.' });
+    return;
+  }
+
+  res.writeHead(200, {
+    'content-type': 'text/event-stream; charset=utf-8',
+    'cache-control': 'no-cache',
+    connection: 'keep-alive',
+  });
+  const slij = (e: unknown) => res.write(`data: ${JSON.stringify(e)}\n\n`);
+
+  const historia = watki.get(postac.id) ?? [];
+  try {
+    if (!rozgrzany) {
+      slij({ typ: 'czekaj', tekst: 'budzę model…' });
+      await przygotuj();
+      rozgrzany = true;
+    }
+    const { tekst, watek } = await kwestia(postac, stanGracza, historia, odGracza, (f) => slij({ typ: 'tekst', tekst: f }));
+    const dar = await akcja(postac, watek);
+    historia.push({ rola: 'gracz', tekst: odGracza }, { rola: 'postac', tekst });
+    // Pamiec rozmowy jest krotka celowo: dluzszy watek to dluzszy prompt i wolniejsza tura.
+    watki.set(postac.id, historia.slice(-8));
+    slij({ typ: 'koniec', daj: dar });
+  } catch (e) {
+    slij({ typ: 'blad', tekst: e instanceof Error ? e.message : String(e) });
+  }
+  res.end();
+}
+
+let rozgrzany = false;
+
 const serwer = createServer((req, res) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
 
@@ -120,6 +175,11 @@ const serwer = createServer((req, res) => {
       }
       json(res, 202, { biegId: startuj(prompt).id });
     });
+    return;
+  }
+
+  if (req.method === 'POST' && url.pathname === '/api/rozmowa') {
+    void czytajBody(req).then((body) => obsluzRozmowe(res, (body ?? {}) as Record<string, unknown>));
     return;
   }
 

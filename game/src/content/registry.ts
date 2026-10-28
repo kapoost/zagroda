@@ -25,6 +25,8 @@ import {
 
 /** Crafting może podnieść wartość wsadu najwyżej tyle razy. */
 const VALUE_MULT = 4;
+/** Najwyższa wartość przedmiotu, jaki postać może dać graczowi w rozmowie. */
+const DAR_MAX = 5;
 
 export interface Issue {
   code: string;
@@ -148,6 +150,23 @@ export function validateContent(raw: unknown): ValidateResult {
     }
     if (it.tool && it.edible) {
       err('ROLA', 'narzędzie nie jest jednocześnie jedzeniem', `items.${it.id}`);
+    }
+  }
+  for (const n of c.npcs) {
+    for (const g of n.gives) {
+      const it = items.get(g);
+      if (!it) { needItem(g, `npcs.${n.id}.gives`); continue; }
+      // Dar ma być drobiazgiem. Narzędzie albo budynek rozdany w rozmowie omija
+      // cały łańcuch wytwarzania, a bot progresji tego nie zauważy — on sprawdza,
+      // czy DA SIĘ coś zdobyć, nie czy trzeba było na to zapracować.
+      if (it.tool || it.placeable || it.value > DAR_MAX) {
+        err(
+          'NPC_DAR',
+          `"${g}" nie nadaje się na dar z rozmowy (${it.tool ? 'to narzędzie' : it.placeable ? 'to budynek' : `wartość ${it.value} > ${DAR_MAX}`}). ` +
+            `Postać może dać drobiazg, nie wyprawkę`,
+          `npcs.${n.id}.gives`,
+        );
+      }
     }
   }
   for (const r of c.resources) {

@@ -15,6 +15,10 @@
       "Zbierasz? Dobrze. Ta wyspa płaci tym, którzy się schylą.",
       "Jagody z południowej łąki są najsłodsze po deszczu.",
       "Jak uzbierasz za dużo, postaw skrzynię. Nie noś wszystkiego ze sobą."
+    ],
+    "gives": [
+      "jagoda",
+      "sznurek"
     ]
   },
   {
@@ -33,6 +37,9 @@
       "Woda się marszczy tam, gdzie warto zarzucić.",
       "Wędka to gałąź i dwa sznurki. Resztę robi cierpliwość.",
       "Rybę zjesz surową, ale pieczona trzyma dłużej."
+    ],
+    "gives": [
+      "ryba"
     ]
   },
   {
@@ -51,6 +58,9 @@
       "Kamienne narzędzia to etap. Żelazo to decyzja.",
       "Najpierw piec, potem węgiel, dopiero potem sztabka. W tej kolejności.",
       "Góry na wschodzie mają rudę płytko pod skałą."
+    ],
+    "gives": [
+      "wegiel_drzewny"
     ]
   }
 ]

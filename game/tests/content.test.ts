@@ -23,6 +23,24 @@ describe('treść gry', () => {
  */
 describe('walidator łapie psucie treści', () => {
 
+  it('narzędzie jako dar z rozmowy', () => {
+    const c = clone();
+    c.npcs[0].gives = ['siekiera_kamienna'];
+    expect(codes(c)).toContain('NPC_DAR');
+  });
+
+  it('zbyt cenny dar z rozmowy', () => {
+    const c = clone();
+    c.npcs[0].gives = ['sztabka_zelaza'];
+    expect(codes(c)).toContain('NPC_DAR');
+  });
+
+  it('dar, którego nie ma wśród przedmiotów', () => {
+    const c = clone();
+    c.npcs[0].gives = ['nie_ma_takiego'];
+    expect(codes(c)).toContain('REF_ITEM');
+  });
+
   it('lukę w pokryciu archetypów fasad', () => {
     const c = clone();
     c.facades = c.facades.filter((f: any) => !f.heritage);

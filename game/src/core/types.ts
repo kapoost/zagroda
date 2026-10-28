@@ -67,6 +67,15 @@ export interface Input {
   place?: string;
   hold?: string | null;
   eat?: string;
+  /**
+   * Wynik żywej rozmowy z postacią: KTÓRĄ akcję wybrała, nigdy co powiedziała.
+   *
+   * Tekst jest prezentacją i nie ma prawa wejść do rdzenia. Sam wybór akcji jest
+   * niedeterministyczny — ale wejście już takie jest, bo po drugiej stronie siedzi
+   * człowiek. Test determinizmu odtwarza ustaloną sekwencję wejść, więc dopóki akcja
+   * przychodzi TĄ drogą, a nie bokiem, hash stanu dalej zgadza się co do bitu.
+   */
+  rozmowa?: { npc: string; daj?: string };
 }
 
 export const MAX_LOG = 64;

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../src/core/game.js';
 import { Rng } from '../src/core/rng.js';
-import { NIGHT_FROM, NIGHT_TO, idx, isNight } from '../src/core/tick.js';
+import { NIGHT_FROM, NIGHT_TO, idx, isNight, tick } from '../src/core/tick.js';
+import { registry } from '../src/content/load.js';
+import { generate } from '../src/core/world.js';
 import { MAX_LOG, type Facing, type Input } from '../src/core/types.js';
 
 /**
@@ -181,5 +183,52 @@ describe('koszt czynności', () => {
     expect(hitNearestBush(g)).toBeLessThanOrEqual(20);
     (g.reg.content.config as { energyPerAction: number }).energyPerAction = 1;
     (g.reg.content.config as { energyMax: number }).energyMax = 100;
+  });
+});
+
+/**
+ * Rozmowa jest prezentacją, ale jej WYNIK wchodzi do rdzenia jak każde inne wejście.
+ * Te testy pilnują, że przychodzi wyłącznie tą drogą i że rdzeń nie wierzy na słowo:
+ * sprawdza odległość i listę darów drugi raz, mimo gramatyki po stronie modelu.
+ */
+describe('wynik rozmowy', () => {
+  const przyPostaci = () => {
+    const reg = registry();
+    const s = generate(reg, 7);
+    const npc = s.ents.find((e) => e.kind === 'npc')!;
+    s.player.x = npc.x - 1;
+    s.player.y = npc.y;
+    return { reg, s, npc };
+  };
+
+  it('daje przedmiot z listy, gdy postać stoi obok', () => {
+    const { reg, s, npc } = przyPostaci();
+    const dar = reg.npcs.get(npc.def)!.gives[0]!;
+    const przed = s.player.inv[dar] ?? 0;
+    tick(s, { rozmowa: { npc: npc.def, daj: dar } }, reg);
+    expect(s.player.inv[dar] ?? 0).toBe(przed + 1);
+  });
+
+  it('nie daje nic, gdy postać jest daleko', () => {
+    const { reg, s, npc } = przyPostaci();
+    const dar = reg.npcs.get(npc.def)!.gives[0]!;
+    s.player.x = npc.x + 9;
+    const przed = s.player.inv[dar] ?? 0;
+    tick(s, { rozmowa: { npc: npc.def, daj: dar } }, reg);
+    expect(s.player.inv[dar] ?? 0).toBe(przed);
+  });
+
+  it('nie daje przedmiotu spoza listy tej postaci', () => {
+    const { reg, s, npc } = przyPostaci();
+    const przed = s.player.inv['sztabka_zelaza'] ?? 0;
+    tick(s, { rozmowa: { npc: npc.def, daj: 'sztabka_zelaza' } }, reg);
+    expect(s.player.inv['sztabka_zelaza'] ?? 0).toBe(przed);
+  });
+
+  it('nie zna postaci, której nie ma w treści', () => {
+    const { reg, s } = przyPostaci();
+    const przed = JSON.stringify(s.player.inv);
+    tick(s, { rozmowa: { npc: 'nikt_taki', daj: 'jagoda' } }, reg);
+    expect(JSON.stringify(s.player.inv)).toBe(przed);
   });
 });

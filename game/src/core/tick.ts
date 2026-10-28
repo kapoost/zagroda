@@ -152,6 +152,30 @@ function talk(state: State, reg: Registry, e: Entity, rng: Rng): void {
   log(state, `${npc.name}: ${line}`);
 }
 
+/**
+ * Zastosowanie wyniku rozmowy. Rdzeń sprawdza wszystko drugi raz, mimo że gramatyka
+ * modelu i tak nie pozwala wypisać daru spoza listy — bo to wejście przychodzi z sieci,
+ * a nie z klawiatury, i jedyne, co wiemy na pewno, to co stoi w treści gry.
+ */
+function doRozmowa(state: State, reg: Registry, r: NonNullable<Input['rozmowa']>): void {
+  const npc = reg.npcs.get(r.npc);
+  if (!npc) return;
+  const obok = Object.values(DIRS).some((d) => {
+    const e = entityAt(state, state.player.x + d.dx, state.player.y + d.dy);
+    return e?.kind === 'npc' && e.def === r.npc;
+  });
+  if (!obok) {
+    log(state, `${npc.name} jest za daleko.`);
+    return;
+  }
+  if (!r.daj) return;
+  if (!npc.gives.includes(r.daj)) return;
+  const it = reg.items.get(r.daj);
+  if (!it) return;
+  give(state, r.daj, 1);
+  log(state, `${npc.name} daje ci: ${it.name}.`);
+}
+
 function doCraft(state: State, reg: Registry, recipeId: string): void {
   if (state.craft) {
     log(state, 'Jesteś już czymś zajęty.');
@@ -266,6 +290,7 @@ export function tick(state: State, input: Input, reg: Registry): State {
     else log(state, `${reg.structures.get(e.def)?.name ?? e.def} stoi na swoim miejscu.`);
   }
 
+  if (input.rozmowa) doRozmowa(state, reg, input.rozmowa);
   if (input.craft) doCraft(state, reg, input.craft);
   if (input.place) doPlace(state, reg, input.place);
   if (input.eat) doEat(state, reg, input.eat);

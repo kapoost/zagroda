@@ -51,6 +51,23 @@
   #keys b { color: var(--ink); font-weight: 600; }
 
   /* ── Pracownia ─────────────────────────────────────────────────── */
+  /* Okno rozmowy. Dzieli ramę z pracownią, bo to ten sam rodzaj przerwy w grze. */
+  .ro-okno { width: min(34rem, 100%); max-height: min(32rem, 100%); }
+  .ro-watek {
+    flex: 1 1 auto; min-height: 10rem; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 0.6rem;
+    padding: 0.2rem 0.1rem;
+  }
+  .ro-linia { font-size: 13px; line-height: 1.6; }
+  .ro-info { color: var(--dim); font-size: 11px; border-bottom: 1px solid #2c3626; padding-bottom: 0.6rem; }
+  .ro-gracz { color: var(--dim); }
+  .ro-gracz::before { content: "Ty: "; color: var(--accent); }
+  .ro-postac { color: var(--ink); }
+  .ro-postac::before { content: attr(data-kto) ": "; color: #d46a9f; }
+  .ro-dar { color: var(--accent); font-size: 12px; }
+  .ro-blad { color: #d98a6a; font-size: 12px; }
+  .ro-stopka { display: flex; gap: 0.5rem; }
+  .ro-pole { flex: 1 1 auto; }
   .pr-tlo {
     position: fixed; inset: 0; z-index: 50;
     background: rgba(8, 12, 7, 0.72);
@@ -182,6 +199,7 @@
     <b>Q</b> / <b>E</b> — zmień przedmiot w ręce<br />
     <b>G</b> — postaw, <b>F</b> — zjedz<br />
     <b>1-9</b> — wytwórz z listy powyżej<br />
+    <b>T</b> — porozmawiaj z postacią obok<br>
     <b>P</b> — pracownia: zgłoś zmianę w grze
   </div>
 </aside>
