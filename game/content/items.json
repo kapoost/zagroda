@@ -368,7 +368,7 @@
     "tool": {
       "kind": "pickaxe",
       "power": 1,
-      "durability": 600
+      "durability": 30
     }
   },
   {
