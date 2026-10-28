@@ -14,8 +14,8 @@
     "gate": "tsx tools/gate.ts",
     "zu": "npm run zu -w agent --",
     "sim": "tsx tools/sim.ts",
-    "pracownia": "concurrently -n gra,agent -c green,yellow \"npm:dev\" \"npm run serve -w agent\"",
-    "npc-model": "tsx tools/npc-model.ts"
+    "npc-model": "tsx tools/npc-model.ts",
+    "start": "tsx tools/start.ts"
   },
   "devDependencies": {
     "concurrently": "^10.0.6",

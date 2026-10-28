@@ -108,6 +108,19 @@
   }
   .pr-pole:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+  .pr-podglad { border-top: 1px solid #2c3626; padding-top: 0.7rem; }
+  .pr-podglad > summary {
+    cursor: pointer; color: var(--dim); font-size: 12px; list-style: none;
+  }
+  .pr-podglad > summary::before { content: "▸ "; color: var(--accent); }
+  .pr-podglad[open] > summary::before { content: "▾ "; }
+  .pr-podglad > summary:hover { color: var(--ink); }
+  .pr-prompt {
+    margin: 0.6rem 0; padding: 0.7rem; max-height: 18rem; overflow: auto;
+    background: #141a10; border: 1px solid #2c3626; border-radius: 4px;
+    font-size: 11px; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+    color: var(--dim);
+  }
   .pr-chipy { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .pr-chip {
     background: transparent; color: var(--dim);

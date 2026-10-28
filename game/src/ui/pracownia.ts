@@ -99,7 +99,60 @@ function zbuduj(): HTMLElement {
 
   const stopka = el('p', 'pr-stopka', 'Esc zamyka · zmiana w treści wchodzi sama, zmiana w kodzie czeka na Ciebie');
 
-  okno.append(head, pole, chipy, wyslij, stan, histTyt, hist, stopka);
+  // Podgląd promptu. Z gry widać, co Bielik dostanie — bez tego zgłoszenie zmiany
+  // jest rzucaniem zdania w ciemno.
+  const podglad = el('details', 'pr-podglad');
+  const lupa = el('summary', undefined, 'Pokaż prompt, który dostanie model');
+  const promptBox = el('pre', 'pr-prompt', 'wpisz opis powyżej i rozwiń to pole');
+  const pelny = el('button', 'pr-chip', 'dołóż prompty tworzące treść (woła model)');
+  pelny.type = 'button';
+  podglad.append(lupa, promptBox, pelny);
+
+  const pokazPrompt = (zPelnym: boolean): void => {
+    const opis = pole.value.trim();
+    if (opis.length < 8) {
+      promptBox.textContent = 'wpisz najpierw opis zmiany — prompt powstaje z niego';
+      return;
+    }
+    promptBox.textContent = zPelnym ? 'pytam Bielika o klasyfikację…' : 'składam prompt…';
+    void fetch('/api/prompt', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ prompt: opis, pelny: zPelnym }),
+    })
+      .then((r) => r.json())
+      .then((d: { kroki?: Array<{ nazwa: string; system: string; user: string; schemat: unknown }>; blad?: string }) => {
+        if (!d.kroki) {
+          promptBox.textContent = d.blad ?? 'nie udało się złożyć promptu';
+          return;
+        }
+        promptBox.textContent = d.kroki
+          .map((k) => {
+            const g = JSON.stringify(k.schemat);
+            return [
+              `══ ${k.nazwa.toUpperCase()} ══ ok. ${Math.round((k.system.length + k.user.length) / 3.3)} tokenów`,
+              '',
+              `── SYSTEM (${k.system.length} znaków) ──`,
+              k.system,
+              '',
+              `── UŻYTKOWNIK (${k.user.length} znaków) ──`,
+              k.user,
+              '',
+              `── GRAMATYKA (${g.length} znaków) ──`,
+              g,
+            ].join('\n');
+          })
+          .join('\n\n');
+        if (d.blad) promptBox.textContent += `\n\n${d.blad}`;
+      })
+      .catch(() => {
+        promptBox.textContent = 'pracownia nie odpowiada — uruchom grę przez npm start';
+      });
+  };
+  podglad.addEventListener('toggle', () => { if (podglad.open) pokazPrompt(false); });
+  pelny.addEventListener('click', (e) => { e.preventDefault(); pokazPrompt(true); });
+
+  okno.append(head, pole, chipy, wyslij, podglad, stan, histTyt, hist, stopka);
   tlo.append(okno);
 
   // ── działanie ────────────────────────────────────────────────────
@@ -175,7 +228,7 @@ function zbuduj(): HTMLElement {
         wyslij.textContent = 'Wyślij do Bielika';
       })
       .catch(() => {
-        dopiszLog('Nie ma kontaktu z pracownią. Uruchom ją: npm run pracownia');
+        dopiszLog('Nie ma kontaktu z pracownią. Uruchom ją: npm start');
         zajety = false;
         wyslij.disabled = false;
         wyslij.textContent = 'Wyślij do Bielika';
@@ -201,7 +254,7 @@ function zbuduj(): HTMLElement {
         hist.append(li);
       }
     } catch {
-      hist.replaceChildren(el('li', 'pr-pusto', 'pracownia nie odpowiada — npm run pracownia'));
+      hist.replaceChildren(el('li', 'pr-pusto', 'pracownia nie odpowiada — npm start'));
     }
   };
 

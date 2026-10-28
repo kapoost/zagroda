@@ -281,6 +281,88 @@ const FOCUS: Record<Collection, string> = {
  * mniejszą gramatykę na wywołanie i prostsze zadanie dla modelu — a to ostatnie podnosi
  * także trafność merytoryczną, nie tylko tempo.
  */
+/** Wspólny nagłówek promptu operacji: słownik, cała treść gry i zadanie. */
+function naglowekOps(route: Route, prompt: string): string {
+  return [
+    vocabBlock(),
+    '',
+    'OBECNA TREŚĆ GRY:',
+    digest(),
+    '',
+    `ZADANIE: ${route.title}`,
+    route.summary_pl,
+    '',
+    `ORYGINALNY OPIS OD GRACZA:\n${prompt}`,
+  ].join('\n');
+}
+
+export interface Krok {
+  nazwa: string;
+  system: string;
+  user: string;
+  /** Schemat w postaci JSON Schema — to on jedzie do modelu jako gramatyka. */
+  schemat: Record<string, unknown>;
+}
+
+/**
+ * Jeden krok fazy operacji, złożony dokładnie tak, jak poleci do modelu.
+ *
+ * Tę samą funkcję wywołuje podgląd promptu (`podglad()`), i to jest cały sens jej
+ * wydzielenia: podgląd, który składa prompt po swojemu, prędzej czy później pokaże
+ * coś innego, niż model naprawdę dostaje — a wtedy przestaje być narzędziem diagnozy
+ * i staje się trzecim miejscem, w którym trzeba pamiętać o zmianie.
+ */
+function krokOps(
+  route: Route,
+  prompt: string,
+  col: Collection,
+  i: number,
+  ops: Record<string, unknown>,
+  feedback: string[],
+) {
+  const subSchema = buildOpsSchema([col], route.removes_content && i === 0, route.modifies_existing);
+  const user =
+    `${naglowekOps(route, prompt)}${alreadyProposed(ops)}\n\nTEN KROK DOTYCZY WYŁĄCZNIE: ${col}\n${FOCUS[col]}` +
+    // Warunek intencji podajemy PRZED pierwszą próbą, nie dopiero jako skargę po niej.
+    // Inaczej model trafia w liczbę metodą prób: 50, potem 150, potem 300 — i kończą
+    // mu się rundy, zanim w ogóle zobaczy, czego od niego chcieliśmy.
+    (route.checks.length
+      ? `\n\nWYNIK MUSI SPEŁNIĆ TE WARUNKI — sprawdzi je automat, nie człowiek:\n` +
+        route.checks.map((c) => `- ${c}`).join('\n')
+      : '') +
+    (feedback.length ? `\n\nPOPRZEDNIA PRÓBA ZOSTAŁA ODRZUCONA. Napraw dokładnie te błędy:\n${feedback.join('\n')}` : '');
+  return {
+    krok: {
+      nazwa: `operacje: ${col}`,
+      system: OPS_SYSTEM,
+      user,
+      schemat: tightenForGrammar(jsonSchemaOf(subSchema)) as Record<string, unknown>,
+    },
+    // Walidator Zod zostaje po stronie wywołującego: podgląd go nie potrzebuje,
+    // a faza operacji sprawdza nim odpowiedź modelu.
+    walidator: subSchema,
+  };
+}
+
+/**
+ * Prompt klasyfikacji — ten sam, który leci w routingu. Da się go obejrzeć bez
+ * uruchamiania modelu, bo nie zależy od niczego poza opisem i treścią gry.
+ */
+export function podgladRoutingu(prompt: string): Krok {
+  return {
+    nazwa: 'routing',
+    system: ROUTE_SYSTEM,
+    user: routeUser(prompt),
+    schemat: tightenForGrammar(jsonSchemaOf(RouteSchema)) as Record<string, unknown>,
+  };
+}
+
+/** Prompty fazy operacji dla już sklasyfikowanej zmiany. */
+export function podgladOps(route: Route, prompt: string): Krok[] {
+  const cols = widenCollections(route.collections);
+  return ORDER.filter((c) => cols.includes(c)).map((col, i) => krokOps(route, prompt, col, i, {}, []).krok);
+}
+
 export async function proposeOps(
   route: Route,
   prompt: string,
@@ -294,31 +376,12 @@ export async function proposeOps(
   const ops: Record<string, unknown> = {};
   let usedApi = false;
 
-  const header = [
-    vocabBlock(),
-    '',
-    'OBECNA TREŚĆ GRY:',
-    digest(),
-    '',
-    `ZADANIE: ${route.title}`,
-    route.summary_pl,
-    '',
-    `ORYGINALNY OPIS OD GRACZA:\n${prompt}`,
-  ].join('\n');
+  const header = naglowekOps(route, prompt);
 
   for (const [i, col] of ordered.entries()) {
-    const subSchema = buildOpsSchema([col], route.removes_content && i === 0, route.modifies_existing);
-    const schema = tightenForGrammar(jsonSchemaOf(subSchema));
-    const base =
-      `${header}${alreadyProposed(ops)}\n\nTEN KROK DOTYCZY WYŁĄCZNIE: ${col}\n${FOCUS[col]}` +
-      // Warunek intencji podajemy PRZED pierwszą próbą, nie dopiero jako skargę po niej.
-      // Inaczej model trafia w liczbę metodą prób: 50, potem 150, potem 300 — i kończą
-      // mu się rundy, zanim w ogóle zobaczy, czego od niego chcieliśmy.
-      (route.checks.length
-        ? `\n\nWYNIK MUSI SPEŁNIĆ TE WARUNKI — sprawdzi je automat, nie człowiek:\n` +
-          route.checks.map((c) => `- ${c}`).join('\n')
-        : '') +
-      (feedback.length ? `\n\nPOPRZEDNIA PRÓBA ZOSTAŁA ODRZUCONA. Napraw dokładnie te błędy:\n${feedback.join('\n')}` : '');
+    const { krok, walidator: subSchema } = krokOps(route, prompt, col, i, ops, feedback);
+    const schema = krok.schemat;
+    const base = krok.user;
 
     let done = false;
     for (let attempt = 0; attempt < (preferApi ? 0 : CFG.attempts.ops) && !done; attempt++) {

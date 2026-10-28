@@ -8,8 +8,7 @@ i testuje. Jeśli coś się psuje, zmiana nie wchodzi.
 
 ```bash
 npm install
-npm run dev                 # gra: http://localhost:5181
-npm run zu -- --status      # co jest gotowe
+npm start                   # gra + pętla agenta + kontrola wstępna
 npm run zu -- "dodaj drewnianą fujarkę, NPC lubią gdy im zagrasz"
 ```
 
@@ -44,6 +43,23 @@ opis po polsku
 Orkiestracja jest deterministyczna. Model nie jest agentem — dostaje wąskie,
 walidowalne zadania. To jedyny sposób, w jaki model ogólnego przeznaczenia może
 rozwijać grę i jej nie zepsuć.
+
+## Co dostaje model
+
+Rozwijanie gry modelem bez wglądu w prompt jest rzucaniem zdania w ciemno, więc prompt
+da się obejrzeć z dwóch stron — i składa go **ta sama funkcja**, która składa go naprawdę:
+
+```
+npm run zu -- --prompt "dodaj gliniany dzban na wodę"
+```
+
+wypisze krok po kroku: blok systemowy, blok użytkownika i gramatykę dekodowania, z
+liczbą znaków i przybliżoną liczbą tokenów. Krok klasyfikacji renderuje się bez żadnego
+wywołania modelu; prompty tworzące treść wymagają jednego pytania do Bielika, bo
+zależą od tego, które kolekcje wybrał.
+
+To samo jest w grze: **P** otwiera pracownię, a w niej *„Pokaż prompt, który dostanie
+model"*.
 
 ## Skille briefowania kodera
 
@@ -99,12 +115,15 @@ z „trzy rundy, ten sam błąd" do „druga runda, zielono".
 
 | Komenda | Działanie |
 | --- | --- |
-| `npm run dev` | gra w przeglądarce |
+| `npm start` | **wszystko naraz**: gra, pętla agenta i kontrola wstępna |
+| `npm run dev` | sama gra w przeglądarce |
+| `npm run npc-model` | przebuduj model rozmów — po każdej zmianie treści |
 | `npm run gate` | pełna bramka jakości |
 | `npm test` | same testy |
 | `npm run sim` | raport progresji: ile ticków do kamieni milowych |
 | `npm run zu -- "..."` | zmiana opisana po polsku |
 | `npm run zu -- --dry "..."` | sama klasyfikacja, bez zapisu |
+| `npm run zu -- --prompt "..."` | dokładny prompt, który dostanie model |
 
 ## Modele
 

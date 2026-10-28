@@ -13,6 +13,7 @@ import { run, type RunResult } from './pipeline.js';
  */
 
 import { akcja, kwestia, modelAktualny, przygotuj, type Oferta, type Postac, type TuraRozmowy } from './rozmowa.js';
+import { podgladOps, podgladRoutingu, routeRequest } from './stages/intent.js';
 
 const PORT = Number(process.env.ZU_PORT ?? 5182);
 
@@ -179,6 +180,33 @@ const serwer = createServer((req, res) => {
         return;
       }
       json(res, 202, { biegId: startuj(prompt).id });
+    });
+    return;
+  }
+
+  /**
+   * Podgląd promptu. Nie da się rozwijać gry modelem, nie widząc, co model dostaje —
+   * a dotąd dało się to obejrzeć wyłącznie przez CLI. Krok routingu renderuje się bez
+   * żadnego wywołania, więc panel pokazuje go natychmiast i za darmo.
+   */
+  if (req.method === 'POST' && url.pathname === '/api/prompt') {
+    void czytajBody(req).then(async (body) => {
+      const opis = String((body as { prompt?: unknown })?.prompt ?? '').trim();
+      if (opis.length < 8) {
+        json(res, 400, { blad: 'Opisz zmianę pełnym zdaniem — prompt powstaje z tego opisu.' });
+        return;
+      }
+      const kroki = [podgladRoutingu(opis)];
+      if ((body as { pelny?: unknown })?.pelny) {
+        try {
+          const { route } = await routeRequest(opis);
+          kroki.push(...podgladOps(route, opis));
+        } catch (e) {
+          json(res, 200, { kroki, blad: `klasyfikacja się nie udała: ${e instanceof Error ? e.message : String(e)}` });
+          return;
+        }
+      }
+      json(res, 200, { kroki });
     });
     return;
   }

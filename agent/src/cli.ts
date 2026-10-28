@@ -2,6 +2,7 @@ import { CFG } from './config.js';
 import { apiReady } from './providers/anthropic.js';
 import { ollamaModels } from './providers/ollama.js';
 import { run } from './pipeline.js';
+import { podgladOps, podgladRoutingu, routeRequest, type Krok } from './stages/intent.js';
 
 const HELP = `zu — Bielik rozwija grę "Zagroda"
 
@@ -12,6 +13,7 @@ Opcje:
   --no-merge      nie scalaj do main nawet przy czystej zmianie danych
   --dane | --kod  wymuś rodzaj zmiany (pomiń klasyfikację)
   --status        pokaż konfigurację i dostępność modeli
+  --prompt        pokaż DOKŁADNY prompt, który dostanie model, i nic nie zmieniaj
   -h, --help      ta pomoc
 
 Przykłady:
@@ -31,6 +33,47 @@ async function status(): Promise<void> {
   console.log(`auto-merge: ${CFG.autoMergeData ? 'zmiany danych wjeżdżają do main same' : 'wyłączony'}`);
 }
 
+/**
+ * Podgląd promptu.
+ *
+ * Składa go ta sama funkcja, która składa go naprawdę — podgląd budujący prompt po
+ * swojemu prędzej czy później pokazałby coś innego, niż model dostaje, i przestałby
+ * być narzędziem diagnozy.
+ *
+ * Krok routingu da się pokazać bez modelu. Kroki operacji zależą od tego, które
+ * kolekcje wybrał routing, więc po nie trzeba raz zapytać Bielika — stąd jedno
+ * wywołanie, zanim pojawi się reszta.
+ */
+function wypiszKrok(k: Krok): void {
+  const znakow = k.system.length + k.user.length;
+  const linia = (etykieta: string, tresc: string) => {
+    console.log(`\n\x1b[1m── ${etykieta} ── ${tresc.length} znaków ──\x1b[0m`);
+    console.log(tresc);
+  };
+  console.log(`\n\x1b[7m  ${k.nazwa.toUpperCase()}  \x1b[0m  \x1b[90m~${Math.round(znakow / 3.3)} tokenów\x1b[0m`);
+  linia('SYSTEM', k.system);
+  linia('UŻYTKOWNIK', k.user);
+  const g = JSON.stringify(k.schemat);
+  console.log(`\n\x1b[1m── GRAMATYKA ── ${g.length} znaków ──\x1b[0m`);
+  console.log(g.length > 1200 ? g.slice(0, 1200) + ' …' : g);
+}
+
+async function podglad(prompt: string): Promise<void> {
+  wypiszKrok(podgladRoutingu(prompt));
+
+  console.log('\n\x1b[90mpytam Bielika o klasyfikację, żeby wiedzieć, które kolekcje wchodzą…\x1b[0m');
+  const { route } = await routeRequest(prompt);
+  console.log(
+    `\x1b[90m→ ${route.kind}: ${route.title} · kolekcje: ${route.collections.join(', ') || '—'}` +
+      `${route.checks.length ? ' · warunki: ' + route.checks.join(' · ') : ''}\x1b[0m`,
+  );
+  if (route.kind !== 'dane') {
+    console.log('\n\x1b[90mZmiana kodu: dalej nie ma promptu operacji — jest brief dla kodera ze skilla.\x1b[0m');
+    return;
+  }
+  for (const k of podgladOps(route, prompt)) wypiszKrok(k);
+}
+
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   if (!argv.length || argv.includes('-h') || argv.includes('--help')) {
@@ -47,6 +90,11 @@ async function main(): Promise<void> {
   if (!prompt) {
     console.error('Podaj opis zmiany. Pomoc: npm run zu -- --help');
     process.exit(2);
+  }
+
+  if (flags.has('--prompt')) {
+    await podglad(prompt);
+    return;
   }
 
   const res = await run({
