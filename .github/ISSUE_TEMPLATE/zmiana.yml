@@ -1,0 +1,35 @@
+name: Zmiana w grze
+description: Opisz po polsku, co ma się w grze zmienić — tak samo jak w pracowni (klawisz P).
+title: 'zmiana: '
+labels: [zmiana]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        To zgłoszenie trafia wprost do pętli: lokalny model je klasyfikuje, proponuje
+        wpisy w treści albo patch kodu, a bramka sprawdza, czy gra się nie zepsuła.
+        Pisz **pełnym zdaniem po polsku** — z „młot" model nie wyciągnie nic, z „dodaj
+        kamienny młot, dużo wytrzymalszy od kilofa" wyciągnie wszystko.
+  - type: textarea
+    id: opis
+    attributes:
+      label: Co ma się zmienić
+      placeholder: dodaj drewnianą fujarkę — NPC lubią, gdy im się zagra
+    validations:
+      required: true
+  - type: textarea
+    id: po-czym-poznam
+    attributes:
+      label: Po czym poznać, że zadziałało
+      description: >
+        Jedno zdanie. Jeśli jest w nim stopniowanie („wytrzymalszy", „tańszy"),
+        napisz, z czym porównujesz — routing zamieni to na warunek, który sprawdza automat.
+      placeholder: Fujarka da się wytworzyć przy warsztacie i kosztuje mniej niż wędka.
+  - type: dropdown
+    id: rodzaj
+    attributes:
+      label: Zgadujesz, że to…
+      options:
+        - nie wiem, niech zdecyduje model
+        - treść (nowy przedmiot, receptura, surowiec, budynek, postać, zadanie)
+        - mechanika (coś, czego obecne dane nie opisują)

@@ -1,0 +1,35 @@
+name: bramka
+
+# Każdy push i każdy pull request przechodzi przez tę samą bramkę, co zmiany
+# robione lokalnie. To jest cały sens tego projektu: nie "model jest dobry",
+# tylko "zepsucie gry nie przechodzi" — także gdy psuje ktoś obcy.
+#
+# Bramka NIE POTRZEBUJE MODELU. Żaden z siedmiu etapów nie dotyka Ollamy,
+# więc CI nie wymaga GPU, sekretów ani niczego poza Node.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  bramka:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: bramka jakości
+        run: npm run gate
+
+      - name: raport symulacji
+        if: always()
+        run: npm run sim
