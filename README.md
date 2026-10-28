@@ -179,10 +179,10 @@ modelu albo na lepsze przykłady w prompcie.
 
 ## Licencja
 
-Kod: **MIT** (plik `LICENSE`).
+Kod: **MIT** (`LICENSE`).
 
-Dane mapy to osobna sprawa. `game/content/mapa.json` jest bazą pochodną z
+Dane mapy to osobna sprawa: `game/content/mapa.json` jest bazą pochodną z
 OpenStreetMap i podlega **ODbL 1.0** — razem ze wszystkim, co z niej powstaje.
-Jeśli bierzesz stąd mapę, bierzesz też ten obowiązek.
+Szczegóły i atrybucja w `NOTICE.md`. Kto bierze stąd mapę, bierze też ten obowiązek.
 
 > © OpenStreetMap contributors · [openstreetmap.org/copyright](https://www.openstreetmap.org/copyright)

@@ -19,17 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-WYJĄTEK: DANE MAPY
-
-Plik `game/content/mapa.json` nie jest objęty powyższą licencją. Jest bazą
-pochodną wykonaną z danych OpenStreetMap i podlega Open Database License (ODbL
-1.0), tak samo jak wszystko, co z niego powstaje.
-
-  © OpenStreetMap contributors — https://www.openstreetmap.org/copyright
-  ODbL 1.0 — https://opendatacommons.org/licenses/odbl/1-0/
-
-Dotyczy to także plików generowanych z tej mapy, w tym `game/dowody.json`
-w części opisującej świat.
