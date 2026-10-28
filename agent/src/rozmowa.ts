@@ -193,15 +193,32 @@ export async function kwestia(
  * Pomylka w te strone jest bezpieczna: brak daru to brak zmiany stanu.
  */
 const DAWANIE = [
-  'daje ci', 'daję ci', 'dam ci', 'dam go', 'dam ją', 'masz tu', 'masz go', 'weź', 'wez',
-  'oto ', 'trzymaj', 'podaję', 'podaje', 'oddaję', 'oddaje', 'przyjmij', 'proszę bardzo',
+  'daje ci', 'daję ci', 'dam ci', 'dam go', 'dam ją', 'masz tu', 'masz go',
+  'weź', 'wez', 'trzymaj', 'podaję', 'podaje', 'oddaję', 'oddaje', 'przyjmij',
 ];
+
+const LITERA = 'a-zA-Ząćęłńóśźżż';
+
+/**
+ * Czy w tym zdaniu ktos cos wrecza.
+ *
+ * Dopasowanie idzie PO SLOWACH, nie po podciagach, i to nie jest pedanteria.
+ * Pierwsza wersja sprawdzala zwykle `includes`, wiec "Wezme w zamian kawalek drewna"
+ * — czyli propozycje wymiany — uznawala za wreczenie, bo w slowie "wezme" siedzi
+ * "wez". Filtr odwrocil znaczenie zdania na przeciwne i ryba trafila do plecaka,
+ * mimo ze Bartek wlasnie zazadal zaplaty.
+ */
+export function czyWreczono(tekst: string): boolean {
+  const t = tekst.toLowerCase();
+  return DAWANIE.some((zwrot) =>
+    new RegExp(`(^|[^${LITERA}])${zwrot}([^${LITERA}]|$)`, 'u').test(t),
+  );
+}
 
 export async function akcja(postac: Postac, watek: Wiadomosc[]): Promise<string | null> {
   if (!postac.gives.length) return null;
 
-  const ostatnia = (watek[watek.length - 1]?.content ?? '').toLowerCase();
-  if (!DAWANIE.some((z) => ostatnia.includes(z))) return null;
+  if (!czyWreczono(watek[watek.length - 1]?.content ?? '')) return null;
 
   /**
    * Pytanie doklejamy do TEGO SAMEGO watku, ktory przed chwila wygenerowal kwestie.
