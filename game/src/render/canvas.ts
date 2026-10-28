@@ -1,3 +1,4 @@
+import type { Attyka } from '../content/schema.js';
 import type { Registry } from '../content/registry.js';
 import { entityAt, idx, timeOfDay } from '../core/tick.js';
 import type { State } from '../core/types.js';
@@ -33,10 +34,14 @@ const ZABUDOWA = 'kamienica';
  */
 const SCIANA = 2;
 
-/** Dachy — ceramika w ośmiu odcieniach, żeby sąsiednie pierzeje dało się rozróżnić. */
-const DACHY = ['#b0573c', '#9c4a38', '#bb6a45', '#8e4b3b', '#a95f42', '#c07650', '#95543f', '#b3634a'];
-/** Tynki, w parze z dachami. Zamojski Rynek jest kolorowy i tego się trzymamy. */
-const TYNKI = ['#e9d7ab', '#e6bda4', '#dcd6c2', '#cfdac9', '#ead0bb', '#dcc7d4', '#f0e5c9', '#cfd8de'];
+/**
+ * Kolory kamienicy nie są już stałą w rendererze — biorą się z archetypu fasady
+ * (content/facades.json), dobranego do liczby kondygnacji i statusu zabytku z OSM.
+ * Odcień budynku (state.dachy) dokłada do tego lekką wariację, żeby dwie sąsiednie
+ * kamienice tego samego rodzaju nadal dało się rozróżnić.
+ */
+const WARIACJA = 0.05;
+const odcien = (kolor: string, ton: number) => przyciemnij(kolor, (ton - 3.5) * WARIACJA * 0.5);
 
 /**
  * Co na czym leży. To jedyne miejsce, w którym zapisane są przejścia terenu —
@@ -76,10 +81,27 @@ function nightAlpha(t: number): number {
   return Math.min(0.42, Math.pow(night, 1.6) * 0.48);
 }
 
-function przyciemnij(hex: string, ile: number): string {
-  const n = parseInt(hex.slice(1), 16);
+/**
+ * Rozbiór koloru na składowe. Przyjmuje i "#rrggbb", i "rgb(r,g,b)", bo wynik
+ * przyciemniania bywa podawany dalej do kolejnego przyciemnienia — a wersja
+ * parsująca wyłącznie hex dawała wtedy NaN, które w operacji bitowej cichnie
+ * do zera i maluje czystą czerń. Bramka tego nie złapie: wszystkie etapy były
+ * zielone, a miasto miało czarne pasy nad każdą elewacją.
+ */
+function rozbij(kolor: string): [number, number, number] {
+  if (kolor.startsWith('#')) {
+    const n = parseInt(kolor.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  const liczby = kolor.match(/\d+(\.\d+)?/g);
+  if (!liczby || liczby.length < 3) return [0, 0, 0];
+  return [Number(liczby[0]), Number(liczby[1]), Number(liczby[2])];
+}
+
+function przyciemnij(kolor: string, ile: number): string {
+  const [r, g, b] = rozbij(kolor);
   const f = (v: number) => Math.max(0, Math.min(255, Math.round(v * (1 - ile))));
-  return `rgb(${f((n >> 16) & 255)},${f((n >> 8) & 255)},${f(n & 255)})`;
+  return `rgb(${f(r)},${f(g)},${f(b)})`;
 }
 
 /**
@@ -137,7 +159,10 @@ export function draw(ctx: CanvasRenderingContext2D, state: State, reg: Registry)
 
   const zabudowa = (x: number, y: number) => biomAt(x, y)?.id === ZABUDOWA;
   const dach = (x: number, y: number) => (poza(x, y) ? 0 : state.dachy[idx(state, x, y)]!);
-  const ton = (x: number, y: number) => (dach(x, y) - 1 + DACHY.length) % DACHY.length;
+  const ton = (x: number, y: number) => (dach(x, y) + 7) % 8;
+  const zapasowa = reg.content.facades[0]!;
+  const fasadaAt = (x: number, y: number) =>
+    (poza(x, y) ? null : reg.content.facades[state.fasady[idx(state, x, y)]! - 1]) ?? zapasowa;
   /** Ten sam budynek, nie ta sama zabudowa — sąsiednie kamienice dzielą ścianę. */
   const tenSam = (x: number, y: number, ten: number) => zabudowa(x, y) && dach(x, y) === ten;
 
@@ -195,6 +220,9 @@ export function draw(ctx: CanvasRenderingContext2D, state: State, reg: Registry)
       if (!zabudowa(x, y)) continue;
       const ten = dach(x, y);
       const t = ton(x, y);
+      const f = fasadaAt(x, y);
+      const kolorDachu = odcien(f.roof, t);
+      const kolorTynku = odcien(f.plaster, t);
       const px = rx * TILE;
       const py = ry * TILE;
 
@@ -210,18 +238,21 @@ export function draw(ctx: CanvasRenderingContext2D, state: State, reg: Registry)
       const rzedowSciany = glebokosc >= 5 ? SCIANA : 1;
 
       if (odPoludnia >= rzedowSciany) {
-        rysujDach(ctx, px, py, t, !tenSam(x, y - 1, ten), odPoludnia === rzedowSciany);
+        rysujDach(
+          ctx, px, py, kolorDachu, !tenSam(x, y - 1, ten),
+          odPoludnia === rzedowSciany ? f.attic : null, kolorTynku, x,
+        );
       } else {
         // Drzwi trafiają na środek pierzei tego budynku, nie co drugi kafel.
         let zachod = x, wschod = x;
         while (tenSam(zachod - 1, y, ten)) zachod--;
         while (tenSam(wschod + 1, y, ten)) wschod++;
         const drzwi = odPoludnia === 0 && x === ((zachod + wschod) >> 1);
-        rysujElewacje(ctx, px, py, x, t, odPoludnia, rzedowSciany, drzwi);
+        rysujElewacje(ctx, px, py, x, kolorTynku, odPoludnia, rzedowSciany, drzwi, f.arcades);
       }
 
       // Krawędź stawiamy tam, gdzie kończy się TEN budynek.
-      ctx.strokeStyle = przyciemnij(DACHY[t]!, 0.62);
+      ctx.strokeStyle = przyciemnij(kolorDachu, 0.62);
       ctx.lineWidth = 2;
       ctx.beginPath();
       if (!tenSam(x, y - 1, ten)) { ctx.moveTo(px, py + 1); ctx.lineTo(px + TILE, py + 1); }
@@ -296,11 +327,16 @@ export function draw(ctx: CanvasRenderingContext2D, state: State, reg: Registry)
   }
 }
 
-/** Połać dachu. Okap od północy łapie światło — jedno słońce dla całego miasta. */
+/**
+ * Połać dachu. Okap od północy łapie światło — jedno słońce dla całego miasta.
+ * Rząd stykający się ze ścianą niesie attykę, czyli ozdobne zwieńczenie muru.
+ * To znak firmowy Zamościa i jedyny element, po którym z góry widać, że to nie
+ * jest zwykła kamienica.
+ */
 function rysujDach(
-  ctx: CanvasRenderingContext2D, px: number, py: number, t: number, polnocny: boolean, nadScianą: boolean,
+  ctx: CanvasRenderingContext2D, px: number, py: number, kolor: string,
+  polnocny: boolean, attyka: Attyka | null, tynk: string, x: number,
 ): void {
-  const kolor = DACHY[t]!;
   ctx.fillStyle = kolor;
   ctx.fillRect(px, py, TILE, TILE);
   if (polnocny) {
@@ -308,34 +344,59 @@ function rysujDach(
     ctx.fillStyle = przyciemnij(kolor, -0.2);
     ctx.fillRect(px, py, TILE, TILE * 0.26);
   }
-  if (nadScianą) {
+  // Rowki dachówki: delikatne, co kilka pikseli, żeby połać nie była płaską plamą.
+  ctx.fillStyle = przyciemnij(kolor, 0.06);
+  for (let i = 0; i < TILE; i += 11) ctx.fillRect(px + i, py, 1, TILE);
+
+  if (attyka === null) return;
+  const wys = TILE * 0.34;
+  const gora = py + TILE - wys;
+  if (attyka === 'brak') {
     ctx.fillStyle = przyciemnij(kolor, 0.18);
     ctx.fillRect(px, py + TILE * 0.7, TILE, TILE * 0.3);
+    return;
   }
-  // Rowki dachówki: delikatne, co kilka pikseli, żeby połać nie była płaską plamą.
-  ctx.fillStyle = przyciemnij(kolor, 0.1);
-  for (let i = 0; i < TILE; i += 8) ctx.fillRect(px + i, py, 1, TILE);
+  // Attyka jest otynkowana jak mur, więc bierze kolor tynku, nie dachówki.
+  ctx.fillStyle = tynk;
+  ctx.fillRect(px, gora, TILE, wys);
+  ctx.fillStyle = 'rgba(40,28,20,0.18)';
+  ctx.fillRect(px, gora, TILE, 1.5);
+  if (attyka === 'rzezbiona') {
+    // Grzebień: ślepe arkadki i sterczyny. Z góry widać z nich tylko rytm.
+    ctx.fillStyle = przyciemnij(tynk, 0.3);
+    const ile = 4;
+    for (let i = 0; i < ile; i++) {
+      const w = TILE / ile;
+      ctx.beginPath();
+      ctx.arc(px + w * (i + 0.5), gora + wys * 0.55, w * 0.26, Math.PI, 0);
+      ctx.fill();
+    }
+    ctx.fillStyle = przyciemnij(tynk, 0.45);
+    ctx.fillRect(px + (x % 2 === 0 ? 0 : TILE - 2), gora, 2, wys);
+  } else {
+    ctx.fillStyle = przyciemnij(tynk, 0.22);
+    ctx.fillRect(px, gora + wys * 0.58, TILE, 1.5);
+  }
 }
 
 /**
  * Elewacja. Przy płytkim budynku cały front mieści się w jednym rzędzie kafli, więc
- * okno i arkada dzielą ten sam kafel — okno u góry, przejście u dołu. Rytm liczymy
- * z bezwzględnego x, żeby arkady układały się w linię przez całą pierzeję, a drzwi
- * trafiały dokładnie na środek budynku.
+ * okno i arkada dzielą ten sam kafel — okno u góry, przejście u dołu. Rytm arkad
+ * podaje archetyp: co ile kafli przęsło, a zero znaczy fasadę bez podcieni.
+ * Drzwi trafiają na środek budynku niezależnie od tego rytmu.
  */
 function rysujElewacje(
-  ctx: CanvasRenderingContext2D, px: number, py: number, x: number, t: number,
-  rzad: number, rzedow: number, drzwi: boolean,
+  ctx: CanvasRenderingContext2D, px: number, py: number, x: number, tynk: string,
+  rzad: number, rzedow: number, drzwi: boolean, arkady: number,
 ): void {
-  const tynk = TYNKI[t]!;
   ctx.fillStyle = tynk;
   ctx.fillRect(px, py, TILE, TILE);
 
   const gorny = rzad === rzedow - 1;
   if (gorny) {
     // Pod okapem zawsze jest cień.
-    ctx.fillStyle = 'rgba(40,28,20,0.26)';
-    ctx.fillRect(px, py, TILE, TILE * 0.16);
+    ctx.fillStyle = 'rgba(40,28,20,0.16)';
+    ctx.fillRect(px, py, TILE, TILE * 0.14);
   }
 
   // Okna: w górnym rzędzie, a przy jednorzędowym froncie — w jego górnej części.
@@ -355,13 +416,12 @@ function rysujElewacje(
 
   if (rzad > 0) return;
 
-  // Parter: drzwi na środku pierzei, podcienia co drugi kafel obok nich.
-  const otwor = drzwi || x % 2 === 0;
-  if (otwor) {
-    const w = TILE * (drzwi ? 0.44 : 0.5);
+  const arkada = arkady > 0 && x % arkady === 0;
+  if (drzwi || arkada) {
+    const w = TILE * (drzwi ? 0.4 : 0.42);
     const ox = px + (TILE - w) / 2;
-    const gora = py + TILE * (rzedow > 1 ? 0.2 : 0.46);
-    ctx.fillStyle = drzwi ? '#5a3a24' : 'rgba(52,36,26,0.8)';
+    const gora = py + TILE * (rzedow > 1 ? 0.38 : 0.5);
+    ctx.fillStyle = drzwi ? '#6b4428' : przyciemnij(tynk, 0.52);
     ctx.beginPath();
     ctx.moveTo(ox, py + TILE);
     ctx.lineTo(ox, gora + w / 2);
@@ -378,10 +438,14 @@ function rysujElewacje(
       ctx.arc(ox + w * 0.76, py + TILE * 0.78, TILE * 0.045, 0, Math.PI * 2);
       ctx.fill();
     }
+  } else if (arkady > 0) {
+    // Filar między przęsłami.
+    ctx.fillStyle = przyciemnij(tynk, 0.08);
+    ctx.fillRect(px + TILE * 0.35, py + TILE * 0.2, TILE * 0.3, TILE * 0.8);
   }
   // Próg: ciemny pas tam, gdzie mur styka się z brukiem.
-  ctx.fillStyle = 'rgba(40,28,20,0.32)';
-  ctx.fillRect(px, py + TILE - 2, TILE, 2);
+  ctx.fillStyle = 'rgba(40,28,20,0.22)';
+  ctx.fillRect(px, py + TILE - 1.5, TILE, 1.5);
 }
 
 /** Cień pod obiektem — bez niego wszystko wisi w powietrzu. */

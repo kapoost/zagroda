@@ -3,6 +3,7 @@ import {
   STATIONS,
   type Biome,
   type Content,
+  type Facade,
   type Item,
   type Npc,
   type Recipe,
@@ -38,7 +39,13 @@ export interface Registry {
   resources: Map<string, Resource>;
   recipes: Map<string, Recipe>;
   biomes: Map<string, Biome>;
+  facades: Map<string, Facade>;
   npcs: Map<string, Npc>;
+  /**
+   * Archetypy fasad pasujące do budynku o danej liczbie kondygnacji i statusie zabytku.
+   * Zero kondygnacji znaczy "OSM nie podaje" i jest osobnym przypadkiem, nie parterem.
+   */
+  facadesFor: (storeys: number, heritage: boolean) => Facade[];
   /** Biomy posortowane malejąco po priorytecie — kolejność rozstrzygania w worldgenie. */
   biomeOrder: Biome[];
   /** Itemy osiągalne w rozgrywce, wyliczone punktem stałym. */
@@ -89,6 +96,7 @@ export function validateContent(raw: unknown): ValidateResult {
   const resources = byId(c.resources);
   const recipes = byId(c.recipes);
   const biomes = byId(c.biomes);
+  const facades = byId(c.facades);
   const npcs = byId(c.npcs);
 
   // --- 2. referencje ------------------------------------------------------
@@ -187,6 +195,40 @@ export function validateContent(raw: unknown): ValidateResult {
   }
   if (!c.biomes.some((b) => b.walkable)) {
     err('NO_WALKABLE', 'żaden biom nie jest przechodni', 'biomes');
+  }
+
+  // --- fasady: każdy budynek z mapy musi mieć w co się ubrać ---------------
+  // Odpowiednik BIOME_HOLE. Budynek bierze archetyp z liczby kondygnacji i statusu
+  // zabytku — obie liczby pochodzą z OSM, więc nie da się ich "nie mieć". Gdyby
+  // któraś kombinacja została bez archetypu, kamienica wyrenderowałaby się jako
+  // dziura w pierzei i nikt by nie wiedział dlaczego.
+  const dziuryFasad: string[] = [];
+  for (let kondygnacje = 0; kondygnacje <= 6; kondygnacje++) {
+    for (const zabytek of [false, true]) {
+      const pasuje = c.facades.some(
+        (f) => f.heritage === zabytek && kondygnacje >= f.storeys[0] && kondygnacje <= f.storeys[1],
+      );
+      if (!pasuje) dziuryFasad.push(`${kondygnacje} kondygnacji${zabytek ? ', zabytek' : ''}`);
+    }
+  }
+  if (dziuryFasad.length) {
+    err(
+      'FASADA_DZIURA',
+      `budynek bez pasującego archetypu: ${dziuryFasad.join('; ')}. ` +
+        `Rozszerz zakres "storeys" któregoś archetypu albo dodaj nowy`,
+      'facades',
+    );
+  }
+  for (const f of c.facades) {
+    // Attyka bez arkad jest w porządku, arkady bez parteru nie — ale to już pilnuje
+    // renderer. Tu pilnujemy tylko tego, czego renderer nie może: sensu danych.
+    if (f.arcades > 0 && f.storeys[1] === 1 && f.storeys[0] === 1) {
+      err(
+        'FASADA_PARTER',
+        'parterowy dom nie ma podcieni — nad arkadą nie ma czego podeprzeć. Ustaw "arcades": 0',
+        `facades.${f.id}`,
+      );
+    }
   }
 
   // --- 4. acykliczność grafu receptur ------------------------------------
@@ -394,7 +436,11 @@ export function validateContent(raw: unknown): ValidateResult {
   return {
     ok: true,
     issues: [],
-    registry: { content: c, items, structures, resources, recipes, biomes, npcs, biomeOrder, obtainable },
+    registry: {
+      content: c, items, structures, resources, recipes, biomes, facades, npcs, biomeOrder, obtainable,
+      facadesFor: (storeys: number, heritage: boolean) =>
+        c.facades.filter((f) => f.heritage === heritage && storeys >= f.storeys[0] && storeys <= f.storeys[1]),
+    },
   };
 }
 

@@ -80,6 +80,53 @@ export const StructureSchema = z
   })
   .strict();
 
+/**
+ * Zwieńczenie kamienicy. Attyka jest znakiem firmowym Zamościa — ozdobna ścianka
+ * nad gzymsem, od prostej geometrii po płaskorzeźbę. "brak" to dach bez niej.
+ */
+export const ATTYKI = ['brak', 'prosta', 'rzezbiona'] as const;
+export type Attyka = (typeof ATTYKI)[number];
+
+/**
+ * Archetyp fasady — typologia, nie konkretny budynek.
+ *
+ * Podział pracy jest tu celowy i wynika z pomiaru. Bielik zapytany o konkretne
+ * kamienice Rynku Wielkiego konfabuluje: wymienia tę samą "Pod Małpą" dwa razy jako
+ * dwa różne budynki i dorysowuje dachy mansardowe miastu, które słynie z attyk.
+ * Zapytany ogólnie, po czym poznać kamienicę z Zamościa, odpowiada poprawnie — i co
+ * ważniejsze, każda wymieniona przez niego cecha jest parametrem, nie opisem.
+ *
+ * Dlatego tożsamość budynku bierze się z OSM (liczba kondygnacji, status zabytku),
+ * a stąd bierze się tylko to, JAK wygląda budynek danego rodzaju. Nikt nie zgaduje,
+ * co stoi pod którym adresem.
+ */
+export const FacadeSchema = z
+  .object({
+    id: Id,
+    name: PlName,
+    desc: Desc.default(''),
+    /** Kolor tynku. Zamojskie pierzeje są pastelowe i w tym się między sobą różnią. */
+    plaster: Hex,
+    /** Kolor dachówki. Odcień pojedynczego budynku dokłada do tego wariację. */
+    roof: Hex,
+    attic: z.enum(ATTYKI).default('brak'),
+    /**
+     * Co ile kafli arkada podcienia; 0 oznacza fasadę bez podcieni. Przy trzech
+     * metrach na kafel 2 daje przęsło sześciometrowe, czyli mniej więcej tyle,
+     * ile mają prawdziwe zamojskie podcienia.
+     */
+    arcades: z.number().int().min(0).max(4),
+    /**
+     * Zakres kondygnacji z OSM, do którego ten archetyp pasuje, włącznie.
+     * Zero znaczy "OSM nie podaje" — a tego nie wolno udawać, że wiemy.
+     */
+    storeys: z.tuple([z.number().int().min(0).max(6), z.number().int().min(0).max(6)])
+      .refine(([a, b]) => a <= b, 'zakres kondygnacji: pierwsza wartość nie może być większa'),
+    /** Czy archetyp jest dla budynków oznaczonych w OSM jako zabytek. */
+    heritage: z.boolean().default(false),
+  })
+  .strict();
+
 export const DropSchema = z
   .object({
     item: Id,
@@ -170,6 +217,7 @@ export const ContentSchema = z
     resources: z.array(ResourceSchema).min(1),
     recipes: z.array(RecipeSchema).min(1),
     biomes: z.array(BiomeSchema).min(2),
+    facades: z.array(FacadeSchema).min(1),
     npcs: z.array(NpcSchema),
   })
   .strict();
@@ -179,6 +227,7 @@ export type Structure = z.infer<typeof StructureSchema>;
 export type Resource = z.infer<typeof ResourceSchema>;
 export type Recipe = z.infer<typeof RecipeSchema>;
 export type Biome = z.infer<typeof BiomeSchema>;
+export type Facade = z.infer<typeof FacadeSchema>;
 export type Npc = z.infer<typeof NpcSchema>;
 export type Config = z.infer<typeof ConfigSchema>;
 export type Content = z.infer<typeof ContentSchema>;

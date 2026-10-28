@@ -48,6 +48,8 @@ export interface State {
   entAt: Int32Array;
   /** Odcień dachu per kafel, 0 = nie budynek. Pozwala odróżnić sąsiadujące kamienice. */
   dachy: Uint8Array;
+  /** Archetyp fasady per kafel: indeks w content.facades + 1, zero gdy to nie budynek. */
+  fasady: Uint8Array;
   ents: Entity[];
   player: Player;
   craft: CraftJob | null;

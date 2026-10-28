@@ -4,11 +4,12 @@ import structures from '../../content/structures.json';
 import resources from '../../content/resources.json';
 import recipes from '../../content/recipes.json';
 import biomes from '../../content/biomes.json';
+import facades from '../../content/facades.json';
 import npcs from '../../content/npcs.json';
 import { formatIssues, validateContent, type Registry } from './registry.js';
 
 /** Surowa treść przed walidacją — używana przez testy i bramkę agenta. */
-export const rawContent = { config, items, structures, resources, recipes, biomes, npcs };
+export const rawContent = { config, items, structures, resources, recipes, biomes, facades, npcs };
 
 let cached: Registry | null = null;
 

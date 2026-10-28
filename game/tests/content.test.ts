@@ -23,6 +23,25 @@ describe('treść gry', () => {
  */
 describe('walidator łapie psucie treści', () => {
 
+  it('lukę w pokryciu archetypów fasad', () => {
+    const c = clone();
+    c.facades = c.facades.filter((f: any) => !f.heritage);
+    expect(codes(c)).toContain('FASADA_DZIURA');
+  });
+
+  it('podcienia w domu parterowym', () => {
+    const c = clone();
+    const parterowy = c.facades.find((f: any) => f.storeys[0] === 1 && f.storeys[1] === 1);
+    parterowy.arcades = 2;
+    expect(codes(c)).toContain('FASADA_PARTER');
+  });
+
+  it('fasadę o zakresie kondygnacji od większej do mniejszej', () => {
+    const c = clone();
+    c.facades[0].storeys = [4, 2];
+    expect(codes(c)).toContain('SCHEMA');
+  });
+
   it('strukturę, której żaden przedmiot nie stawia', () => {
     const c = clone();
     c.structures.push({

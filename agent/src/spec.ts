@@ -4,6 +4,7 @@ import { loadSkills } from './skills.js';
 import {
   BiomeSchema,
   ConfigSchema,
+  FacadeSchema,
   Id,
   ItemSchema,
   NpcSchema,
@@ -27,7 +28,7 @@ import {
  * z gramatyką na trzy pola; z unią trzynastu operacji już nie.
  */
 
-export const COLLECTIONS = ['items', 'recipes', 'resources', 'structures', 'npcs', 'biomes', 'config'] as const;
+export const COLLECTIONS = ['items', 'recipes', 'resources', 'structures', 'npcs', 'biomes', 'facades', 'config'] as const;
 export type Collection = (typeof COLLECTIONS)[number];
 
 const SKILL_IDS: [string, ...string[]] = ['brak', ...loadSkills().map((s) => s.id)];
@@ -64,6 +65,7 @@ const DEFS = {
   structures: StructureSchema,
   npcs: NpcSchema,
   biomes: BiomeSchema,
+  facades: FacadeSchema,
 } satisfies Record<Exclude<Collection, 'config'>, z.ZodObject<z.ZodRawShape>>;
 
 export type OpsSpec = {

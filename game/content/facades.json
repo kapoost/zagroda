@@ -1,0 +1,114 @@
+[
+  {
+    "id": "pierzeja_ormianska",
+    "name": "Pierzeja ormiańska",
+    "desc": "Najbogatsza w mieście. Rzeźbiona attyka i głębokie podcienia.",
+    "plaster": "#95bdb4",
+    "roof": "#a8503c",
+    "attic": "rzezbiona",
+    "arcades": 2,
+    "storeys": [
+      2,
+      3
+    ],
+    "heritage": true
+  },
+  {
+    "id": "kamienica_zabytkowa",
+    "name": "Kamienica zabytkowa",
+    "desc": "Pod ochroną, więc tynk i gzyms trzymają się lepiej niż gdzie indziej.",
+    "plaster": "#e9d7ab",
+    "roof": "#b0573c",
+    "attic": "prosta",
+    "arcades": 2,
+    "storeys": [
+      0,
+      6
+    ],
+    "heritage": true
+  },
+  {
+    "id": "pierzeja_rynkowa",
+    "name": "Pierzeja rynkowa",
+    "desc": "Podcienia na całej długości, bo pod nimi stoi handel.",
+    "plaster": "#e6bda4",
+    "roof": "#b4603f",
+    "attic": "prosta",
+    "arcades": 2,
+    "storeys": [
+      2,
+      3
+    ],
+    "heritage": false
+  },
+  {
+    "id": "kamienica_uliczna",
+    "name": "Kamienica uliczna",
+    "desc": "Skromniejsza od rynkowej. Arkady rzadsze, zwieńczenie zwykłe.",
+    "plaster": "#dcd6c2",
+    "roof": "#96463a",
+    "attic": "brak",
+    "arcades": 3,
+    "storeys": [
+      2,
+      3
+    ],
+    "heritage": false
+  },
+  {
+    "id": "dom_przywalowy",
+    "name": "Dom przywałowy",
+    "desc": "Parterowy, przy samych wałach. Wchodzi się prosto z ulicy.",
+    "plaster": "#efe3c6",
+    "roof": "#8e4b3b",
+    "attic": "brak",
+    "arcades": 0,
+    "storeys": [
+      1,
+      1
+    ],
+    "heritage": false
+  },
+  {
+    "id": "gmach",
+    "name": "Gmach",
+    "desc": "Wysoki i bez podcieni. Widać go ponad dachami.",
+    "plaster": "#cfd8de",
+    "roof": "#7d6a58",
+    "attic": "prosta",
+    "arcades": 0,
+    "storeys": [
+      4,
+      6
+    ],
+    "heritage": false
+  },
+  {
+    "id": "kamienica_bez_metryki",
+    "name": "Kamienica bez metryki",
+    "desc": "Stoi w pierzei, ale nikt nie spisał, ile ma pięter.",
+    "plaster": "#cfdac9",
+    "roof": "#a95f42",
+    "attic": "brak",
+    "arcades": 2,
+    "storeys": [
+      0,
+      0
+    ],
+    "heritage": false
+  },
+  {
+    "id": "oficyna",
+    "name": "Oficyna",
+    "desc": "W głębi podwórza, odwrócona od ulicy. Bez arkad i bez ozdób.",
+    "plaster": "#e6d3b3",
+    "roof": "#a35f4a",
+    "attic": "brak",
+    "arcades": 0,
+    "storeys": [
+      0,
+      0
+    ],
+    "heritage": false
+  }
+]

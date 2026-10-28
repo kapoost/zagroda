@@ -152,6 +152,28 @@ Hybrydowa, a od niedawna **zasłużona**:
 
 Agent nigdy nie pracuje na `main`. Przy porzuceniu zmiany gałąź znika razem z nią.
 
+### Fasady: fakt z mapy, typologia z treści
+
+Kamienice różnią się wyglądem, ale nikt nie zgaduje, co stoi pod którym adresem.
+Podział pracy wynika z pomiaru na żywym modelu:
+
+| źródło | co daje | dlaczego stamtąd |
+| --- | --- | --- |
+| OSM (`mapa.json`) | liczba kondygnacji, status zabytku, obrys | fakty o konkretnych budynkach: 185 z 265 ma zapisane piętra, 75 status zabytku |
+| treść (`facades.json`) | tynk, dachówka, attyka, rytm arkad | typologia, czyli jedyne, o co model pytany ogólnie odpowiada poprawnie |
+| `world.ts` | złączenie jednego z drugim | deterministyczne: gdy pasuje kilka archetypów, wybiera odcień budynku |
+
+Bielik zapytany o pięć konkretnych kamienic Rynku Wielkiego wymienił tę samą
+„Pod Małpą" dwa razy jako dwa różne budynki i dorysował dachy mansardowe miastu,
+które słynie z attyk. Zapytany, po czym w ogóle poznać kamienicę z Zamościa,
+odpowiedział poprawnie — i każda wymieniona cecha (głębokość podcieni, liczba
+arkad, forma attyki, pastelowa kolorystyka) okazała się parametrem, nie opisem.
+Schemat `FacadeSchema` jest zapisem tamtej odpowiedzi.
+
+Kontrola `FASADA_DZIURA` jest odpowiednikiem `BIOME_HOLE`: każda kombinacja
+liczby kondygnacji i statusu zabytku musi mieć archetyp, bo inaczej kamienica
+wyrenderuje się jako dziura w pierzei.
+
 ### Warunek intencji
 
 Bramka dowodzi, że treść jest spójna. Nie dowodzi, że jest TA, o którą proszono —

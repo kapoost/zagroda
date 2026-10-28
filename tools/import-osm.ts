@@ -120,6 +120,19 @@ const siatka = new Uint8Array(ROZMIAR * ROZMIAR).fill(nr('trawa'));
  * pojedyncze pierzeje — więc każdy budynek dostaje własny odcień i własną krawędź.
  */
 const odcienie = new Uint8Array(ROZMIAR * ROZMIAR);
+/**
+ * Liczba kondygnacji i status zabytku — per kafel, prosto z tagów OSM.
+ *
+ * To są FAKTY o konkretnych budynkach i dlatego biorą się stąd, a nie z modelu.
+ * Bielik zapytany, co stoi pod którym adresem, konfabuluje; OSM po prostu wie:
+ * w kadrze 185 z 265 budynków ma zapisaną liczbę pięter, a 75 status zabytku.
+ * Jak taki budynek ma WYGLĄDAĆ, mówi dopiero treść gry (content/facades.json).
+ *
+ * Zero w kondygnacjach znaczy "OSM nie podaje" i jest osobnym przypadkiem,
+ * nie parterem — udawanie, że wiemy, byłoby zmyślaniem danych.
+ */
+const kondygnacje = new Uint8Array(ROZMIAR * ROZMIAR);
+const zabytki = new Uint8Array(ROZMIAR * ROZMIAR);
 const ODCIENI = 8;
 let licznikBudynkow = 0;
 const ustaw = (x: number, y: number, b: Biom) => {
@@ -168,7 +181,7 @@ function pomaluj(kafle: number[]): void {
  * Co mniejsze niż 2×2 kafle, czyli 36 m², odpada. To szopy, garaże i śmietniki —
  * w tej skali byłyby plamką wielkości gracza.
  */
-function budynek(kontury: Wezel[][]): number[] {
+function budynek(kontury: Wezel[][], tagi: Record<string, string>): number[] {
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   for (const kontur of kontury) {
     for (const w of kontur) {
@@ -180,12 +193,16 @@ function budynek(kontury: Wezel[][]): number[] {
   const x0 = Math.round(minX), x1 = Math.round(maxX);
   const y0 = Math.round(minY), y1 = Math.round(maxY);
   if (x1 - x0 < 2 || y1 - y0 < 2) return [];
+  const pieter = Math.max(0, Math.min(6, Math.round(Number(tagi['building:levels']) || 0)));
+  const zabytek = tagi.heritage || tagi.historic ? 1 : 0;
   const kafle: number[] = [];
   for (let y = Math.max(0, y0); y < Math.min(ROZMIAR, y1); y++) {
     for (let x = Math.max(0, x0); x < Math.min(ROZMIAR, x1); x++) {
       const i = y * ROZMIAR + x;
       if (odcienie[i]) continue; // cudzy budynek — nie zabieramy
       siatka[i] = nr('kamienica');
+      kondygnacje[i] = pieter;
+      zabytki[i] = zabytek;
       kafle.push(i);
     }
   }
@@ -300,7 +317,7 @@ for (const faza of [0, 1, 2]) {
     if (faza === 1 && !czyDroga) continue;
     if (faza === 2 && !czyBudynek) continue;
     if (czyBudynek) {
-      const kafle = budynek(kontury);
+      const kafle = budynek(kontury, e.tags);
       if (kafle.length) pomaluj(kafle);
       continue;
     }
@@ -365,12 +382,21 @@ const wynik = {
   kafle: rle.join(' '),
   odcieni: ODCIENI,
   dachy: spakuj(odcienie),
+  kondygnacje: spakuj(kondygnacje),
+  zabytki: spakuj(zabytki),
 };
 writeFileSync(resolve(ROOT, 'game/content/mapa.json'), JSON.stringify(wynik, null, 2) + '\n', 'utf8');
 
 const licz = new Map<string, number>();
 for (const v of siatka) licz.set(LEGENDA[v]!, (licz.get(LEGENDA[v]!) ?? 0) + 1);
+const zPieterami = new Set<number>();
+let zabytkowych = 0;
+for (let i = 0; i < kondygnacje.length; i++) {
+  if (kondygnacje[i]) zPieterami.add(odcienie[i]!);
+  if (zabytki[i] && siatka[i] === nr('kamienica')) zabytkowych++;
+}
 console.log(`zapisano game/content/mapa.json — ${rle.length} odcinków RLE, ${licznikBudynkow} budynków, ${(JSON.stringify(wynik).length / 1024).toFixed(1)} kB`);
+console.log(`  kafli z liczbą kondygnacji: ${kondygnacje.reduce((a, v) => a + (v ? 1 : 0), 0)}, zabytkowych: ${zabytkowych}`);
 for (const [k, v] of [...licz].sort((a, b) => b[1] - a[1])) {
   console.log(`  ${k.padEnd(10)} ${String(v).padStart(5)} kafli  ${((v / siatka.length) * 100).toFixed(1)}%`);
 }

@@ -36,6 +36,7 @@ export function digest(): string {
   const resources = readList('resources');
   const recipes = readList('recipes');
   const biomes = readList('biomes');
+  const facades = readList('facades');
   const npcs = readList('npcs');
 
   const itemLine = (i: any) => {
@@ -64,6 +65,13 @@ export function digest(): string {
     `RECEPTURY (${recipes.length}):`,
     ...recipes.map((r) => '  ' + recipeLine(r)),
     `BIOMY (${biomes.length}): ${biomes.map((b: any) => b.id).join(', ')}`,
+    `ARCHETYPY FASAD — wygląd kamienicy, dobierany do liczby kondygnacji z mapy (${facades.length}):`,
+    ...facades.map(
+      (f: any) =>
+        `  ${f.id} "${f.name}" kondygnacje ${f.storeys[0]}-${f.storeys[1]}` +
+        `${f.heritage ? ', zabytek' : ''}, attyka ${f.attic}, ` +
+        `${f.arcades ? 'arkada co ' + f.arcades + ' kafle' : 'bez podcieni'}`,
+    ),
     `NPC (${npcs.length}): ${npcs.map((n: any) => n.id).join(', ')}`,
   ].join('\n');
 }

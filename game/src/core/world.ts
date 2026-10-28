@@ -76,6 +76,35 @@ export function generate(reg: Registry, seed: number): State {
   const size = reg.content.config.worldSize;
   let biome = zMapy(reg, size);
   const dachy = (biome && rozpakuj(mapa.dachy, size * size)) || new Uint8Array(size * size);
+  /**
+   * Złączenie faktu z typologią.
+   *
+   * Mapa mówi, ile dany budynek ma kondygnacji i czy jest zabytkiem — to są fakty
+   * z OSM. Treść gry mówi, jak wygląda budynek takiego rodzaju. Tutaj jedno spotyka
+   * drugie, deterministycznie: gdy pasuje kilka archetypów, wybiera je odcień budynku,
+   * czyli liczba, która i tak już odróżnia sąsiadów. Żadnego losowania.
+   */
+  const fasady = new Uint8Array(size * size);
+  if (biome) {
+    const pieter = rozpakuj(mapa.kondygnacje, size * size);
+    const zabytki = rozpakuj(mapa.zabytki, size * size);
+    const nrZabudowy = reg.content.biomes.findIndex((b) => b.id === 'kamienica');
+    if (pieter && zabytki && nrZabudowy >= 0) {
+      const pamiec = new Map<string, number>();
+      for (let i = 0; i < fasady.length; i++) {
+        if (biome[i] !== nrZabudowy) continue;
+        const klucz = `${pieter[i]}:${zabytki[i]}:${dachy[i]}`;
+        let wybrana = pamiec.get(klucz);
+        if (wybrana === undefined) {
+          const pasujace = reg.facadesFor(pieter[i]!, zabytki[i] === 1);
+          const f = pasujace[(Math.max(1, dachy[i]!) - 1) % Math.max(1, pasujace.length)];
+          wybrana = f ? reg.content.facades.indexOf(f) + 1 : 0;
+          pamiec.set(klucz, wybrana);
+        }
+        fasady[i] = wybrana;
+      }
+    }
+  }
   if (!biome) {
     biome = new Uint8Array(size * size);
     for (let y = 0; y < size; y++) {
@@ -187,6 +216,7 @@ export function generate(reg: Registry, seed: number): State {
     biome,
     entAt,
     dachy,
+    fasady,
     ents,
     player: {
       x: start?.x ?? 1,

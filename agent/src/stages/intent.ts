@@ -238,7 +238,7 @@ export function widenCollections(cols: Collection[]): Collection[] {
 const MAX_COLLECTIONS = 5;
 
 /** Kolejność ma znaczenie: struktury przed przedmiotami, przedmioty przed recepturami. */
-const ORDER: Collection[] = ['structures', 'biomes', 'resources', 'items', 'recipes', 'npcs', 'config'];
+const ORDER: Collection[] = ['structures', 'biomes', 'facades', 'resources', 'items', 'recipes', 'npcs', 'config'];
 
 function alreadyProposed(ops: Record<string, unknown>): string {
   const lines: string[] = [];
@@ -255,6 +255,7 @@ function alreadyProposed(ops: Record<string, unknown>): string {
 const FOCUS: Record<Collection, string> = {
   structures: 'Dodaj budynki/stanowiska, jeśli zmiana ich wymaga (np. coś, co gracz stawia w świecie). Jeśli nie — zwróć pustą tablicę.',
   biomes: 'Dodaj biomy, jeśli zmiana ich wymaga. Zwykle nie wymaga — zwróć wtedy pustą tablicę.',
+  facades: 'Dodaj archetypy fasad: JAK wygląda kamienica danego rodzaju. To typologia, nie konkretne budynki — nie wymyślaj, co stoi pod którym adresem, bo liczbę kondygnacji i status zabytku gra bierze z mapy. Pole "storeys" to zakres kondygnacji, do którego archetyp pasuje; zero znaczy "mapa nie podaje". Jeśli zmiana nie dotyczy wyglądu zabudowy — pusta tablica.',
   resources: 'Dodaj surowce do zbierania w świecie, jeśli zmiana ich wymaga. Jeśli nie — pusta tablica.',
   items: 'Dodaj przedmioty. Przedmiot stawiany w świecie wskazuje polem "placeable" na id struktury.',
   recipes: 'Dodaj receptury, żeby nowe przedmioty dało się wytworzyć. Wsad musi istnieć w grze albo być dodany w tej zmianie.',
