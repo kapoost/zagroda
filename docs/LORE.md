@@ -31,11 +31,17 @@ którego surowiec nie rośnie pod Zamościem, do tego świata nie należy.
 
 ## Ludzie
 
-Trzy osoby, bez nazwisk, bez tytułów.
+Sześć osób. Trzy żyją z pracy rąk, trzy pamiętają, jak to miasto powstawało.
 
 - **Zofia** — prowadzi wymianę. Wie, co się komu przyda, i mówi to wprost.
 - **Bartek** — rybak. Mało mówi, zna wodę, mierzy czas pogodą.
 - **Hanka** — kowalka. Żelazo traktuje poważnie, ludzi z humorem.
+- **Morando** — budowniczy z Padwy. Rysował plan tego miasta i stawiał je dwadzieścia lat.
+- **Szymon** — poeta. Chodził za tym, żeby stanęła tu szkoła wyższa.
+- **Rudomicz** — profesor Akademii. Zapisuje, co się dzieje, tego samego dnia.
+
+Ci trzej mówią o mieście z tego, co zapisane w ich wiedzy — nie z pamięci modelu.
+Nazwy kamienic, bram i kościołów pochodzą z mapy, a nie z domysłu.
 
 Nikt tu nie jest bohaterem i nikt nikogo nie ratuje. Gracz jest czwartą osobą w mieście,
 nie wybrańcem.

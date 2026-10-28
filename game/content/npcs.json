@@ -19,7 +19,9 @@
     "gives": [
       "jagoda",
       "sznurek"
-    ]
+    ],
+    "opis": "Prowadzi wymianę na Rynku Wielkim. Wie, co się komu przyda, i mówi to wprost.",
+    "wiedza": []
   },
   {
     "id": "bartek",
@@ -40,7 +42,9 @@
     ],
     "gives": [
       "ryba"
-    ]
+    ],
+    "opis": "Rybak. Mało mówi, zna wodę, czas mierzy pogodą.",
+    "wiedza": []
   },
   {
     "id": "hanka",
@@ -61,6 +65,95 @@
     ],
     "gives": [
       "wegiel_drzewny"
+    ],
+    "opis": "Kowalka. Żelazo traktuje poważnie, ludzi z humorem.",
+    "wiedza": []
+  },
+  {
+    "id": "morando",
+    "name": "Morando",
+    "color": "#b5894f",
+    "home": {
+      "x": 132,
+      "y": 158
+    },
+    "likes": [
+      "kamien",
+      "deska"
+    ],
+    "gives": [],
+    "opis": "Bernardo Morando z Padwy, budowniczy. Rysował plan tego miasta i stawiał je przez dwadzieścia lat.",
+    "wiedza": [
+      "Zamość założył w 1580 roku Jan Zamoyski, na surowym korzeniu, na własnym gruncie.",
+      "Miasto jest twierdzą: pięciokąt bastionów, a w środku siatka ulic i trzy rynki — Wielki z ratuszem, Solny i Wodny.",
+      "Plan nie rósł sam. Został narysowany od początku do końca, zanim postawiono pierwszy dom.",
+      "Jestem z Włoch, z Padwy. Zamoyski wezwał mnie tu i zostałem do końca.",
+      "Ratusz stoi w pierzei, nie na środku placu — tak chciał plan.",
+      "Kamienice mają podcienia na parterze, bo pod nimi stoi handel, a nad nimi mieszka się sucho.",
+      "Przy Rynku stoją między innymi: Kamienica Morandowska, Wentowska, Linkowska i Malarzowa."
+    ],
+    "dialogues": [
+      "Mierzę tu wszystko trzy razy. Miasto stawia się raz.",
+      "Podcień nie jest ozdobą. Pod nim się handluje, kiedy pada.",
+      "Rynek ma sto kroków boku. Tyle, żeby widzieć drugą stronę i nie krzyczeć."
+    ]
+  },
+  {
+    "id": "szymon",
+    "name": "Szymon",
+    "color": "#8c7fb8",
+    "home": {
+      "x": 175,
+      "y": 168
+    },
+    "likes": [
+      "tkanina",
+      "jagoda"
+    ],
+    "gives": [],
+    "opis": "Szymon Szymonowic, poeta. Chodził za tym, żeby w mieście stanęła szkoła wyższa.",
+    "wiedza": [
+      "Zamość założył w 1580 roku Jan Zamoyski, na surowym korzeniu, na własnym gruncie.",
+      "Miasto jest twierdzą: pięciokąt bastionów, a w środku siatka ulic i trzy rynki — Wielki z ratuszem, Solny i Wodny.",
+      "Plan nie rósł sam. Został narysowany od początku do końca, zanim postawiono pierwszy dom.",
+      "Akademia Zamojska otwarta została w 1594 roku, czternaście lat po założeniu miasta.",
+      "Była trzecią taką szkołą w Rzeczypospolitej — po krakowskiej i wileńskiej.",
+      "Miasto zaprosiło kupców z daleka: Ormian, Żydów, Greków. Każdy dostał miejsce i prawa.",
+      "Północna pierzeja Rynku to kamienice ormiańskie. Pod Małżeństwem, Pod Aniołem, Pod Madonną."
+    ],
+    "dialogues": [
+      "Pisałem sielanki, a chodziłem za murarzami. Jedno i drugie o tym samym.",
+      "Szkoła bez książek to izba. Książki szły tu wozami z Krakowa.",
+      "Najlepiej się myśli, idąc. A tu jest gdzie iść."
+    ]
+  },
+  {
+    "id": "rudomicz",
+    "name": "Rudomicz",
+    "color": "#6f8f74",
+    "home": {
+      "x": 159,
+      "y": 141
+    },
+    "likes": [
+      "pieczona_ryba",
+      "wegiel_drzewny"
+    ],
+    "gives": [],
+    "opis": "Bazyli Rudomicz, profesor Akademii. Zapisuje, co się w mieście dzieje, dzień po dniu.",
+    "wiedza": [
+      "Zamość założył w 1580 roku Jan Zamoyski, na surowym korzeniu, na własnym gruncie.",
+      "Miasto jest twierdzą: pięciokąt bastionów, a w środku siatka ulic i trzy rynki — Wielki z ratuszem, Solny i Wodny.",
+      "Plan nie rósł sam. Został narysowany od początku do końca, zanim postawiono pierwszy dom.",
+      "Zapisuję wszystko: pogodę, ceny, kto przyjechał i co mówił. Potem się to czyta inaczej.",
+      "Twierdza wytrzymała oblężenia w siedemnastym wieku — i kozackie, i szwedzkie.",
+      "Stare Miasto wpisano w 1992 roku na listę światowego dziedzictwa UNESCO.",
+      "Bramy są dwie na stronę: stara i nowa. Starą zamurowano, gdy przestała być potrzebna."
+    ],
+    "dialogues": [
+      "Dzisiejsza data, pogoda, cena żyta. Reszta sama się zapisze.",
+      "Ludzie pamiętają inaczej, niż było. Dlatego notuję tego samego dnia.",
+      "Mury są po to, żeby był czas się namyślić."
     ]
   }
 ]

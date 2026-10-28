@@ -14,6 +14,14 @@ export interface PostacDoRozmowy {
   id: string;
   name: string;
   gives: string[];
+  opis: string;
+  wiedza: string[];
+}
+
+export interface MiejsceWPoblizu {
+  nazwa: string;
+  metrow: number;
+  kierunek: string;
 }
 
 export interface OfertaUi {
@@ -36,6 +44,7 @@ let biezaca: PostacDoRozmowy | null = null;
 let naAkcje: ((npc: string, daj: string, za: string) => void) | null = null;
 let dajStan: (() => string) | null = null;
 let dajOferty: (() => OfertaUi[]) | null = null;
+let dajOkolice: (() => MiejsceWPoblizu[]) | null = null;
 let czeka = false;
 
 export const rozmowaOtwarta = (): boolean => otwarta;
@@ -103,6 +112,8 @@ async function wyslij(tekst: string): Promise<void> {
         // Cennik liczy silnik gry, a nie model: tu jedzie po to, żeby postać mówiła
         // te same liczby, które za chwilę zastosuje rdzeń.
         oferty: dajOferty?.() ?? [],
+        // Nazwane zabytki w zasięgu wzroku. Fakty z mapy, nie z pamięci modelu.
+        okolica: dajOkolice?.() ?? [],
       }),
     });
     if (!odp.ok || !odp.body) {
@@ -152,18 +163,21 @@ export function otworz(
   postac: PostacDoRozmowy,
   stan: () => string,
   cennik: () => OfertaUi[],
+  wokol: () => MiejsceWPoblizu[],
   akcja: (npc: string, daj: string, za: string) => void,
 ): void {
   korzen ??= zbuduj();
   biezaca = postac;
   dajStan = stan;
   dajOferty = cennik;
+  dajOkolice = wokol;
   naAkcje = akcja;
   otwarta = true;
   korzen.classList.add('widoczne');
   (korzen.querySelector('h2') as HTMLElement).textContent = postac.name;
   watekEl().replaceChildren();
-  dopisz('ro-info', `Rozmawiasz z: ${postac.name}. Odpowiedzi pisze lokalny model, więc bywają wolniejsze niż gra.`);
+  dopisz('ro-info', postac.opis || `Rozmawiasz z: ${postac.name}.`);
+  dopisz('ro-info', 'Odpowiedzi pisze lokalny model, więc bywają wolniejsze niż gra.');
   (korzen.querySelector('.ro-pole') as HTMLInputElement).focus();
 }
 

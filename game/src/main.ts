@@ -60,7 +60,43 @@ function postacPrzedSoba() {
   const e = game.state.ents.find((en) => en.kind === 'npc' && en.x === x && en.y === y);
   if (!e) return null;
   const def = game.reg.npcs.get(e.def);
-  return def ? { id: def.id, name: def.name, gives: def.gives } : null;
+  return def
+    ? { id: def.id, name: def.name, gives: def.gives, opis: def.opis, wiedza: def.wiedza }
+    : null;
+}
+
+/**
+ * Nazwane zabytki w zasięgu wzroku, z odległością i kierunkiem.
+ *
+ * To są fakty z OpenStreetMap, a nie pamięć modelu — i dlatego w ogóle tu są. Bielik
+ * zapytany o kamienice Rynku Wielkiego zmyśla przekonująco, ale te nazwy leżały przez
+ * cały czas w pobranych danych; wyrzucaliśmy je przy imporcie.
+ */
+const ZASIEG_WZROKU = 40;
+const NAJWYZEJ_MIEJSC = 5;
+
+function okolica() {
+  const { x, y } = game.state.player;
+  return game.state.miejsca
+    .map((m) => ({ m, d: Math.hypot(m.x - x, m.y - y) }))
+    .filter((w) => w.d <= ZASIEG_WZROKU)
+    .sort((a, b) => a.d - b.d)
+    .slice(0, NAJWYZEJ_MIEJSC)
+    .map(({ m, d }) => ({
+      nazwa: m.nazwa,
+      metrow: Math.round(d * 3),
+      kierunek: kierunek(m.x - x, m.y - y),
+    }));
+}
+
+function kierunek(dx: number, dy: number): string {
+  const pion = Math.abs(dy) > Math.abs(dx) * 2;
+  const poziom = Math.abs(dx) > Math.abs(dy) * 2;
+  const ns = dy < 0 ? 'północ' : 'południe';
+  const we = dx < 0 ? 'zachód' : 'wschód';
+  if (pion) return ns;
+  if (poziom) return we;
+  return `${ns}ny ${we}`;
 }
 
 /**
@@ -100,6 +136,7 @@ window.addEventListener('keydown', (e) => {
         postac,
         stanGracza,
         () => cennik(postac.id),
+        okolica,
         (npc, daj, za) => { pending.rozmowa = { npc, daj, za }; },
       );
     }

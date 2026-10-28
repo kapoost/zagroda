@@ -272,6 +272,37 @@ function klasyfikuj(t: Record<string, string>): { biom: Biom; linia?: number } |
   return null;
 }
 
+/**
+ * Nazwane zabytki — fakty o okolicy, prosto z tagow OSM.
+ *
+ * To jest material, ktorego modelowi NIE WOLNO wymyslac. Bielik zapytany o kamienice
+ * Rynku Wielkiego wymienil te sama "Pod Malpa" dwa razy jako dwa rozne budynki
+ * i polaczyl prawdziwa Kamienice Wilczkowska z prawdziwa Pod Aniolem w jeden dom —
+ * podczas gdy w OSM to dwa osobne obiekty, kazdy pod wlasnym adresem. Nazwy byly
+ * caly czas w pobranych danych; wyrzucalismy je przy imporcie.
+ *
+ * Odsiewamy szyldy: do mapy trafia tylko to, co OSM oznacza jako zabytek, obiekt
+ * historyczny, muzeum albo swiatynie. Sklep "Zabka" przy Rynku historia nie jest.
+ */
+interface Miejsce { nazwa: string; x: number; y: number }
+const miejsca: Miejsce[] = [];
+
+function zbierzMiejsce(e: Element): void {
+  const t = e.tags ?? {};
+  const nazwa = t.name;
+  if (!nazwa) return;
+  const zabytek =
+    Boolean(t.historic) || Boolean(t.heritage) ||
+    t.tourism === 'museum' || t.tourism === 'attraction' || t.amenity === 'place_of_worship';
+  if (!zabytek) return;
+  const punkty = obrysy(e).flat().map(naSiatke);
+  if (!punkty.length) return;
+  const x = Math.round(punkty.reduce((a, q) => a + q.x, 0) / punkty.length);
+  const y = Math.round(punkty.reduce((a, q) => a + q.y, 0) / punkty.length);
+  if (x < 0 || y < 0 || x >= ROZMIAR || y >= ROZMIAR) return;
+  miejsca.push({ nazwa, x, y });
+}
+
 const zrodlo = process.argv[2];
 if (!zrodlo) {
   console.error('podaj plik z odpowiedzią Overpass: tsx tools/import-osm.ts <plik.json>');
@@ -303,6 +334,10 @@ function obrysy(e: Element): Wezel[][] {
     .filter((m) => m.geometry && m.geometry.length > 2 && (m.role === 'outer' || !m.role))
     .map((m) => m.geometry!);
 }
+
+for (const e of dane.elements) zbierzMiejsce(e);
+// Kolejnosc po nazwie: plik ma byc porownywalny w diffie miedzy importami.
+miejsca.sort((a, b) => a.nazwa.localeCompare(b.nazwa, 'pl'));
 
 for (const faza of [0, 1, 2]) {
   for (const e of dane.elements) {
@@ -384,6 +419,7 @@ const wynik = {
   dachy: spakuj(odcienie),
   kondygnacje: spakuj(kondygnacje),
   zabytki: spakuj(zabytki),
+  miejsca,
 };
 writeFileSync(resolve(ROOT, 'game/content/mapa.json'), JSON.stringify(wynik, null, 2) + '\n', 'utf8');
 
@@ -396,6 +432,7 @@ for (let i = 0; i < kondygnacje.length; i++) {
   if (zabytki[i] && siatka[i] === nr('kamienica')) zabytkowych++;
 }
 console.log(`zapisano game/content/mapa.json — ${rle.length} odcinków RLE, ${licznikBudynkow} budynków, ${(JSON.stringify(wynik).length / 1024).toFixed(1)} kB`);
+console.log(`  nazwanych zabytków: ${miejsca.length}`);
 console.log(`  kafli z liczbą kondygnacji: ${kondygnacje.reduce((a, v) => a + (v ? 1 : 0), 0)}, zabytkowych: ${zabytkowych}`);
 for (const [k, v] of [...licz].sort((a, b) => b[1] - a[1])) {
   console.log(`  ${k.padEnd(10)} ${String(v).padStart(5)} kafli  ${((v / siatka.length) * 100).toFixed(1)}%`);

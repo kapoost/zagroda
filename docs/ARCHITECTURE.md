@@ -209,6 +209,38 @@ Dwa filtry przed modelem, bo nie pyta sie modelu o to, co da sie sprawdzic:
 **pytanie dwustanowe** przed pytaniem o przedmiot — gramatyka zawezona do listy darow
 kusi wybraniem czegokolwiek, pytanie `tak`/`nie` tej pokusy nie ma.
 
+#### Postacie historyczne: nazwy z mapy, glos od modelu
+
+Trzy osoby opowiadaja o okolicy: **Morando** (budowniczy, ktory rysowal plan miasta),
+**Szymon** (poeta chodzacy za Akademia) i **Rudomicz** (profesor, ktory wszystko notuje).
+
+Material faktyczny nie pochodzi z pamieci modelu, bo ta w tej dziedzinie zawodzi
+w sposob trudny do wykrycia. Bielik zapytany wprost o kamienice Rynku Wielkiego
+wymienil te sama „Pod Malpa" dwa razy jako dwa rozne domy i polaczyl prawdziwa
+Kamienice Wilczkowska z prawdziwa Pod Aniolem w jeden budynek. Brzmialo wiarygodnie.
+
+Nazwy leza w danych, ktore i tak pobieralismy — wyrzucalismy je przy imporcie:
+
+```
+58 nazwanych zabytkow w kadrze, prosto z tagow OSM
+Ratusz · Rynek Wielki · Kamienica Pod Malzenstwem (Szafirowa)
+Kamienica Pod Aniolem (Bartoszewiczow) · Kamienica Morandowska I
+Synagoga · Stara Brama Lubelska · Nadszaniec VII · Palac Zamoyskich …
+```
+
+Podzial jest ten sam, co przy fasadach i przy cenniku wymiany:
+
+| skad | co | dlaczego stamtad |
+| --- | --- | --- |
+| `mapa.json` → `miejsca` | nazwy i polozenia zabytkow | fakty, sprawdzalne, z OSM |
+| `npcs.json` → `wiedza` | co postac wie o miescie | zapisane recznie, nie zgadywane |
+| gra, w czasie rozmowy | co widac stad: nazwa, odleglosc, kierunek | liczone z pozycji gracza |
+| model | glos, ton, dobor slow | to jedyne, w czym jest dobry |
+
+Prompt mowi wprost: *o budynkach podawaj nazwe i kierunek, nic wiecej*. Bez tej reguly
+Morando dopowiadal kamienicom kolory i ulice, ktorych w danych nie ma — a zmyslony
+szczegol brzmi tak samo jak prawdziwy.
+
 #### Wymiana: model wybiera co za co, silnik liczy ile
 
 Postacie zaczely handlowac same z siebie, bo lore mowi, ze wymiana odbywa sie rzeczami

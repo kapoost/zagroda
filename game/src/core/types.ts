@@ -50,6 +50,8 @@ export interface State {
   dachy: Uint8Array;
   /** Archetyp fasady per kafel: indeks w content.facades + 1, zero gdy to nie budynek. */
   fasady: Uint8Array;
+  /** Nazwane zabytki z OSM. Fakty o okolicy, nie treść do wymyślania. */
+  miejsca: ReadonlyArray<{ nazwa: string; x: number; y: number }>;
   ents: Entity[];
   player: Player;
   craft: CraftJob | null;

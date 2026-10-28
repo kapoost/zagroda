@@ -229,6 +229,9 @@ export function generate(reg: Registry, seed: number): State {
     entAt,
     dachy,
     fasady,
+    // Zabytki trafiają do stanu tylko wtedy, gdy świat naprawdę pochodzi z mapy —
+    // w świecie z szumu nie ma Ratusza i nie wolno udawać, że jest.
+    miejsca: zMapyOsm ? mapa.miejsca : [],
     ents,
     player: {
       x: start?.x ?? 1,

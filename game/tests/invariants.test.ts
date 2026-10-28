@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../src/core/game.js';
 import { Rng } from '../src/core/rng.js';
-import { NIGHT_FROM, NIGHT_TO, idx, isNight, tick } from '../src/core/tick.js';
+import { NIGHT_FROM, NIGHT_TO, entityAt, idx, isNight, tick } from '../src/core/tick.js';
 import { registry } from '../src/content/load.js';
 import { generate } from '../src/core/world.js';
 import { oferty } from '../src/core/wymiana.js';
@@ -324,5 +324,65 @@ describe('wymiana z postacią', () => {
     tick(s, { rozmowa: { npc: 'nikt_taki', daj: 'jagoda', za: 'galaz' } }, reg);
     expect(JSON.stringify(s.player.inv)).toBe(przed);
     expect(npc).toBeTruthy();
+  });
+});
+
+/**
+ * Zasięg zbierania. Kafel przed sobą ma pierwszeństwo zawsze, bo rozmowa i schowek
+ * mają działać na to, na co patrzysz. Surowce łapie się z całego otoczenia, ze skosami.
+ */
+describe('zasięg akcji', () => {
+  const pusteOtoczenie = () => {
+    const reg = registry();
+    const s = generate(reg, 5);
+    // Czyścimy osiem kafli dokoła, żeby test mówił o tym, co sam postawi.
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const e = entityAt(s, s.player.x + dx, s.player.y + dy);
+        if (e) {
+          s.entAt[idx(s, e.x, e.y)] = 0;
+          e.respawnAt = -1;
+        }
+      }
+    }
+    return { reg, s };
+  };
+
+  const postawSurowiec = (s: ReturnType<typeof generate>, dx: number, dy: number, def: string) => {
+    const x = s.player.x + dx;
+    const y = s.player.y + dy;
+    s.ents.push({ kind: 'resource', def, x, y, hp: 1, respawnAt: 0 });
+    s.entAt[idx(s, x, y)] = s.ents.length;
+  };
+
+  it('zbiera surowiec stojący po skosie', () => {
+    const { reg, s } = pusteOtoczenie();
+    s.player.facing = 'n';
+    postawSurowiec(s, 1, 1, 'krzak');
+    const przed = Object.values(s.player.inv).reduce((a, n) => a + n, 0);
+    tick(s, { act: true }, reg);
+    expect(Object.values(s.player.inv).reduce((a, n) => a + n, 0)).toBeGreaterThan(przed);
+  });
+
+  it('kafel przed sobą wygrywa z surowcem po skosie', () => {
+    const { reg, s } = pusteOtoczenie();
+    s.player.facing = 'n';
+    postawSurowiec(s, 0, -1, 'kamien_polny');
+    postawSurowiec(s, 1, 1, 'krzak');
+    tick(s, { act: true }, reg);
+    expect(s.player.inv['kamien']).toBeGreaterThan(0);
+  });
+
+  it('nie zagaduje postaci stojącej za plecami', () => {
+    const { reg, s } = pusteOtoczenie();
+    s.player.facing = 'n';
+    const npc = s.ents.find((e) => e.kind === 'npc')!;
+    s.entAt[idx(s, npc.x, npc.y)] = 0;
+    npc.x = s.player.x;
+    npc.y = s.player.y + 1;
+    s.entAt[idx(s, npc.x, npc.y)] = s.ents.indexOf(npc) + 1;
+    const przed = s.log.length;
+    tick(s, { act: true }, reg);
+    expect(s.log.slice(przed).join(' ')).toContain('Nic tu nie ma');
   });
 });

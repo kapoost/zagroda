@@ -48,6 +48,17 @@ export interface Postac {
   id: string;
   name: string;
   gives: string[];
+  /** Kim jest, jednym zdaniem. */
+  opis?: string;
+  /** Co wie o okolicy — zdania z treści gry, których nie wolno jej uzupełniać własnymi. */
+  wiedza?: string[];
+}
+
+/** Nazwany zabytek w zasięgu wzroku, policzony z mapy po stronie gry. */
+export interface Okolica {
+  nazwa: string;
+  metrow: number;
+  kierunek: string;
 }
 
 /**
@@ -114,10 +125,29 @@ function wiadomosci(
   historia: TuraRozmowy[],
   odGracza: string,
   oferty: Oferta[],
+  okolica: Okolica[],
 ): Wiadomosc[] {
   const dary = postac.gives.length
     ? `Mozesz dac graczowi wylacznie: ${postac.gives.join(', ')}. Nic poza tym.`
-    : 'Nie masz nic do oddania.';
+    : 'Nie handlujesz — gdy gracz poprosi o przedmiot, odmow krotko.';
+
+  /**
+   * Kim jest postac i co wie. Oba bloki sa stale przez cala rozmowe, wiec ida na sam
+   * poczatek — razem z blokiem wpieczonym w model tworza prefiks, ktory trafia w cache.
+   *
+   * "Wiedza" to zdania z tresci gry i model ma ich UZYWAC, a nie uzupelniac. Zapytany
+   * wprost o kamienice Rynku Wielkiego wymienil te sama "Pod Malpa" dwa razy jako dwa
+   * rozne domy i polaczyl prawdziwa Kamienice Wilczkowska z prawdziwa Pod Aniolem
+   * w jeden budynek. Wie, jak to brzmi; nie wie, jak bylo.
+   */
+  const ktoTy = [`Jestes: ${postac.name}.`, postac.opis ?? '', dary].filter(Boolean).join(' ');
+  const coWiesz = postac.wiedza?.length
+    ? ['', 'CO WIESZ O OKOLICY — mow z tego i NICZEGO poza tym nie dopowiadaj:',
+       ...postac.wiedza.map((w) => `  ${w}`),
+       'Gdy gracz pyta o cos spoza tej listy, mow wprost, ze nie wiesz.',
+       'O budynkach podawaj NAZWE i KIERUNEK, nic wiecej. Nie opisuj ich wygladu,',
+       'koloru ani ulicy — tego nie wiesz, a zmyslone szczegoly brzmia tak samo jak prawda.']
+    : [];
 
   /**
    * Cennik liczy silnik gry i podajemy go modelowi DOSLOWNIE, zeby jego zdanie
@@ -134,13 +164,26 @@ function wiadomosci(
         'CENNIK (policzony, nie do negocjacji — podawaj dokladnie te liczby):',
         ...oferty.map((o) => `  ${o.darNazwa} = ${o.ile}x ${o.zaNazwa}`),
       ]
-    : ['Gracz nie ma teraz czym zaplacic, wiec nic mu nie oddajesz. Powiedz to wprost.'];
+    : ['[gracz nie ma teraz czym zaplacic — nie oddawaj mu nic, ale nie recytuj tego zdania]'];
+
+  // Lista jest ZAMKNIETA i trzeba to powiedziec wprost. Sama lista nie wystarczyla:
+  // model wymieniał z niej poprawne nazwy, a między nie wplatał studnie, wieże
+  // i pomniki, których w grze nie ma. Brak czegoś na liście nie jest dla modelu
+  // informacją, dopóki się tego nie napisze.
+  const wokol = okolica.length
+    ? [
+        'W zasiegu wzroku stoi DOKLADNIE TO i nic wiecej:',
+        ...okolica.map((m) => `  ${m.nazwa} — ${m.metrow} m na ${m.kierunek}`),
+        'Nie dodawaj zadnych innych obiektow: ani studni, ani wiez, ani pomnikow.',
+        'Czego nie ma na tej liscie, tego tu nie ma.',
+      ]
+    : ['[w zasiegu wzroku nie ma nic nazwanego — nie wymyslaj budowli]'];
 
   return [
-    { role: 'user', content: `Jestes: ${postac.name}. ${dary}` },
+    { role: 'user', content: [ktoTy, ...coWiesz].join('\n') },
     { role: 'assistant', content: 'Rozumiem. Jestem soba i mowie krotko.' },
     ...historia.map((t) => ({ role: t.rola === 'gracz' ? 'user' : 'assistant', content: t.tekst })),
-    { role: 'user', content: [...cennik, '', `[gracz ma: ${stanGracza}]`, odGracza].join('\n') },
+    { role: 'user', content: [...wokol, ...(wokol.length ? [''] : []), ...cennik, '', `[gracz ma: ${stanGracza}]`, odGracza].join('\n') },
   ];
 }
 
@@ -212,9 +255,10 @@ export async function kwestia(
   historia: TuraRozmowy[],
   odGracza: string,
   oferty: Oferta[],
+  okolica: Okolica[],
   naTekst: (fragment: string) => void,
 ): Promise<{ tekst: string; watek: Wiadomosc[] }> {
-  const watek = wiadomosci(postac, stanGracza, historia, odGracza, oferty);
+  const watek = wiadomosci(postac, stanGracza, historia, odGracza, oferty, okolica);
   const tekst = await strumien(
     MODEL_NPC,
     watek,

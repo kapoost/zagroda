@@ -12,7 +12,7 @@ import { run, type RunResult } from './pipeline.js';
  * a nie usługa — każda dołożona warstwa byłaby tu kosztem bez pokrycia.
  */
 
-import { akcja, kwestia, modelAktualny, przygotuj, type Oferta, type Postac, type TuraRozmowy } from './rozmowa.js';
+import { akcja, kwestia, modelAktualny, przygotuj, type Okolica, type Oferta, type Postac, type TuraRozmowy } from './rozmowa.js';
 import { podgladOps, podgladRoutingu, routeRequest } from './stages/intent.js';
 
 const PORT = Number(process.env.ZU_PORT ?? 5182);
@@ -131,6 +131,7 @@ async function obsluzRozmowe(res: ServerResponse, body: Record<string, unknown>)
   // Oferty liczy silnik gry po stronie przegladarki. Sa NIEZAUFANE: sluza modelowi
   // za liste wyboru i za cennik do zacytowania, a rdzen i tak przelicza kurs od nowa.
   const oferty = Array.isArray(body.oferty) ? (body.oferty as Oferta[]) : [];
+  const okolica = Array.isArray(body.okolica) ? (body.okolica as Okolica[]) : [];
   const odGracza = String(body.tekst ?? '').trim();
   const stanGracza = String(body.stan ?? 'nic');
   if (!postac?.id || !odGracza) {
@@ -158,7 +159,7 @@ async function obsluzRozmowe(res: ServerResponse, body: Record<string, unknown>)
       await przygotuj();
       rozgrzany = true;
     }
-    const { tekst, watek } = await kwestia(postac, stanGracza, historia, odGracza, oferty, (f: string) =>
+    const { tekst, watek } = await kwestia(postac, stanGracza, historia, odGracza, oferty, okolica, (f: string) =>
       slij({ typ: 'tekst', tekst: f }),
     );
     const wymiana = await akcja(postac, watek, oferty);

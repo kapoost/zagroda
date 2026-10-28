@@ -199,6 +199,18 @@ export const NpcSchema = z
      * nie dało się obejść progresji przez rozdawanie narzędzi.
      */
     gives: z.array(Id).max(4).default([]),
+    /** Kim ta osoba jest, jednym zdaniem. Trafia do promptu rozmowy i do okna w grze. */
+    opis: Desc.default(''),
+    /**
+     * Co ta osoba wie o okolicy — zdania, których modelowi NIE WOLNO wymyślać.
+     *
+     * Rozdział jest ten sam, co przy fasadach: fakty pochodzą z zapisu, a model daje
+     * im głos. Bielik zapytany wprost o kamienice Rynku Wielkiego wymienił tę samą
+     * „Pod Małpą" dwa razy jako dwa różne domy i połączył prawdziwą Kamienicę
+     * Wilczkowską z prawdziwą Pod Aniołem w jeden budynek. Nazwy zabytków biorą się
+     * więc z mapy, a to, co o nich wiadomo — stąd.
+     */
+    wiedza: z.array(z.string().min(10).max(300)).max(12).default([]),
     likes: z.array(Id).max(5).default([]),
     dialogues: z.array(z.string().min(3).max(200)).min(1).max(12),
   })

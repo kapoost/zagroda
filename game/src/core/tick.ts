@@ -49,6 +49,40 @@ export function facingTile(state: State): { x: number; y: number } {
   return { x: state.player.x + d.dx, y: state.player.y + d.dy };
 }
 
+/**
+ * Osiem kafli dokoła gracza, zawsze w TEJ kolejności.
+ *
+ * Kolejność jest częścią reguły, nie szczegółem zapisu: rdzeń jest deterministyczny,
+ * więc gdyby zależała od czegokolwiek poza tą tablicą, dwa przebiegi z tym samym
+ * seedem mogłyby zebrać dwa różne krzaki.
+ */
+const DOKOLA: ReadonlyArray<{ dx: number; dy: number }> = [
+  { dx: 0, dy: -1 }, { dx: 1, dy: -1 }, { dx: 1, dy: 0 }, { dx: 1, dy: 1 },
+  { dx: 0, dy: 1 }, { dx: -1, dy: 1 }, { dx: -1, dy: 0 }, { dx: -1, dy: -1 },
+];
+
+/**
+ * Na czym zadziała spacja.
+ *
+ * Kafel przed sobą ma pierwszeństwo zawsze — dzięki temu rozmowa, schowek i warsztat
+ * zachowują się przewidywalnie: używasz tego, na co patrzysz. Dopiero gdy przed nami
+ * nic nie ma, szukamy SUROWCA w całym otoczeniu, łącznie ze skosami.
+ *
+ * Rozszerzenie dotyczy wyłącznie surowców i to celowo. Gdyby obejmowało wszystko,
+ * gracz zagadywałby postać stojącą za plecami i otwierał skrzynię, której nie widzi.
+ */
+export function celAkcji(state: State): { x: number; y: number } {
+  const przed = facingTile(state);
+  if (entityAt(state, przed.x, przed.y)) return przed;
+  for (const d of DOKOLA) {
+    const x = state.player.x + d.dx;
+    const y = state.player.y + d.dy;
+    const e = entityAt(state, x, y);
+    if (e?.kind === 'resource') return { x, y };
+  }
+  return przed;
+}
+
 export function heldToolKind(state: State, reg: Registry): string {
   const held = state.player.held;
   if (!held) return 'hand';
@@ -292,7 +326,7 @@ export function tick(state: State, input: Input, reg: Registry): State {
   }
 
   if (input.act) {
-    const t = facingTile(state);
+    const t = celAkcji(state);
     const e = entityAt(state, t.x, t.y);
     if (!e) log(state, 'Nic tu nie ma.');
     else if (e.kind === 'resource') harvest(state, reg, e, rng);
