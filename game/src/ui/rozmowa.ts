@@ -18,6 +18,8 @@ export interface PostacDoRozmowy {
   wiedza: string[];
 }
 
+import { tryb } from './tryb.js';
+
 export interface MiejsceWPoblizu {
   nazwa: string;
   metrow: number;
@@ -65,9 +67,12 @@ function zbuduj(): HTMLDivElement {
   const pole = el('input', 'pr-pole ro-pole');
   pole.type = 'text';
   pole.placeholder = 'Co mówisz?';
+  // Wymiana stoi OSOBNO od pisania i działa zawsze. Kurs i tak liczy silnik, więc
+  // nic tu nie zależy od tego, czy ktoś ma osiem i pół giga modelu w pamięci.
+  const handel = el('div', 'ro-handel');
   const stopka = el('div', 'ro-stopka');
   stopka.append(pole);
-  okno.append(head, watek, stopka);
+  okno.append(head, watek, handel, stopka);
   tlo.append(okno);
   document.body.append(tlo);
 
@@ -90,6 +95,35 @@ function zbuduj(): HTMLDivElement {
 }
 
 const watekEl = () => korzen!.querySelector('.ro-watek') as HTMLDivElement;
+const handelEl = () => korzen!.querySelector('.ro-handel') as HTMLDivElement;
+
+/**
+ * Lista wymian do kliknięcia. Odświeżana po każdej transakcji, bo cennik zależy od
+ * tego, co gracz ma w plecaku — a to się właśnie zmieniło.
+ */
+function odswiezHandel(): void {
+  const h = handelEl();
+  const lista = dajOferty?.() ?? [];
+  h.replaceChildren();
+  if (!biezaca?.gives.length) return;
+  if (!lista.length) {
+    h.append(el('p', 'ro-handel-pusto', `${biezaca.name} coś by oddał, ale nie masz czym zapłacić.`));
+    return;
+  }
+  h.append(el('p', 'ro-handel-tyt', 'Wymiana'));
+  for (const o of lista) {
+    const b = el('button', 'ro-oferta', `${o.darNazwa} za ${o.ile}× ${o.zaNazwa}`);
+    b.type = 'button';
+    b.addEventListener('click', () => {
+      if (!biezaca) return;
+      naAkcje?.(biezaca.id, o.daj, o.za);
+      dopisz('ro-dar', `Wymiana: ${o.darNazwa} za ${o.ile}× ${o.zaNazwa}.`);
+      // Rdzeń stosuje wejście dopiero w następnym tiku, więc odświeżamy po nim.
+      setTimeout(odswiezHandel, 150);
+    });
+    h.append(b);
+  }
+}
 
 function dopisz(klasa: string, tekst: string): HTMLDivElement {
   const w = watekEl();
@@ -153,6 +187,7 @@ async function wyslij(tekst: string): Promise<void> {
           const o = (dajOferty?.() ?? []).find((x) => x.daj === z.wymiana!.daj && x.za === z.wymiana!.za);
           naAkcje?.(biezaca.id, z.wymiana.daj, z.wymiana.za);
           dopisz('ro-dar', o ? `Wymiana: ${o.darNazwa} za ${o.ile}× ${o.zaNazwa}.` : 'Wymiana doszła do skutku.');
+          setTimeout(odswiezHandel, 150);
         }
       }
     }
@@ -183,8 +218,24 @@ export function otworz(
   (korzen.querySelector('h2') as HTMLElement).textContent = postac.name;
   watekEl().replaceChildren();
   dopisz('ro-info', postac.opis || `Rozmawiasz z: ${postac.name}.`);
-  dopisz('ro-info', 'Odpowiedzi pisze lokalny model, więc bywają wolniejsze niż gra.');
-  (korzen.querySelector('.ro-pole') as HTMLInputElement).focus();
+
+  // Rozmowa po polsku wymaga modelu; wymiana nie. Mówimy to wprost, zamiast pokazywać
+  // pole, które po Enterze odpowie błędem połączenia.
+  const pisanie = korzen.querySelector('.ro-stopka') as HTMLElement;
+  const zModelem = tryb() === 'pelny';
+  pisanie.style.display = zModelem ? '' : 'none';
+  (korzen.querySelector('.pr-dek') as HTMLElement).textContent = zModelem
+    ? 'Esc zamyka. Enter wysyła.'
+    : 'Esc zamyka.';
+  dopisz(
+    'ro-info',
+    zModelem
+      ? 'Odpowiedzi pisze lokalny model, więc bywają wolniejsze niż gra.'
+      : 'Ta wersja chodzi bez modelu, więc rozmowy nie ma — zostaje wymiana. Spacja przy postaci daje jej kwestie i zlecenia.',
+  );
+
+  odswiezHandel();
+  if (zModelem) (korzen.querySelector('.ro-pole') as HTMLInputElement).focus();
 }
 
 export function zamknij(): void {

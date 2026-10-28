@@ -4,6 +4,7 @@ import { draw } from './render/canvas.js';
 import { availableRecipes, inventoryIds, renderHud, type HudRefs } from './render/hud.js';
 import { pracowniaOtwarta, przelacz, zamknij as zamknijPracownie } from './ui/pracownia.js';
 import { oferty } from './core/wymiana.js';
+import { rozpoznajTryb } from './ui/tryb.js';
 import { otworz as otworzRozmowe, rozmowaOtwarta, zamknij as zamknijRozmowe } from './ui/rozmowa.js';
 
 /** Spięcie rdzenia z przeglądarką: pętla o stałym kroku, wejście z klawiatury, rysowanie. */
@@ -29,6 +30,10 @@ function resize(): void {
 }
 window.addEventListener('resize', resize);
 resize();
+
+// Jedno pytanie na starcie: czy jest z kim rozmawiać. Od odpowiedzi zależy, co gra
+// pokazuje — a nie to, czy pokaże błąd po kliknięciu.
+void rozpoznajTryb();
 
 const held = new Set<string>();
 /** Akcje jednorazowe: odpalają się na wciśnięcie, nie na auto-powtarzanie klawisza. */

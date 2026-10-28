@@ -1,0 +1,178 @@
+{
+  "wygenerowano": "2026-10-28",
+  "przyklad": "dodaj kamienny młot, dużo wytrzymalszy od kilofa",
+  "prompt": {
+    "system": "ŚWIAT GRY — każda zmiana ma się w nim zmieścić:\nMiejsce\n\n**Stare Miasto w Zamościu**, późne lato. Renesansowe miasto idealne zaprojektowane od\nzera: pięciokąt bastionów, Rynek Wielki pośrodku, dwa mniejsze rynki, siatka uliczek\nmiędzy kamienicami w podcieniach. Za wałami zagony, trawa i woda.\n\nPlan miasta nie jest wymyślony — pochodzi z OpenStreetMap i odpowiada rzeczywistemu\nukładowi ulic. Co w tym planie rośnie i leży, to już kwestia rozgrywki.\n\nCzas i technika\n\nTechnika kończy się na narzędziu ręcznym. Jest ogień, kowadło, krosno i wiklina. **Nie ma**\nkoła, szkła, prochu, maszyn, zegarów ani pieniędzy. Wymiana odbywa się rzeczami i przysługą.\n\nCzym rzeczy są zrobione\n\nWszystko pochodzi z okolicy: trzcina znad wody, siano i len z zagonów za wałami, kamień\npolny, drewno, węgiel drzewny z mielerza, ruda darniowa z podmokłej ziemi. Przedmiot, do\nktórego surowiec nie rośnie pod Zamościem, do tego świata nie należy.\n\nLudzie\n\nSześć osób. Trzy żyją z pracy rąk, trzy pamiętają, jak to miasto powstawało.\n\n- **Zofia** — prowadzi wymianę. Wie, co się komu przyda, i mówi to wprost.\n- **Bartek** — rybak. Mało mówi, zna wodę, mierzy czas pogodą.\n- **Hanka** — kowalka. Żelazo traktuje poważnie, ludzi z humorem.\n- **Morando** — budowniczy z Padwy. Rysował plan tego miasta i stawiał je dwadzieścia lat.\n- **Szymon** — poeta. Chodził za tym, żeby stanęła tu szkoła wyższa.\n- **Rudomicz** — profesor Akademii. Zapisuje, co się dzieje, tego samego dnia.\n\nCi trzej mówią o mieście z tego, co zapisane w ich wiedzy — nie z pamięci modelu.\nNazwy kamienic, bram i kościołów pochodzą z mapy, a nie z domysłu.\n\nNikt tu nie jest bohaterem i nikt nikogo nie ratuje. Gracz jest czwartą osobą w mieście,\nnie wybrańcem.\n\nTon\n\nSpokojny, konkretny, ciepły. Praca ma sens, a dzień ma koniec. Bez patosu, bez żartów\nsytuacyjnych, bez mrugania do gracza. Zdanie o przedmiocie ma brzmieć jak notatka kogoś,\nkto go używał — a nie jak opis z katalogu.\n\nDobrze: *„Sucha, lekka, wszędzie jej pełno.\"* · *„Wytopiona i ostudzona.\"*\nŹle: *„Legendarna gałąź mocy!\"* · *„Ten przedmiot zwiększa wydobycie o 15%.\"*\n\nNazewnictwo\n\n- Nazwa po polsku, mianownik, bez przymiotników wartościujących („legendarny\", „ulepszony\")\n- Materiał w nazwie tylko wtedy, gdy odróżnia: *siekiera kamienna* i *siekiera żelazna* tak,\n*drewniana łyżka* nie\n- Identyfikator to nazwa bez polskich znaków, małymi literami, z podkreśleniem\n- Opis: jedno zdanie, najwyżej dwa. Mówi, jak rzecz działa albo czym jest, nie jak jest cenna\n\nCzego w tym świecie nie ma\n\nMagii, potworów, bogów, klątw, run, kryształów, broni wojennej, zwierząt gospodarskich,\npieniędzy, poczty, map skarbów. Nie ma też niczego, co rosłoby w cieplejszym klimacie —\nbambusa, palm, wiśni, ryżu.\n\nJeśli pomysł gracza wymaga którejś z tych rzeczy, znajdź najbliższy odpowiednik z tego\nmiasta zamiast wprowadzać ją do świata.\n\nJesteś projektantem gry \"Zagroda\" — otwarty świat z wytwarzaniem przedmiotów.\nDostajesz opis zmiany po polsku i klasyfikujesz go. Odpowiadasz WYŁĄCZNIE obiektem JSON.\n\nPola:\n- kind: \"dane\" jeśli zmianę da się wyrazić jako nowe/zmienione wpisy w treści gry\n  (przedmioty, receptury, surowce, budynki, NPC, biomy, parametry świata).\n  \"kod\" jeśli wymaga nowej MECHANIKI — czegoś, czego obecne struktury danych nie opisują\n  (np. uprawy, pory roku wpływające na rozgrywkę, handel, walka, nowy rodzaj akcji gracza).\n- collections: które kolekcje trzeba ruszyć (pusta lista przy \"kod\").\n  Pamiętaj o zależnościach: przedmiot, który się stawia, potrzebuje też wpisu w\n  \"structures\"; przedmiot, który się wytwarza, potrzebuje wpisu w \"recipes\";\n  nowy surowiec do zbierania to \"resources\".\n  Zlecenie, prośba, \"przynieś mi\", \"idź zobacz\", \"postaw\" — to kolekcja \"zadania\".\n  UWAGA na dwie kolekcje, które łatwo pomylić:\n  - \"structures\" to rzeczy, które GRACZ STAWIA w świecie — skrzynia, piec, ściana.\n  - \"facades\" to WYGLĄD ZABUDOWY MIASTA, której gracz nie stawia i nie posiada:\n    jak wygląda kamienica danego rodzaju — tynk, dachówka, attyka, rytm podcieni.\n    Wszystko o pierzejach, elewacjach, attykach, podcieniach i kolorach kamienic\n    to \"facades\". Liczbę kondygnacji i status zabytku gra bierze z mapy miasta,\n    więc nie wymyślaj, co stoi pod którym adresem.\n- title: krótki tytuł zmiany po polsku, bez kropki\n- summary_pl: 2-3 zdania, co dokładnie się zmieni i dlaczego\n- removes_content: true TYLKO jeśli gracz wprost prosi o usunięcie czegoś, co już jest w grze.\n  Dodanie nowej rzeczy to zawsze false.\n- modifies_existing: true TYLKO jeśli zmiana dotyka wpisów, które już są w grze\n  (np. \"osłab jagody\", \"zmień cenę skrzyni\"). Dodanie nowej rzeczy to zawsze false.\n- code_request_en: PO ANGIELSKU, techniczny opis zmiany w kodzie; puste przy \"dane\"\n- observable_pl: jedno zdanie po polsku — co gracz zauważy, gdy zmiana zadziała\n- checks: to samo zdanie przełożone na WARUNKI NA LICZBY, które ktoś może sprawdzić.\n  Składnia: lewa_strona OPERATOR prawa_strona, gdzie strona to liczba albo ścieżka\n  kolekcja.id.pole — na przykład \"items.kosa_zelazna.tool.power > items.kosa.tool.power\"\n  albo \"config.energyMax >= 100\". Operatory: > < >= <= == !=\n  ZAWSZE wpisz warunek, gdy w opisie zmiany jest stopniowanie: \"wytrzymalszy\",\n  \"tańszy\", \"mocniejszy\", \"rzadszy\", \"szybszy\" — to są porównania i dają się policzyć.\n  Porównuj z tym, co JUŻ JEST w grze, a nie z liczbą wziętą z powietrza.\n  Gdy zmiana niczego nie porównuje, wpisz pustą listę.\n- skill_id: przy \"kod\" wybierz z listy poniżej ten rodzaj zmiany, który pasuje najlepiej;\n  wpisz \"brak\", jeśli żaden naprawdę nie pasuje. Przy \"dane\" zawsze \"brak\".\n\nZasada: wybieraj \"dane\", kiedy tylko to możliwe. Nowa broń, surowiec, potrawa, budynek\nczy postać to zawsze \"dane\".\n\nPRZYKŁAD dla zadania \"dodaj żelazną siekierę, mocniejszą i trwalszą od kamiennej\":\n{\n  \"kind\": \"dane\",\n  \"collections\": [\"items\", \"recipes\"],\n  \"title\": \"Żelazna siekiera\",\n  \"summary_pl\": \"Nowe narzędzie do ścinki, lepsze od kamiennego. Wymaga sztabek żelaza, więc pojawia się dopiero po uruchomieniu pieca.\",\n  \"code_request_en\": \"\",\n  \"observable_pl\": \"Gracz ścina drzewo szybciej i siekiera wytrzymuje dłużej.\",\n  \"checks\": [\n    \"items.siekiera_zelazna.tool.power > items.siekiera_kamienna.tool.power\",\n    \"items.siekiera_zelazna.tool.durability > items.siekiera_kamienna.tool.durability\"\n  ],\n  \"skill_id\": \"brak\",\n  \"removes_content\": false,\n  \"modifies_existing\": false\n}\nZwróć uwagę: w zadaniu były DWA stopniowania (\"mocniejszą\", \"trwalszą\"), więc w checks\nsą DWA warunki — każdy porównuje nowy wpis z tym, który już jest w grze. Gdyby w zadaniu\nnie było żadnego stopniowania, checks byłoby pustą listą.",
+    "user": "RODZAJE NARZĘDZI: hand, axe, pickaxe, hoe, rod, scythe\nSTACJE: hand, workbench, furnace, kitchen, loom\n\nRODZAJE ZMIAN W KODZIE (skill_id):\n- interakcja-ze-struktura: Zmiana dotyczy tego, co się dzieje, gdy gracz użyje czegoś, co sam postawił — schowka, stanowiska, posłania, ogniska.\n- koszt-akcji: Zmiana dotyczy tego, ile sił kosztuje jakaś czynność, albo tego, że koszt ma zależeć od warunków — pory doby, stanu gracza, miejsca, użytego narzędzia.\n- pora-doby: Zmiana dotyczy dnia i nocy, upływu czasu, długości doby, regeneracji sił w czasie albo czegokolwiek, co dzieje się „co jakiś czas\".\n- ruch-gracza: Zmiana dotyczy poruszania się — co blokuje przejście, jak szybko gracz idzie, czy teren albo struktury wpływają na ruch.\n- wymiana-z-postacia: Zmiana dotyczy handlu, wymiany, cen albo tego, co postacie dają graczowi i za ile — kto z kim handluje, kiedy wymiana jest możliwa, co wolno przyjąć jako zapłatę.\n- zachowanie-surowca: Zmiana dotyczy tego, jak zachowują się surowce — ile wypada, jak szybko odrastają, ile uderzeń trzeba, jak wpływa na to narzędzie albo warunki.\n\nOBECNA TREŚĆ GRY:\nPRZEDMIOTY — tylko te id wolno podawać jako wsad receptury i jako łup surowca:\n(33)\n  galaz \"Gałąź\" wart=1\n  kamien \"Kamień\" wart=1\n  wlokno \"Włókno\" wart=1\n  drewno \"Drewno\" wart=2\n  siano \"Siano\" wart=1\n  ruda_zelaza \"Ruda żelaza\" wart=4\n  jagoda \"Jagoda\" wart=2 [jedzenie:+8]\n  ryba \"Ryba\" wart=5 [jedzenie:+20]\n  sznurek \"Sznurek\" wart=3\n  deska \"Deska\" wart=2\n  wegiel_drzewny \"Węgiel drzewny\" wart=3\n  sztabka_zelaza \"Sztabka żelaza\" wart=14\n  tkanina \"Tkanina\" wart=5\n  pieczona_ryba \"Pieczona ryba\" wart=12 [jedzenie:+35]\n  siekiera_kamienna \"Siekiera kamienna\" wart=12 [narzędzie:axe/siła1]\n  kilof_kamienny \"Kilof kamienny\" wart=14 [narzędzie:pickaxe/siła1]\n  siekiera_zelazna \"Siekiera żelazna\" wart=60 [narzędzie:axe/siła2]\n  kilof_zelazny \"Kilof żelazny\" wart=60 [narzędzie:pickaxe/siła2]\n  wedka \"Wędka\" wart=20 [narzędzie:rod/siła1]\n  kosa \"Kosa\" wart=30 [narzędzie:scythe/siła1]\n  stol_warsztatowy \"Stół warsztatowy\" wart=20 [stawiane→warsztat]\n  piec \"Piec\" wart=30 [stawiane→piec_hutniczy]\n  kuchnia_polowa \"Kuchnia polowa\" wart=24 [stawiane→palenisko_kuchenne]\n  krosno \"Krosno\" wart=30 [stawiane→krosno_tkackie]\n  skrzynia \"Skrzynia\" wart=20 [stawiane→skrzynia_drewniana]\n  sciana_drewniana \"Ściana drewniana\" wart=8 [stawiane→sciana]\n  pochodnia \"Pochodnia\" wart=3 [stawiane→pochodnia_stojaca]\n  kosz_wiklinowy \"Kosz wiklinowy\" wart=10 [stawiane→kosz_wiklinowy]\n  mata_slomiana \"Mata słomiana\" wart=10 [stawiane→legowisko]\n  namiot \"Namiot płócienny\" wart=35 [stawiane→namiot_plocienny]\n  mlot_kamienny \"Kamienny młot\" wart=24 [narzędzie:pickaxe/siła1]\n  kosa_zelazna \"Kosa żelazna\" wart=60 [narzędzie:scythe/siła2]\n  wedka_zelazna \"Wędka żelazna\" wart=40 [narzędzie:rod/siła2]\nSTRUKTURY (10):\n  warsztat \"Stół warsztatowy\" stacja=workbench\n  piec_hutniczy \"Piec hutniczy\" stacja=furnace\n  palenisko_kuchenne \"Kuchnia polowa\" stacja=kitchen\n  krosno_tkackie \"Krosno\" stacja=loom\n  skrzynia_drewniana \"Skrzynia\" schowek=20\n  sciana \"Ściana drewniana\"\n  pochodnia_stojaca \"Pochodnia\"\n  kosz_wiklinowy \"Kosz wiklinowy\" schowek=30\n  legowisko \"Legowisko\"\n  namiot_plocienny \"Namiot\"\nSUROWCE — rosną/leżą w świecie i NIE SĄ przedmiotami. Nie wolno ich podawać jako wsadu\nreceptury. Receptura bierze to, co surowiec DAJE:\n(8)\n  krzak \"Krzak jagodowy\" — zbierasz narzędziem hand w biomach [trawa,ziemia], DAJE PRZEDMIOTY: galaz, jagoda\n  kamien_polny \"Kamień polny\" — zbierasz narzędziem hand w biomach [ziemia,trawa], DAJE PRZEDMIOTY: kamien\n  trzcina \"Trzcina\" — zbierasz narzędziem hand w biomach [woda], DAJE PRZEDMIOTY: wlokno\n  drzewo \"Drzewo\" — zbierasz narzędziem axe w biomach [trawa], DAJE PRZEDMIOTY: drewno, galaz\n  zloze_zelaza \"Ruda darniowa\" — zbierasz narzędziem pickaxe w biomach [ziemia], DAJE PRZEDMIOTY: ruda_zelaza, kamien\n  lowisko \"Łowisko\" — zbierasz narzędziem rod w biomach [woda], DAJE PRZEDMIOTY: ryba\n  trawa_wysoka \"Trawa wysoka\" — zbierasz narzędziem scythe w biomach [trawa], DAJE PRZEDMIOTY: siano\n  len \"Len\" — zbierasz narzędziem hand w biomach [trawa,ziemia], DAJE PRZEDMIOTY: wlokno\nRECEPTURY (25):\n  r_sznurek @hand: 2×wlokno → 1×sznurek\n  r_siekiera_kamienna @hand: 2×galaz + 2×kamien + 1×sznurek → 1×siekiera_kamienna\n  r_kilof_kamienny @hand: 2×galaz + 3×kamien + 1×sznurek → 1×kilof_kamienny\n  r_stol_warsztatowy @hand: 4×galaz + 2×kamien + 1×sznurek → 1×stol_warsztatowy\n  r_pochodnia @hand: 1×galaz + 1×wegiel_drzewny → 2×pochodnia\n  r_deska @workbench: 1×drewno → 2×deska\n  r_piec @workbench: 12×kamien + 1×sznurek → 1×piec\n  r_wedka @workbench: 2×galaz + 2×sznurek → 1×wedka\n  r_skrzynia @workbench: 4×deska + 1×sznurek → 1×skrzynia\n  r_sciana_drewniana @workbench: 3×deska → 1×sciana_drewniana\n  r_kuchnia_polowa @workbench: 4×deska + 2×kamien → 1×kuchnia_polowa\n  r_krosno @workbench: 4×deska + 2×sznurek → 1×krosno\n  r_siekiera_zelazna @workbench: 2×sztabka_zelaza + 1×drewno + 1×sznurek → 1×siekiera_zelazna\n  r_kilof_zelazny @workbench: 2×sztabka_zelaza + 1×drewno + 1×sznurek → 1×kilof_zelazny\n  r_kosa @workbench: 1×sztabka_zelaza + 1×drewno + 1×sznurek → 1×kosa\n  r_wegiel_drzewny @furnace: 2×drewno → 1×wegiel_drzewny\n  r_sztabka_zelaza @furnace: 2×ruda_zelaza + 1×wegiel_drzewny → 1×sztabka_zelaza\n  r_pieczona_ryba @kitchen: 1×ryba + 1×wegiel_drzewny → 1×pieczona_ryba\n  r_tkanina @loom: 3×wlokno → 1×tkanina\n  r_kosz_wiklinowy @workbench: 10×wlokno + 2×sznurek → 1×kosz_wiklinowy\n  r_mata_slomiana @workbench: 4×siano + 1×sznurek → 1×mata_slomiana\n  r_namiot @workbench: 3×tkanina + 2×galaz + 1×sznurek → 1×namiot\n  r_mlot_kamienny @workbench: 2×galaz + 4×kamien + 1×sznurek → 1×mlot_kamienny\n  r_kosa_zelazna @workbench: 2×sztabka_zelaza + 1×drewno + 1×sznurek → 1×kosa_zelazna\n  r_wedka_zelazna @workbench: 2×sztabka_zelaza + 1×deska + 1×sznurek → 1×wedka_zelazna\nBIOMY (6): woda, ziemia, trawa, bruk, rynek, kamienica\nARCHETYPY FASAD — wygląd kamienicy, dobierany do liczby kondygnacji z mapy (8):\n  pierzeja_ormianska \"Pierzeja ormiańska\" kondygnacje 2-3, zabytek, attyka rzezbiona, arkada co 2 kafle\n  kamienica_zabytkowa \"Kamienica zabytkowa\" kondygnacje 0-6, zabytek, attyka prosta, arkada co 2 kafle\n  pierzeja_rynkowa \"Pierzeja rynkowa\" kondygnacje 2-3, attyka prosta, arkada co 2 kafle\n  kamienica_uliczna \"Kamienica uliczna\" kondygnacje 2-3, attyka brak, arkada co 3 kafle\n  dom_przywalowy \"Dom przywałowy\" kondygnacje 1-1, attyka brak, bez podcieni\n  gmach \"Gmach\" kondygnacje 4-6, attyka prosta, bez podcieni\n  kamienica_bez_metryki \"Kamienica bez metryki\" kondygnacje 0-0, attyka brak, arkada co 2 kafle\n  oficyna \"Oficyna\" kondygnacje 0-0, attyka brak, bez podcieni\nNPC (6): zofia, bartek, hanka, morando, szymon, rudomicz\nZADANIA — zlecenia postaci (5):\n  z_trzcina_dla_zofii od zofia: miec wlokno ×6 → 3× sznurek\n  z_wegiel_dla_hanki od hanka: miec wegiel_drzewny ×3 → 1× sztabka_zelaza\n  z_stol_dla_moranda od morando: postawic warsztat → 4× deska\n  z_ratusz_dla_rudomicza od rudomicz: dojsc Ratusz → 4× jagoda\n  z_brama_dla_szymona od szymon: dojsc Stara Brama Lubelska → 1× tkanina\n\nOPIS ZMIANY OD GRACZA:\ndodaj kamienny młot, dużo wytrzymalszy od kilofa",
+    "gramatykaZnakow": 1018
+  },
+  "dziennik": [
+    {
+      "prompt": "dodaj kosz wiklinowy: pojemny schowek pleciony z trzciny, mieści więcej niż zwykła skrzynia",
+      "kind": "dane",
+      "title": "Dodanie kosza wiklinowego",
+      "outcome": "abandoned",
+      "resolvedBy": null
+    },
+    {
+      "prompt": "dodaj kosz wiklinowy: pojemny schowek pleciony z trzciny, mieści więcej niż zwykła skrzynia",
+      "kind": "dane",
+      "title": "Kosz wiklinowy",
+      "outcome": "abandoned",
+      "resolvedBy": "bielik"
+    },
+    {
+      "prompt": "dodaj kosz wiklinowy: pojemny schowek pleciony z trzciny, mieści więcej niż zwykła skrzynia",
+      "kind": "dane",
+      "title": "Dodanie kosza wiklinowego",
+      "outcome": "abandoned",
+      "resolvedBy": "bielik"
+    },
+    {
+      "prompt": "dodaj kosz wiklinowy: pojemny schowek pleciony z trzciny, mieści więcej niż zwykła skrzynia",
+      "kind": "dane",
+      "title": "Dodanie kosza wiklinowego",
+      "outcome": "merged",
+      "resolvedBy": "bielik"
+    },
+    {
+      "prompt": "dodaj kosz wiklinowy: pojemny schowek pleciony z trzciny, mieści więcej niż zwykła skrzynia",
+      "kind": "dane",
+      "title": "Dodanie kosza wiklinowego",
+      "outcome": "merged",
+      "resolvedBy": "bielik"
+    },
+    {
+      "prompt": "zbieranie surowców w nocy ma kosztować dwa razy więcej sił niż w dzień",
+      "kind": "kod",
+      "title": "Koszty zbierania surowców w nocy",
+      "outcome": "abandoned",
+      "resolvedBy": null
+    },
+    {
+      "prompt": "zbieranie surowców w nocy ma kosztować dwa razy więcej sił niż w dzień",
+      "kind": "kod",
+      "title": "Koszty zbierania surowców w nocy",
+      "outcome": "abandoned",
+      "resolvedBy": null
+    },
+    {
+      "prompt": "zbieranie surowców w nocy ma kosztować dwa razy więcej sił niż w dzień",
+      "kind": "kod",
+      "title": "Koszty zbierania surowców w nocy",
+      "outcome": "abandoned",
+      "resolvedBy": null
+    },
+    {
+      "prompt": "zbieranie surowców w nocy ma kosztować dwa razy więcej sił niż w dzień",
+      "kind": "kod",
+      "title": "Koszt zbierania surowców w nocy",
+      "outcome": "abandoned",
+      "resolvedBy": null
+    },
+    {
+      "prompt": "zbieranie surowców w nocy ma kosztować dwa razy więcej sił niż w dzień",
+      "kind": "kod",
+      "title": "Koszt zbierania surowców w nocy",
+      "outcome": "branch",
+      "resolvedBy": "coder"
+    },
+    {
+      "prompt": "zbieranie surowców w nocy ma kosztować dwa razy więcej sił niż w dzień",
+      "kind": "kod",
+      "title": "Koszt zbierania surowców w nocy",
+      "outcome": "branch",
+      "resolvedBy": "coder"
+    },
+    {
+      "prompt": "dodaj kamienny młot — wolniejszy od kilofa, ale dużo wytrzymalszy",
+      "kind": "dane",
+      "title": "Dodanie kamiennego młota",
+      "outcome": "merged",
+      "resolvedBy": "bielik"
+    },
+    {
+      "prompt": "dodaj żelazną kosę, wyraźnie mocniejszą od zwykłej kosy",
+      "kind": "dane",
+      "title": "Żelazna kosa",
+      "outcome": "merged",
+      "resolvedBy": "bielik"
+    },
+    {
+      "prompt": "dodaj żelazną wędkę, trwalszą od zwykłej",
+      "kind": "dane",
+      "title": "Żelazna wędka",
+      "outcome": "branch",
+      "resolvedBy": "bielik"
+    },
+    {
+      "prompt": "dodaj żelazną wędkę, trwalszą od zwykłej",
+      "kind": "dane",
+      "title": "Żelazna wędka",
+      "outcome": "abandoned",
+      "resolvedBy": "bielik"
+    },
+    {
+      "prompt": "dodaj żelazną wędkę, trwalszą od zwykłej",
+      "kind": "dane",
+      "title": "Żelazna wędka",
+      "outcome": "branch",
+      "resolvedBy": "bielik"
+    },
+    {
+      "prompt": "dodaj żelazną wędkę, trwalszą od zwykłej",
+      "kind": "dane",
+      "title": "Żelazna wędka",
+      "outcome": "merged",
+      "resolvedBy": "bielik"
+    },
+    {
+      "prompt": "dodaj kamienny młot, wytrzymalszy od kilofa",
+      "kind": "dane",
+      "title": "Kamienny młot",
+      "outcome": "abandoned",
+      "resolvedBy": "bielik"
+    }
+  ],
+  "bramka": {
+    "ok": true,
+    "failed": null,
+    "stages": [
+      {
+        "name": "tresc",
+        "ok": true,
+        "ms": 2
+      },
+      {
+        "name": "typy",
+        "ok": true,
+        "ms": 609
+      },
+      {
+        "name": "typy-agent",
+        "ok": true,
+        "ms": 587
+      },
+      {
+        "name": "typy-narzedzi",
+        "ok": true,
+        "ms": 591
+      },
+      {
+        "name": "testy",
+        "ok": true,
+        "ms": 2966
+      },
+      {
+        "name": "testy-agent",
+        "ok": true,
+        "ms": 503
+      },
+      {
+        "name": "symulacja",
+        "ok": true,
+        "ms": 782
+      }
+    ]
+  }
+}

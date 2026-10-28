@@ -44,6 +44,27 @@ Orkiestracja jest deterministyczna. Model nie jest agentem — dostaje wąskie,
 walidowalne zadania. To jedyny sposób, w jaki model ogólnego przeznaczenia może
 rozwijać grę i jej nie zepsuć.
 
+## Jak to pokazać
+
+Trzy poziomy, każdy pokazuje co innego:
+
+| poziom | czego wymaga | co widać |
+| --- | --- | --- |
+| **statyczna gra** | `npm run build`, dowolny hosting | pełna rozgrywka: ruch, zbieranie, wytwarzanie, zadania, wymiana, kwestie postaci |
+| **gra + dowody** | to samo — dowody są w paczce | pracownia staje się eksponatem: prompt, dziennik przebiegów, wynik bramki |
+| **pełny `npm start`** | Ollama i 8,5 GB modelu | żywe rozmowy po polsku i prawdziwe zgłaszanie zmian |
+
+Paczka ma **211 kB** (57 kB po gzipie) i zawiera całą mapę Zamościa — zero zapytań
+sieciowych przy starcie.
+
+Gra sprawdza raz, czy ma z kim rozmawiać, i od tego zależy, co pokazuje. Bez modelu
+znika pole do pisania i przycisk „Wyślij do Bielika", bo **przycisk, który nie może
+zadziałać, jest gorszy od jego braku**. Zostaje wymiana — kurs i tak liczy silnik, więc
+nie zależy od niczego poza treścią gry.
+
+Dowody odświeża `npm run dowody` (robi to też `npm run build`): prompt klasyfikacji
+powstaje z tej samej funkcji, co w pętli, a dziennik i wynik bramki pochodzą z `.agent/`.
+
 ## Co dostaje model
 
 Rozwijanie gry modelem bez wglądu w prompt jest rzucaniem zdania w ciemno, więc prompt

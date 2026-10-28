@@ -6,6 +6,9 @@
  * serwera — tutaj zostaje to, co gracz ma zobaczyć.
  */
 
+import dowody from '../../dowody.json';
+import { gdyTrybZnany } from './tryb.js';
+
 interface WynikBiegu {
   outcome: 'merged' | 'branch' | 'abandoned' | 'dry' | 'error';
   title?: string;
@@ -146,7 +149,7 @@ function zbuduj(): HTMLElement {
         if (d.blad) promptBox.textContent += `\n\n${d.blad}`;
       })
       .catch(() => {
-        promptBox.textContent = 'pracownia nie odpowiada — uruchom grę przez npm start';
+        promptBox.textContent = 'Ta wersja chodzi bez modelu — poniżej jest prompt zapisany przy budowaniu.';
       });
   };
   podglad.addEventListener('toggle', () => { if (podglad.open) pokazPrompt(false); });
@@ -196,7 +199,6 @@ function zbuduj(): HTMLElement {
       zajety = false;
       wyslij.disabled = false;
       wyslij.textContent = 'Wyślij do Bielika';
-      void odswiezHistorie();
     };
     es.addEventListener('error', koniec);
   };
@@ -228,7 +230,7 @@ function zbuduj(): HTMLElement {
         wyslij.textContent = 'Wyślij do Bielika';
       })
       .catch(() => {
-        dopiszLog('Nie ma kontaktu z pracownią. Uruchom ją: npm start');
+        dopiszLog('Ta wersja chodzi bez modelu, więc zgłoszenia nie mają gdzie pójść.');
         zajety = false;
         wyslij.disabled = false;
         wyslij.textContent = 'Wyślij do Bielika';
@@ -254,14 +256,79 @@ function zbuduj(): HTMLElement {
         hist.append(li);
       }
     } catch {
-      hist.replaceChildren(el('li', 'pr-pusto', 'pracownia nie odpowiada — npm start'));
+      hist.replaceChildren(el('li', 'pr-pusto', 'historia przebiegów poniżej pochodzi z zapisu, nie z tej przeglądarki'));
     }
   };
 
   tlo.addEventListener('click', (e) => {
     if (e.target === tlo) zamknij();
   });
-  void odswiezHistorie();
+
+  /**
+   * Bez modelu pracownia przestaje być formularzem, a staje się eksponatem.
+   *
+   * Przycisk, który nie może zadziałać, jest gorszy od jego braku: ktoś go naciśnie
+   * i dostanie błąd połączenia zamiast odpowiedzi na pytanie, po co ta gra istnieje.
+   * Zostaje więc to, co da się pokazać bez niczego — prompt, dziennik przebiegów
+   * i wynik bramki, zapisane w chwili budowania.
+   */
+  gdyTrybZnany((t) => {
+    // Historia z serwera TYLKO w trybie pełnym. Inaczej jej asynchroniczny błąd
+    // wyścigał się z eksponatem i zamazywał go komunikatem o braku kontaktu.
+    if (t === 'pelny') {
+      void odswiezHistorie();
+      return;
+    }
+    wyslij.remove();
+    chipy.remove();
+    pole.remove();
+    (okno.querySelector('.pr-dek') as HTMLElement).textContent =
+      'Ta wersja chodzi bez modelu. Poniżej jest dokładnie to, co model dostawał i co z tym robił.';
+    histTyt.textContent = 'Co model naprawdę zrobił';
+    pokazDowody();
+  });
+
+  /**
+   * Eksponat zamiast formularza: prompt, który model dostawał, i co z tego wyszło.
+   * Wyniki są prawdziwe — pochodzą z dziennika przebiegów zapisanego przy budowaniu.
+   */
+  function pokazDowody(): void {
+    promptBox.textContent = [
+      `── SYSTEM (${dowody.prompt.system.length} znaków) ──`,
+      dowody.prompt.system,
+      '',
+      `── UŻYTKOWNIK (${dowody.prompt.user.length} znaków) ──`,
+      dowody.prompt.user,
+      '',
+      `── GRAMATYKA ── ${dowody.prompt.gramatykaZnakow} znaków ──`,
+    ].join('\n');
+    podglad.open = false;
+    (podglad.querySelector('summary') as HTMLElement).textContent =
+      `Prompt, który dostawał model — dla zgłoszenia „${dowody.przyklad}"`;
+    pelny.remove();
+
+    hist.replaceChildren();
+    if (!dowody.dziennik.length) {
+      hist.append(el('li', 'pr-pusto', 'brak zapisanych przebiegów'));
+    }
+    for (const w of dowody.dziennik.slice().reverse()) {
+      const opis = OPIS_WYNIKU[w.outcome as WynikBiegu['outcome']];
+      const li = el('li');
+      li.append(
+        el('span', `pr-znacznik ${opis?.klasa ?? 'bad'}`, opis?.etykieta ?? w.outcome),
+        el('span', 'pr-hist-tekst', w.title ?? w.prompt),
+      );
+      hist.append(li);
+    }
+
+    const b = dowody.bramka;
+    if (b) {
+      const etapy = b.stages.map((e) => `${e.ok ? '✓' : '✗'} ${e.name} ${e.ms} ms`).join(' · ');
+      stan.append(el('p', 'pr-dek', `Bramka z ${dowody.wygenerowano}: ${b.ok ? 'zielona' : 'czerwona'} — ${etapy}`));
+    }
+  }
+
+  // Historii nie pobieramy tutaj: robi to gdyTrybZnany, i tylko w trybie pełnym.
   queueMicrotask(() => pole.focus());
   return tlo;
 }

@@ -70,6 +70,18 @@
   .ro-postac::before { content: attr(data-kto) ": "; color: #d46a9f; }
   .ro-dar { color: var(--accent); font-size: 12px; }
   .ro-blad { color: #d98a6a; font-size: 12px; }
+  .ro-handel { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+  .ro-handel-tyt {
+    margin: 0; width: 100%; font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--dim);
+  }
+  .ro-handel-pusto { margin: 0; font-size: 12px; color: var(--dim); }
+  .ro-oferta {
+    font: inherit; font-size: 12px; cursor: pointer;
+    background: #1b2415; color: var(--ink);
+    border: 1px solid #3a462f; border-radius: 999px; padding: 0.3rem 0.7rem;
+  }
+  .ro-oferta:hover { border-color: var(--accent); color: var(--accent); }
   .ro-stopka { display: flex; gap: 0.5rem; }
   .ro-pole { flex: 1 1 auto; }
   .pr-tlo {
