@@ -141,37 +141,37 @@
       {
         "name": "tresc",
         "ok": true,
-        "ms": 2
+        "ms": 3
       },
       {
         "name": "typy",
         "ok": true,
-        "ms": 609
+        "ms": 657
       },
       {
         "name": "typy-agent",
         "ok": true,
-        "ms": 587
+        "ms": 569
       },
       {
         "name": "typy-narzedzi",
         "ok": true,
-        "ms": 591
+        "ms": 581
       },
       {
         "name": "testy",
         "ok": true,
-        "ms": 2966
+        "ms": 2841
       },
       {
         "name": "testy-agent",
         "ok": true,
-        "ms": 503
+        "ms": 492
       },
       {
         "name": "symulacja",
         "ok": true,
-        "ms": 782
+        "ms": 751
       }
     ]
   }
