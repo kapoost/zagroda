@@ -4,40 +4,34 @@ name: Wymiana z postacią
 when: Zmiana dotyczy handlu, wymiany, cen albo tego, co postacie dają graczowi i za ile — kto z kim handluje, kiedy wymiana jest możliwa, co wolno przyjąć jako zapłatę.
 files: game/src/core/tick.ts, game/src/core/types.ts, game/src/core/wymiana.ts
 ---
+Characters barter with the player. The exchange rate lives in `game/src/core/wymiana.ts`:
+`oferty(state, reg, npcId)` returns every trade that character can make right now, with
+the quantity computed from item values. `doRozmowa()` in `tick.ts` applies a trade only
+if it appears in that list. The input carries `{ npc, daj, za }` and deliberately carries
+NO quantity — the engine recomputes it, so a forged rate cannot exist.
 
-# Wymiana z postacią
+TASK: {{MECHANIZM_EN}}
 
-## Gdzie leży punkt zaczepienia
+HOW TO DO IT
+- `wymiana.ts` is on the write-deny list. READ it to understand the rate, but make your
+  change in `tick.ts` (when a trade happens, what it logs) or in the content JSON
+  (`npcs.json` → `gives`, which items a character may hand over).
+- If the change really needs a different rate, STOP and say so in your summary instead
+  of editing `wymiana.ts`. The rate is an economic boundary, not a gameplay knob; a human
+  changes it deliberately.
+- Call `oferty()` or `dozwolona()` — never re-derive a price inline. One function must
+  stay the single source of the rate, because the same list is also shown to the model
+  that speaks for the character.
+- Keep `doRozmowa()` validating adjacency and the character's `gives` list. It is reached
+  over the network, so it must not trust its input.
 
-`game/src/core/wymiana.ts` — i tego pliku **nie wolno zmieniać**. Jest na liście
-zakazu zapisu razem z botem progresji, bo kurs nie jest pokrętłem rozgrywki, tylko
-granicą ekonomii. Zmiany dotyczące wymiany robi się **wokół** niego:
+INVARIANTS YOU MUST NOT BREAK
+- A trade never increases the total value of the player's inventory. `game/tests/` fuzzes
+  this with random exchange inputs.
+- Tools and placeables are never accepted as payment.
+- A free gift happens only when the player has nothing to pay with; otherwise every
+  handover costs something.
+- `tick()` stays a pure function of (state, input, registry). No clock, no randomness
+  outside `Rng`, no network.
 
-- `game/src/core/tick.ts` → `doRozmowa()` — kiedy wymiana w ogóle dochodzi do skutku
-- `game/content/npcs.json` → `gives` — co która postać może oddać (to są DANE)
-
-## Czego nie wolno złamać
-
-1. **Cenę liczy silnik, nigdy model i nigdy klient.** Do rdzenia przychodzi wyłącznie
-   „co za co"; „ile" wylicza `oferty()` od nowa przy stosowaniu. Gdyby ilość dało się
-   przysłać z zewnątrz, wymiana stałaby się pompą wartości.
-2. **Wartość plecaka gracza nie może rosnąć na wymianie.** Pilnuje tego fuzz
-   w `game/tests/invariants.test.ts`, którego nie wolno edytować.
-3. **Narzędziem ani budynkiem się nie płaci.** Oddanie siekiery za jagodę byłoby dla
-   gracza katastrofą, a postać nie ma prawa mu tego proponować.
-4. **Darmowy dar tylko wtedy, gdy gracz nie ma czym zapłacić.** Inaczej rozmowa
-   zamienia się w darmową kopalnię.
-
-## Co wysłać koderowi jako kontekst
-
-- `game/src/core/wymiana.ts` (do czytania, nie do zmiany)
-- `game/src/core/tick.ts`
-- `game/src/core/types.ts` (pole `Input.rozmowa`)
-
-## Skąd to się wzięło
-
-Postacie zaczęły handlować same z siebie, bo lore mówi, że wymiana odbywa się rzeczami
-i przysługą. Model robił rzecz słuszną, tylko mechaniki pod to nie było — a próba
-klasyfikowania jego zdań na „dał / nie dał" goniła ogon: „Wezmę w zamian" przechodziło
-jako dar, a „Tutaj, masz jedną" już nie. Kategoria była zła. Model nigdy nie mówił
-„dałem", tylko „dam X za Y".
+The player should notice: {{EFEKT_PL}}
