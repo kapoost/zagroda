@@ -71,6 +71,12 @@ function zbuduj(): HTMLDivElement {
   tlo.append(okno);
   document.body.append(tlo);
 
+  // Kliknięcie w tło zamyka, tak samo jak w pracowni — żeby myszą dało się wyjść
+  // z rozmowy bez szukania klawisza.
+  tlo.addEventListener('click', (e) => {
+    if (e.target === tlo) zamknij();
+  });
+
   pole.addEventListener('keydown', (e) => {
     e.stopPropagation();
     if (e.key === 'Escape') { zamknij(); return; }

@@ -51,7 +51,11 @@
   #keys b { color: var(--ink); font-weight: 600; }
 
   /* ── Pracownia ─────────────────────────────────────────────────── */
-  /* Okno rozmowy. Dzieli ramę z pracownią, bo to ten sam rodzaj przerwy w grze. */
+  /* Okno rozmowy. Dzieli ramę z pracownią, bo to ten sam rodzaj przerwy w grze.
+     Różni się tym, że zostaje w drzewie dokumentu między rozmowami — więc MUSI mieć
+     stan ukryty. Bez tej reguły klasa "widoczne" była napisem bez znaczenia: Esc ją
+     zdejmował, a przezroczyste tło dalej zasłaniało całą grę. */
+  .ro-tlo:not(.widoczne) { display: none; }
   .ro-okno { width: min(34rem, 100%); max-height: min(32rem, 100%); }
   .ro-watek {
     flex: 1 1 auto; min-height: 10rem; overflow-y: auto;
