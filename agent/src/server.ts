@@ -12,7 +12,7 @@ import { run, type RunResult } from './pipeline.js';
  * a nie usługa — każda dołożona warstwa byłaby tu kosztem bez pokrycia.
  */
 
-import { akcja, kwestia, modelAktualny, przygotuj, type Okolica, type Oferta, type Postac, type TuraRozmowy } from './rozmowa.js';
+import { POLACZENIE, akcja, kwestia, modelAktualny, przygotuj, type Okolica, type Oferta, type Postac, type TuraRozmowy } from './rozmowa.js';
 import { podgladOps, podgladRoutingu, routeRequest } from './stages/intent.js';
 
 const PORT = Number(process.env.ZU_PORT ?? 5182);
@@ -159,10 +159,10 @@ async function obsluzRozmowe(res: ServerResponse, body: Record<string, unknown>)
       await przygotuj();
       rozgrzany = true;
     }
-    const { tekst, watek } = await kwestia(postac, stanGracza, historia, odGracza, oferty, okolica, (f: string) =>
+    const { tekst, watek } = await kwestia(POLACZENIE, postac, stanGracza, historia, odGracza, oferty, okolica, (f: string) =>
       slij({ typ: 'tekst', tekst: f }),
     );
-    const wymiana = await akcja(postac, watek, oferty);
+    const wymiana = await akcja(POLACZENIE, watek, oferty);
     historia.push({ rola: 'gracz', tekst: odGracza }, { rola: 'postac', tekst });
     // Pamiec rozmowy jest krotka celowo: dluzszy watek to dluzszy prompt i wolniejsza tura.
     watki.set(postac.id, historia.slice(-8));

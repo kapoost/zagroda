@@ -143,6 +143,7 @@ window.addEventListener('keydown', (e) => {
         stanGracza,
         () => cennik(postac.id),
         okolica,
+        () => game.reg.content,
         (npc, daj, za) => { pending.rozmowa = { npc, daj, za }; },
       );
     }

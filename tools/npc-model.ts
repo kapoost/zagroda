@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { blokSwiata } from '../game/src/rozmowa/prompt.js';
+import type { Content } from '../game/src/content/schema.js';
 
 /**
  * Budowa modelu Ollamy do zywych rozmow z postaciami.
@@ -48,33 +50,19 @@ export function odciskTresci(): string {
   return h.toString(16).padStart(8, '0');
 }
 
+/**
+ * Blok systemowy sklada sie w game/src/rozmowa/prompt.ts, a nie tutaj.
+ *
+ * Czytaja go trzy miejsca: ten generator, serwer petli i sama gra, gdy rozmawia
+ * z Ollama gracza bez zadnego serwera posrodku. Trzy kopie tego tekstu predzej czy
+ * pozniej rozjechalyby sie miedzy soba i gracz z wlasnym modelem dostalby inna gre.
+ */
 export function blokSystemowy(): string {
-  const items = lista('items');
-  const recipes = lista('recipes');
-  const resources = lista('resources');
-  const nazwa = (id: string) => items.find((i) => i.id === id)?.name ?? id;
-
-  return [
-    czytaj('docs/LORE.md').trim(),
-    '',
-    'Jestes jedna z postaci gry "Zagroda" i rozmawiasz z graczem. Zasady rozmowy:',
-    '',
-    '- Odpowiadasz JEDNYM albo DWOMA zdaniami. Nigdy dluzej.',
-    '- Mowisz po polsku, w pierwszej osobie, tonem swojej postaci.',
-    '- Nie wychodzisz z roli, nie opisujesz siebie z zewnatrz, nie piszesz didaskaliow.',
-    '- Nie wymyslasz niczego, czego nie ma ponizej. Gdy nie wiesz, mowisz wprost, ze nie wiesz.',
-    '- Nie obiecujesz graczowi rzeczy, ktorych nie ma na Twojej liscie darow.',
-    '',
-    'RECEPTURY - to sa WSZYSTKIE sposoby wytwarzania, jakie w tej grze istnieja:',
-    ...recipes.map(
-      (r) => `  ${nazwa(r.output.item)} (przy: ${r.station}) = ${r.inputs.map((i: any) => `${i.qty}x ${nazwa(i.item)}`).join(' + ')}`,
-    ),
-    '',
-    'SKAD BIORA SIE SUROWCE:',
-    ...resources.map(
-      (r) => `  ${r.name} - rosnie na: ${r.biomes.join(', ')}; zbierasz: ${r.tool === 'hand' ? 'reka' : r.tool}; daje: ${r.drops.map((d: any) => nazwa(d.item)).join(', ')}`,
-    ),
-  ].join('\n');
+  return blokSwiata(czytaj('docs/LORE.md'), {
+    items: lista('items') as Content['items'],
+    recipes: lista('recipes') as Content['recipes'],
+    resources: lista('resources') as Content['resources'],
+  });
 }
 
 /**

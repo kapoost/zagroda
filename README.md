@@ -56,8 +56,21 @@ To wersja bez modelu: gra działa w całości (ruch, zbieranie, wytwarzanie, zad
 wymiana z postaciami), a **P** otwiera pracownię zamienioną w eksponat — prompt, który
 model dostawał, dziennik przebiegów z prawdziwymi wynikami i stan bramki.
 
-Żywe rozmowy po polsku i zgłaszanie zmian wymagają `npm start` u siebie. **I nie da się
-tego obejść przez stronę** — sprawdziłem:
+### Z własnym modelem, bez instalowania projektu
+
+Jeśli masz Ollamę i pobranego Bielika, gra rozmawia z nim **bezpośrednio z przeglądarki**,
+bez żadnego serwera pośrodku:
+
+```bash
+ollama pull hf.co/speakleash/Bielik-11B-v3.0-Instruct-GGUF:Q5_K_M
+npm run build && npx serve game/dist     # albo cokolwiek, co postawi to na localhoście
+```
+
+Gra sama znajdzie model na `127.0.0.1:11434` i powie w oknie rozmowy, z czym gada.
+To ten sam kod promptów, co w pętli agenta — gdyby był inny, dostałbyś inną grę.
+Pracownia dalej nie zadziała: zapisuje pliki, uruchamia testy i robi commity.
+
+**Strona z internetu tego nie potrafi** i nie jest to kwestia konfiguracji — sprawdziłem:
 
 | strona | → Ollama na `127.0.0.1:11434` |
 | --- | --- |

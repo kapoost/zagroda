@@ -18,7 +18,10 @@ export interface PostacDoRozmowy {
   wiedza: string[];
 }
 
-import { tryb } from './tryb.js';
+import lore from '../../../docs/LORE.md?raw';
+import { akcja, kwestia } from '../rozmowa/klient.js';
+import { blokSwiata, type TuraRozmowy } from '../rozmowa/prompt.js';
+import { OLLAMA, tryb, wybranyModel } from './tryb.js';
 
 export interface MiejsceWPoblizu {
   nazwa: string;
@@ -47,6 +50,10 @@ let naAkcje: ((npc: string, daj: string, za: string) => void) | null = null;
 let dajStan: (() => string) | null = null;
 let dajOferty: (() => OfertaUi[]) | null = null;
 let dajOkolice: (() => MiejsceWPoblizu[]) | null = null;
+/** Treść gry do zbudowania bloku świata, gdy rozmawiamy z gołym Bielikiem gracza. */
+let dajTresc: (() => Parameters<typeof blokSwiata>[1]) | null = null;
+/** Historia wątku. W trybie pełnym trzyma ją serwer; z własnym modelem — my. */
+const watki = new Map<string, TuraRozmowy[]>();
 let czeka = false;
 
 export const rozmowaOtwarta = (): boolean => otwarta;
@@ -141,6 +148,10 @@ async function wyslij(tekst: string): Promise<void> {
   mowi.dataset.kto = biezaca.name;
 
   try {
+    if (tryb() === 'wlasnyModel') {
+      await zWlasnymModelem(tekst, mowi);
+      return;
+    }
     const odp = // Ścieżka względna, bo Vite proxuje /api do serwera pętli — to samo pochodzenie, zero CORS-u.
     await fetch('/api/rozmowa', {
       method: 'POST',
@@ -200,11 +211,62 @@ async function wyslij(tekst: string): Promise<void> {
   }
 }
 
+/**
+ * Rozmowa prosto z przeglądarki do Ollamy gracza, bez żadnego serwera pośrodku.
+ *
+ * Ten sam kod promptów i ten sam klient, co w pętli agenta — gdyby były dwa, gracz
+ * z własnym modelem dostałby inną grę. Serwerowi zostaje to, czego przeglądarka
+ * zrobić nie może: pilnowanie świeżości modelu, zwalnianie wag i jedna tura naraz.
+ */
+async function zWlasnymModelem(tekst: string, mowi: HTMLDivElement): Promise<void> {
+  const wybor = wybranyModel();
+  if (!biezaca || !wybor) {
+    mowi.className = 'ro-linia ro-blad';
+    mowi.textContent = 'nie ma z czym rozmawiać — Ollama nie odpowiada';
+    return;
+  }
+  const pol = {
+    url: OLLAMA,
+    model: wybor.model,
+    // Model zbudowany przez `npm run npc-model` ma blok świata wpieczony. Goły Bielik
+    // nie ma, więc dostaje go z przeglądarki — i zachowuje się tak samo.
+    blokSwiata: wybor.wlasnyBlok && dajTresc ? blokSwiata(lore, dajTresc()) : undefined,
+  };
+  const historia = watki.get(biezaca.id) ?? [];
+  const oferty = dajOferty?.() ?? [];
+
+  const { tekst: odp, watek } = await kwestia(
+    pol,
+    biezaca,
+    dajStan?.() ?? 'nic',
+    historia,
+    tekst,
+    oferty,
+    dajOkolice?.() ?? [],
+    (f) => {
+      if (mowi.dataset.pusto !== 'nie') { mowi.textContent = ''; mowi.dataset.pusto = 'nie'; }
+      mowi.textContent += f;
+      watekEl().scrollTop = watekEl().scrollHeight;
+    },
+  );
+
+  const wymiana = await akcja(pol, watek, oferty);
+  historia.push({ rola: 'gracz', tekst }, { rola: 'postac', tekst: odp });
+  watki.set(biezaca.id, historia.slice(-8));
+
+  if (wymiana) {
+    naAkcje?.(biezaca.id, wymiana.daj, wymiana.za);
+    dopisz('ro-dar', `Wymiana: ${wymiana.darNazwa} za ${wymiana.ile}× ${wymiana.zaNazwa}.`);
+    setTimeout(odswiezHandel, 150);
+  }
+}
+
 export function otworz(
   postac: PostacDoRozmowy,
   stan: () => string,
   cennik: () => OfertaUi[],
   wokol: () => MiejsceWPoblizu[],
+  tresc: () => Parameters<typeof blokSwiata>[1],
   akcja: (npc: string, daj: string, za: string) => void,
 ): void {
   korzen ??= zbuduj();
@@ -212,6 +274,7 @@ export function otworz(
   dajStan = stan;
   dajOferty = cennik;
   dajOkolice = wokol;
+  dajTresc = tresc;
   naAkcje = akcja;
   otwarta = true;
   korzen.classList.add('widoczne');
@@ -222,16 +285,19 @@ export function otworz(
   // Rozmowa po polsku wymaga modelu; wymiana nie. Mówimy to wprost, zamiast pokazywać
   // pole, które po Enterze odpowie błędem połączenia.
   const pisanie = korzen.querySelector('.ro-stopka') as HTMLElement;
-  const zModelem = tryb() === 'pelny';
+  const zModelem = tryb() === 'pelny' || tryb() === 'wlasnyModel';
   pisanie.style.display = zModelem ? '' : 'none';
   (korzen.querySelector('.pr-dek') as HTMLElement).textContent = zModelem
     ? 'Esc zamyka. Enter wysyła.'
     : 'Esc zamyka.';
+  const wybor = wybranyModel();
   dopisz(
     'ro-info',
-    zModelem
-      ? 'Odpowiedzi pisze lokalny model, więc bywają wolniejsze niż gra.'
-      : 'Ta wersja chodzi bez modelu, więc rozmowy nie ma — zostaje wymiana. Spacja przy postaci daje jej kwestie i zlecenia.',
+    tryb() === 'wlasnyModel' && wybor
+      ? `Rozmawiasz przez swoją Ollamę (${wybor.model}). Pierwsza odpowiedź bywa wolna — model się budzi.`
+      : zModelem
+        ? 'Odpowiedzi pisze lokalny model, więc bywają wolniejsze niż gra.'
+        : 'Ta wersja chodzi bez modelu, więc rozmowy nie ma — zostaje wymiana. Spacja przy postaci daje jej kwestie i zlecenia.',
   );
 
   odswiezHandel();
