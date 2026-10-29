@@ -1,4 +1,7 @@
 <meta charset="utf-8" />
+<!-- Bez tego telefon renderuje stronę w wirtualnych 980 px i gra jest nieczytelna.
+     user-scalable=no, bo podwójne stuknięcie w kierunek nie ma przybliżać mapy. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
 <title>Zagroda</title>
 <style>
   :root {
@@ -9,6 +12,7 @@
     --accent: #c9a227;
   }
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
     background: var(--bg);
@@ -19,7 +23,14 @@
     overflow: hidden;
   }
   /* min-width:0 + basis 0 — bez tego canvas rozpycha flexa swoją szerokością atrybutową i rośnie z każdym resize. */
-  #world { flex: 1 1 0; min-width: 0; display: block; background: #0d1512; }
+  /* Plansza ma własny kontener, bo sterowanie dotykiem jest pozycjonowane WZGLĘDEM
+     NIEJ. Przy pozycjonowaniu do okna krzyż kierunków kładł się na panelu bocznym
+     i zasłaniał ekwipunek — a wysokość panelu zmienia się z zawartością, więc
+     odliczanie jej w CSS byłoby zgadywaniem. */
+  #plansza { position: relative; flex: 1 1 0; min-width: 0; min-height: 0; }
+  /* touch-action: none — bez tego przeciągnięcie po planszy przewija stronę
+     albo uruchamia „pull to refresh" i gra znika w pół ruchu. */
+  #world { width: 100%; height: 100%; display: block; background: #0d1512; touch-action: none; }
   #side {
     width: 290px;
     flex: none;
@@ -38,6 +49,8 @@
   li { padding: 2px 0; }
   li.dim, .dim { color: var(--dim); }
   li.sel { color: var(--accent); }
+  #inventory li[data-item], #recipes li[data-recipe] { cursor: pointer; }
+  #inventory li[data-item]:hover, #recipes li[data-recipe]:hover { color: var(--accent); }
   li.cant { color: #6f7564; }
   li.can kbd { background: var(--accent); color: #1b2217; }
   kbd {
@@ -129,6 +142,63 @@
   #zadania li { line-height: 1.5; }
   #zadania .zrobione { color: var(--dim); text-decoration: line-through; }
   #zadania .postep { color: var(--accent); }
+  /* ─── Telefon ─────────────────────────────────────────────────────────
+     Panel boczny ma 290 px, czyli na typowym telefonie trzy czwarte szerokości.
+     Na wąskim ekranie schodzi więc pod planszę i oddaje jej większość wysokości,
+     a przyciskiem „panel" da się go schować całkiem. */
+  @media (max-width: 760px) {
+    body { flex-direction: column; }
+    #side {
+      width: 100%; max-height: 38vh;
+      border-left: none; border-top: 1px solid #2c3626;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    }
+    body.bez-panelu #side { display: none; }
+    /* Wpisy list są celami dla kciuka, więc muszą mieć w co trafić. */
+    #inventory li, #recipes li { padding: 7px 0; }
+    h2 { margin: 10px 0 4px; }
+    #keys, #pomoc { display: none; }
+  }
+
+  /* ─── Sterowanie dotykiem ───────────────────────────────────────────── */
+  #dotyk {
+    position: absolute; inset: auto 0 0 0; z-index: 40;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    padding: 0 12px calc(12px + env(safe-area-inset-bottom));
+    pointer-events: none;
+  }
+  #dotyk button {
+    pointer-events: auto; touch-action: none; -webkit-tap-highlight-color: transparent;
+    font: 600 15px/1 ui-sans-serif, system-ui, sans-serif;
+    color: var(--ink); background: rgba(27, 34, 23, 0.82);
+    border: 1px solid #3a462f; border-radius: 10px;
+    backdrop-filter: blur(3px);
+  }
+  #dotyk button.wcisniety { background: rgba(201, 162, 39, 0.35); border-color: var(--accent); }
+  .d-krzyz {
+    display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px);
+    gap: 4px;
+  }
+  .d-kier { font-size: 20px; }
+  .d-gora  { grid-area: 1 / 2; }
+  .d-lewo  { grid-area: 2 / 1; }
+  .d-prawo { grid-area: 2 / 3; }
+  .d-dol   { grid-area: 3 / 2; }
+  .d-akcje { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .d-mala { width: 44px; height: 44px; border-radius: 50%; font-size: 13px; }
+  .d-duza { width: 84px; height: 84px; border-radius: 50%; font-size: 15px; }
+  #zwin-panel {
+    position: fixed; z-index: 41; right: 12px; top: calc(10px + env(safe-area-inset-top));
+    font: 600 11px/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--dim);
+    background: rgba(27, 34, 23, 0.82); border: 1px solid #3a462f;
+    border-radius: 999px; padding: 7px 12px; -webkit-tap-highlight-color: transparent;
+  }
+  /* Na dużym ekranie warstwa dotyku nie ma po co istnieć. */
+  @media (pointer: fine) and (min-width: 761px) {
+    #dotyk, #zwin-panel { display: none; }
+  }
+
   .pr-podglad { border-top: 1px solid #2c3626; padding-top: 0.7rem; }
   .pr-podglad > summary {
     cursor: pointer; color: var(--dim); font-size: 12px; list-style: none;
@@ -214,7 +284,7 @@
     color: var(--dim); font-size: 11px;
   }
 </style>
-<canvas id="world"></canvas>
+<div id="plansza"><canvas id="world"></canvas></div>
 <aside id="side">
   <h1>Zagroda</h1>
   <div id="clock"></div>

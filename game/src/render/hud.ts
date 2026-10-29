@@ -49,7 +49,10 @@ export function renderHud(refs: HudRefs, state: State, reg: Registry): void {
         .map((id) => {
           const it = reg.items.get(id)!;
           const sel = state.player.held === id ? ' class="sel"' : '';
-          return `<li${sel}>${it.name} <b>×${count(state, id)}</b></li>`;
+          // data-item/data-recipe to jedyny sposób, w jaki kciuk może zrobić to,
+          // co na komputerze robią Q/E i cyfry. Identyfikator w atrybucie, a nie
+          // indeks na liście — lista zmienia kolejność przy każdym zbieraniu.
+          return `<li${sel} data-item="${id}">${it.name} <b>×${count(state, id)}</b></li>`;
         })
         .join('')
     : '<li class="dim">pusto — zbierz coś z otoczenia</li>';
@@ -61,7 +64,7 @@ export function renderHud(refs: HudRefs, state: State, reg: Registry): void {
         .map((r, i) => {
           const can = r.inputs.every((x) => count(state, x.item) >= x.qty);
           const inputs = r.inputs.map((x) => `${x.qty}×${reg.items.get(x.item)!.name}`).join(' + ');
-          return `<li class="${can ? 'can' : 'cant'}"><kbd>${i + 1}</kbd> ${r.name} <small>${inputs}</small></li>`;
+          return `<li class="${can ? 'can' : 'cant'}" data-recipe="${r.id}"><kbd>${i + 1}</kbd> ${r.name} <small>${inputs}</small></li>`;
         })
         .join('')
     : '<li class="dim">brak receptur w zasięgu</li>';

@@ -4,6 +4,7 @@ import { draw } from './render/canvas.js';
 import { availableRecipes, inventoryIds, renderHud, type HudRefs } from './render/hud.js';
 import { pracowniaOtwarta, przelacz, zamknij as zamknijPracownie } from './ui/pracownia.js';
 import { oferty } from './core/wymiana.js';
+import { wlaczDotyk } from './ui/dotyk.js';
 import { rozpoznajTryb } from './ui/tryb.js';
 import { otworz as otworzRozmowe, rozmowaOtwarta, zamknij as zamknijRozmowe } from './ui/rozmowa.js';
 
@@ -34,6 +35,7 @@ resize();
 // Jedno pytanie na starcie: czy jest z kim rozmawiać. Od odpowiedzi zależy, co gra
 // pokazuje — a nie to, czy pokaże błąd po kliknięciu.
 void rozpoznajTryb();
+wlaczDotyk();
 
 const held = new Set<string>();
 /** Akcje jednorazowe: odpalają się na wciśnięcie, nie na auto-powtarzanie klawisza. */
@@ -193,6 +195,27 @@ window.addEventListener('keydown', (e) => {
     }
   }
 });
+
+/**
+ * Stuknięcie w listę robi to samo, co klawisz.
+ *
+ * Bez tego telefon nie ma jak wytworzyć przedmiotu ani zmienić tego, co w ręce —
+ * cyfr i Q/E po prostu nie ma. Delegacja, a nie listener na każdym wpisie, bo HUD
+ * przerysowuje obie listy przy każdej klatce.
+ */
+function stukniecia(el: HTMLElement, atrybut: string, co: (id: string) => void): void {
+  el.addEventListener('click', (e) => {
+    const li = (e.target as HTMLElement).closest(`li[data-${atrybut}]`);
+    const id = li?.getAttribute(`data-${atrybut}`);
+    if (id) co(id);
+  });
+}
+stukniecia(refs.inventory, 'item', (id) => {
+  // Drugie stuknięcie w trzymany przedmiot odkłada go — inaczej z telefonu nie da
+  // się wrócić do gołej ręki, a bez niej nie zbierzesz jagód.
+  pending.hold = game.state.player.held === id ? null : id;
+});
+stukniecia(refs.recipes, 'recipe', (id) => { pending.craft = id; });
 
 window.addEventListener('keyup', (e) => {
   held.delete(e.code);
