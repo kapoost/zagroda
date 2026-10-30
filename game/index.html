@@ -106,6 +106,11 @@
     padding: 2rem 1rem;
     backdrop-filter: blur(2px);
   }
+  /* Na telefonie okno idzie POD GÓRĘ, a nie na środek.
+     Klawiatura ekranowa zajmuje dolne 40% i wyśrodkowane okno chowa pod nią pole
+     do pisania — czyli dokładnie to, po co się je otwiera. Wysokość liczymy w dvh,
+     bo 100vh na telefonie to wysokość BEZ paska przeglądarki i wystaje poza ekran. */
+  
   .pr-okno {
     width: min(42rem, 100%);
     max-height: 100%;
@@ -137,6 +142,7 @@
     padding: 0.7rem 0.8rem;
     font: inherit; font-size: 13px; line-height: 1.6;
   }
+
   .pr-pole:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
   #zadania li { line-height: 1.5; }
@@ -146,19 +152,7 @@
      Panel boczny ma 290 px, czyli na typowym telefonie trzy czwarte szerokości.
      Na wąskim ekranie schodzi więc pod planszę i oddaje jej większość wysokości,
      a przyciskiem „panel" da się go schować całkiem. */
-  @media (max-width: 760px) {
-    body { flex-direction: column; }
-    #side {
-      width: 100%; max-height: 38vh;
-      border-left: none; border-top: 1px solid #2c3626;
-      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-    }
-    body.bez-panelu #side { display: none; }
-    /* Wpisy list są celami dla kciuka, więc muszą mieć w co trafić. */
-    #inventory li, #recipes li { padding: 7px 0; }
-    h2 { margin: 10px 0 4px; }
-    #keys, #pomoc { display: none; }
-  }
+  
 
   /* ─── Sterowanie dotykiem ───────────────────────────────────────────── */
   #dotyk {
@@ -282,6 +276,39 @@
     margin: 0.3rem 0 0; padding-top: 0.7rem;
     border-top: 1px solid #2c3626;
     color: var(--dim); font-size: 11px;
+  }
+
+  /* ─── Telefon ─────────────────────────────────────────────────────────
+     Blok stoi NA KOŃCU arkusza i to nie jest porządkowanie dla porządku.
+     Reguły mają tę samą wagę co bazowe, więc wygrywa ta późniejsza — gdy blok
+     telefonowy stał wyżej, pole do pisania zostawało przy 13 px mimo jawnego
+     nadpisania, a Safari na iOS przybliża wtedy całą stronę przy fokusie. */
+  @media (max-width: 760px) {
+    .pr-tlo {
+      align-items: flex-start;
+      height: 100dvh;
+      padding: calc(0.75rem + env(safe-area-inset-top)) 0.75rem 0.75rem;
+    }
+    .pr-okno, .ro-okno { max-height: calc(100dvh - 1.5rem); width: 100%; }
+    .ro-watek { max-height: 42dvh; }
+    /* 16 px to nie estetyka, tylko granica: Safari na iOS PRZYBLIŻA całą stronę przy
+       fokusie na polu mniejszym niż 16 px i układ rozjeżdża się w pół rozmowy.
+       Reguła wisi na tym samym progu, co reszta układu telefonowego — dzięki temu
+       da się ją sprawdzić, a nie tylko założyć. */
+    .pr-pole { font-size: 16px; }
+  
+    body { flex-direction: column; }
+    #side {
+      width: 100%; max-height: 38vh;
+      border-left: none; border-top: 1px solid #2c3626;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    }
+    body.bez-panelu #side { display: none; }
+    /* Wpisy list są celami dla kciuka, więc muszą mieć w co trafić. */
+    #inventory li, #recipes li { padding: 7px 0; }
+    h2 { margin: 10px 0 4px; }
+    #keys, #pomoc { display: none; }
+  
   }
 </style>
 <div id="plansza"><canvas id="world"></canvas></div>

@@ -89,6 +89,15 @@ function zbuduj(): HTMLDivElement {
     if (e.target === tlo) zamknij();
   });
 
+  /**
+   * Po podniesieniu klawiatury ekranowej przeglądarka przewija kontener sama, ale
+   * nie zawsze i nie od razu. Jedno przewinięcie po animacji kosztuje nic, a bez
+   * niego pole do pisania bywa tuż pod krawędzią klawiatury.
+   */
+  pole.addEventListener('focus', () => {
+    setTimeout(() => pole.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300);
+  });
+
   pole.addEventListener('keydown', (e) => {
     e.stopPropagation();
     if (e.key === 'Escape') { zamknij(); return; }
